@@ -36,7 +36,6 @@ pub enum SettingsTab {
     Privilege,
     Network,
     Sftp,
-    Ide,
     Ai,
     Keybindings,
     Help,
@@ -389,7 +388,6 @@ impl SettingsTab {
             Self::Network,
             Self::Sftp,
             Self::Privilege,
-            Self::Ide,
             Self::Ai,
             Self::Help,
         ]
@@ -405,7 +403,6 @@ impl SettingsTab {
             Self::Privilege => "privilege",
             Self::Network => "network",
             Self::Sftp => "sftp",
-            Self::Ide => "ide",
             Self::Ai => "ai",
             Self::Keybindings => "keybindings",
             Self::Help => "help",
@@ -428,7 +425,7 @@ impl SettingsTab {
                 Self::Sftp,
                 Self::Privilege,
             ],
-            &[Self::Ide, Self::Ai],
+            &[Self::Ai],
             &[Self::Help],
         ]
     }
@@ -443,7 +440,6 @@ impl SettingsTab {
             Self::Privilege => "settings_view.tabs.privilege",
             Self::Network => "settings_view.tabs.network",
             Self::Sftp => "settings_view.tabs.sftp",
-            Self::Ide => "settings_view.tabs.ide",
             Self::Ai => "settings_view.tabs.ai",
             Self::Keybindings => "settings_view.tabs.keybindings",
             Self::Help => "settings_view.tabs.help",
@@ -460,7 +456,6 @@ impl SettingsTab {
             Self::Privilege => "settings_view.privilege_credentials.title",
             Self::Network => "settings_view.network.title",
             Self::Sftp => "settings_view.sftp.title",
-            Self::Ide => "settings_view.ide.title",
             Self::Ai => "settings_view.ai.title",
             Self::Keybindings => "settings_view.keybindings.title",
             Self::Help => "settings_view.help.title",
@@ -477,7 +472,6 @@ impl SettingsTab {
             Self::Privilege => "settings_view.privilege_credentials.description",
             Self::Network => "settings_view.network.description",
             Self::Sftp => "settings_view.sftp.description",
-            Self::Ide => "settings_view.ide.description",
             Self::Ai => "settings_view.ai.description",
             Self::Keybindings => "settings_view.keybindings.description",
             Self::Help => "settings_view.help.description",
@@ -492,7 +486,6 @@ impl SettingsTab {
             Self::Connections => SettingsTabIcon::Shield,
             Self::Privilege => SettingsTabIcon::Key,
             Self::Network => SettingsTabIcon::Network,
-            Self::Ide => SettingsTabIcon::Code2,
             Self::Ai => SettingsTabIcon::Sparkles,
             Self::Keybindings => SettingsTabIcon::Keyboard,
             Self::Help => SettingsTabIcon::HelpCircle,
@@ -722,7 +715,6 @@ impl SettingsInput {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SettingsTabIcon {
-    Code2,
     HardDrive,
     HelpCircle,
     Key,

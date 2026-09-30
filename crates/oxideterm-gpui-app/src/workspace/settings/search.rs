@@ -541,45 +541,6 @@ fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
             "settings_view.sftp.conflict",
             &["settings_view.sftp.conflict_hint"],
         ),
-        settings_search_entry(
-            SettingsTab::Ide,
-            0,
-            "settings_view.ide.editing",
-            &[
-                "settings_view.ide.auto_save",
-                "settings_view.ide.auto_save_hint",
-                "settings_view.ide.word_wrap",
-                "settings_view.ide.word_wrap_hint",
-            ],
-        ),
-        settings_search_entry(
-            SettingsTab::Ide,
-            1,
-            "settings_view.ide.editor_typography",
-            &[
-                "settings_view.ide.font_family",
-                "settings_view.ide.cjk_font_family",
-                "settings_view.ide.font_weight",
-                "settings_view.ide.font_size",
-                "settings_view.ide.line_height",
-            ],
-        ),
-        settings_search_entry(
-            SettingsTab::Ide,
-            2,
-            "settings_view.ide.agent_title",
-            &["settings_view.ide.agent_mode_label"],
-        ),
-        settings_search_entry(
-            SettingsTab::Ide,
-            3,
-            "settings_view.ide.agent_transparency_title",
-            &[
-                "settings_view.ide.agent_path_label",
-                "settings_view.ide.agent_privacy_label",
-                "settings_view.ide.agent_lifecycle_label",
-            ],
-        ),
         ai_search_entry(
             AiSettingsPage::General,
             1,
@@ -1197,7 +1158,6 @@ mod settings_search_tests {
                 Some(TerminalSettingsPage::Input),
                 1,
             ),
-            ("Deploy Path", SettingsTab::Ide, None, 3),
         ] {
             let results = settings_search_results(&i18n, query);
             let result = results

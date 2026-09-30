@@ -1253,8 +1253,6 @@
     "ide": {
       "editing_hint": "Configura il salvataggio automatico e la visualizzazione delle righe lunghe.",
       "editing": "Comportamento dell’editor",
-      "title": "Modalità IDE (Mini)",
-      "description": "Configura il comportamento dell'editor di codice integrato.",
       "auto_save": "Salvataggio automatico",
       "auto_save_hint": "Salva automaticamente i file quando si cambia scheda o si perde il focus.",
       "word_wrap": "A capo automatico",

@@ -30,7 +30,6 @@ pub fn settings_tab_from_ai_section(section: &str) -> Option<SettingsTab> {
         "ssh" | "ssh_keys" => Some(SettingsTab::Connections),
         "reconnect" => Some(SettingsTab::Connections),
         "sftp" => Some(SettingsTab::Sftp),
-        "ide" => Some(SettingsTab::Ide),
         "ai" | "assistant" => Some(SettingsTab::Ai),
         "keybindings" | "keyboard" => Some(SettingsTab::Keybindings),
         "help" => Some(SettingsTab::Help),

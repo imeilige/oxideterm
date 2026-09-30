@@ -1253,8 +1253,6 @@
     "ide": {
       "editing_hint": "設定自動儲存和長行顯示方式。",
       "editing": "編輯行為",
-      "title": "IDE 模式 (Mini)",
-      "description": "配置內建程式碼編輯器的行為。",
       "auto_save": "自動儲存",
       "auto_save_hint": "切換分頁或失去焦點時自動儲存檔案。",
       "word_wrap": "自動換行",

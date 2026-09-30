@@ -757,7 +757,6 @@ impl WorkspaceApp {
             }
             SettingsTab::Network => self.settings_network_section(section_index, cx),
             SettingsTab::Sftp => self.settings_sftp_section(section_index, cx),
-            SettingsTab::Ide => self.settings_ide_section(section_index, cx),
             SettingsTab::Ai => div().into_any_element(),
             SettingsTab::Keybindings => self.settings_keybindings_section(section_index, cx),
             SettingsTab::Help => self.settings_help_section(section_index, cx),

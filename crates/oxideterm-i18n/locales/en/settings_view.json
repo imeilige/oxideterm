@@ -1253,8 +1253,6 @@
     "ide": {
       "editing_hint": "Choose how edits are saved and long lines are displayed.",
       "editing": "Editing Behavior",
-      "title": "IDE Mode (Mini)",
-      "description": "Configure the built-in code editor behavior.",
       "auto_save": "Auto Save",
       "auto_save_hint": "Automatically save files when switching tabs or losing focus.",
       "word_wrap": "Word Wrap",

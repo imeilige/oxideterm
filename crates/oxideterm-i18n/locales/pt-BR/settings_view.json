@@ -1253,8 +1253,6 @@
     "ide": {
       "editing_hint": "Configure o salvamento automático e a exibição de linhas longas.",
       "editing": "Comportamento de edição",
-      "title": "Modo IDE (Mini)",
-      "description": "Configure o comportamento do editor de código integrado.",
       "auto_save": "Salvamento automático",
       "auto_save_hint": "Salvar arquivos automaticamente ao trocar de aba ou perder o foco.",
       "word_wrap": "Quebra de linha",

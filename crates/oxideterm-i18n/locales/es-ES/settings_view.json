@@ -1253,8 +1253,6 @@
     "ide": {
       "editing_hint": "Configura el guardado automático y la visualización de líneas largas.",
       "editing": "Comportamiento de edición",
-      "title": "Modo IDE (Mini)",
-      "description": "Configurar el comportamiento del editor de código integrado.",
       "auto_save": "Guardar automáticamente",
       "auto_save_hint": "Guardar archivos automáticamente al cambiar de pestaña o al perder el foco.",
       "word_wrap": "Ajuste de línea",

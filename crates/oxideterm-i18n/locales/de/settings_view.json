@@ -1253,8 +1253,6 @@
     "ide": {
       "editing_hint": "Automatisches Speichern und die Darstellung langer Zeilen festlegen.",
       "editing": "Bearbeitungsverhalten",
-      "title": "IDE-Modus (Mini)",
-      "description": "Verhalten des integrierten Code-Editors konfigurieren.",
       "auto_save": "Automatisches Speichern",
       "auto_save_hint": "Dateien beim Tab-Wechsel oder bei Fokusverlust automatisch speichern.",
       "word_wrap": "Zeilenumbruch",

@@ -1253,8 +1253,6 @@
     "ide": {
       "editing_hint": "设置自动保存和长行显示方式。",
       "editing": "编辑行为",
-      "title": "IDE 模式 (Mini)",
-      "description": "配置内置代码编辑器的行为。",
       "auto_save": "自动保存",
       "auto_save_hint": "切换标签页或失去焦点时自动保存文件。",
       "word_wrap": "自动换行",

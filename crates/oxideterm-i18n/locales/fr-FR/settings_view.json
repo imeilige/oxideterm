@@ -1253,8 +1253,6 @@
     "ide": {
       "editing_hint": "Configurez l’enregistrement automatique et l’affichage des lignes longues.",
       "editing": "Comportement de l’éditeur",
-      "title": "Mode IDE (Mini)",
-      "description": "Configurer le comportement de l'éditeur de code intégré.",
       "auto_save": "Sauvegarde automatique",
       "auto_save_hint": "Sauvegarder automatiquement les fichiers lors du changement d'onglet ou de la perte du focus.",
       "word_wrap": "Retour à la ligne",

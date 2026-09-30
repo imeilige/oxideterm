@@ -1253,8 +1253,6 @@
     "ide": {
       "editing_hint": "Thiết lập tự động lưu và cách hiển thị dòng dài.",
       "editing": "Hành vi chỉnh sửa",
-      "title": "Chế độ IDE (Mini)",
-      "description": "Cấu hình hành vi của trình soạn thảo mã tích hợp.",
       "auto_save": "Tự động lưu",
       "auto_save_hint": "Tự động lưu tệp khi chuyển tab hoặc mất tiêu điểm.",
       "word_wrap": "Ngắt dòng",

@@ -1253,8 +1253,6 @@
     "ide": {
       "editing_hint": "自動保存と長い行の表示方法を設定します。",
       "editing": "編集動作",
-      "title": "IDE モード (Mini)",
-      "description": "内蔵コードエディタの動作を設定します。",
       "auto_save": "自動保存",
       "auto_save_hint": "タブの切り替え時やフォーカスを失った時にファイルを自動保存します。",
       "word_wrap": "折り返し",
