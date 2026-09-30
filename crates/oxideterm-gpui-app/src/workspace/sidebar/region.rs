@@ -466,7 +466,6 @@ impl WorkspaceApp {
         let title_key = match panel_section {
             SidebarSection::Forwards => "forwards.table.title",
             SidebarSection::Extensions => "sidebar.panels.plugins",
-            SidebarSection::CloudSync => "plugin.cloud_sync.panel_title",
             SidebarSection::Notifications => "sidebar.panels.event_log",
             _ => "sidebar.panels.sessions",
         };
@@ -679,9 +678,6 @@ impl WorkspaceApp {
         }
         if panel_section == SidebarSection::Extensions {
             return self.render_native_plugin_sidebar_content(cx);
-        }
-        if panel_section == SidebarSection::CloudSync {
-            return self.render_cloud_sync_sidebar_content(cx);
         }
         if panel_section == SidebarSection::Forwards {
             // Tauri only persists these command-palette section keys here; it

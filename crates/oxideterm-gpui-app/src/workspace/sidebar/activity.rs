@@ -17,7 +17,6 @@ impl WorkspaceApp {
             (SidebarSection::Runtime, LucideIcon::Gauge),
         ]);
         let top_items_after_plugins = [
-            (SidebarSection::CloudSync, LucideIcon::Cloud),
             (SidebarSection::Assistant, LucideIcon::Sparkles),
             (SidebarSection::HostTools, LucideIcon::Wrench),
         ];
@@ -224,9 +223,6 @@ impl WorkspaceApp {
             SidebarSection::Extensions => self
                 .active_tab(cx)
                 .is_some_and(|tab| tab.kind == TabKind::PluginManager),
-            SidebarSection::CloudSync => self
-                .active_tab(cx)
-                .is_some_and(|tab| tab.kind == TabKind::CloudSync),
             SidebarSection::Settings => self
                 .active_tab(cx)
                 .is_some_and(|tab| tab.kind == TabKind::Settings),
@@ -384,8 +380,6 @@ impl WorkspaceApp {
                     } else if section == SidebarSection::HostTools {
                         let _ =
                             this.toggle_context_sidebar_panel(ContextSidebarPanel::HostTools, cx);
-                    } else if section == SidebarSection::CloudSync {
-                        this.open_cloud_sync_tab(window, cx);
                     } else if section == SidebarSection::Extensions {
                         this.open_plugin_manager_tab(window, cx);
                     } else {
@@ -406,7 +400,6 @@ impl WorkspaceApp {
             SidebarSection::Runtime => self.i18n.t("sidebar.panels.runtime"),
             SidebarSection::Network => self.i18n.t("sidebar.panels.connection_matrix"),
             SidebarSection::Extensions => self.i18n.t("sidebar.panels.plugins"),
-            SidebarSection::CloudSync => self.i18n.t("plugin.cloud_sync.panel_title"),
             SidebarSection::Assistant => self.i18n.t("sidebar.panels.ai"),
             SidebarSection::HostTools => self.i18n.t("sidebar.panels.host_tools"),
             SidebarSection::Automation => self.i18n.t("sidebar.panels.activity"),

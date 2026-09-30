@@ -49,7 +49,6 @@ pub(super) enum SidebarSection {
     Terminal,
     Network,
     Extensions,
-    CloudSync,
     Assistant,
     HostTools,
     Automation,
@@ -117,7 +116,6 @@ impl SidebarSection {
             "connection_monitor" | "activity" => Self::HostTools,
             "network" | "topology" => Self::Network,
             "extensions" => Self::Extensions,
-            "cloud_sync" => Self::CloudSync,
             "ai" | "assistant" => Self::Assistant,
             "host_tools" => Self::HostTools,
             "automation" => Self::Automation,
@@ -143,7 +141,6 @@ impl SidebarSection {
             Self::Terminal => "connection_pool",
             Self::Network => "topology",
             Self::Extensions => "extensions",
-            Self::CloudSync => "cloud_sync",
             Self::Assistant => "ai",
             Self::HostTools => "host_tools",
             Self::Automation => "automation",
@@ -160,8 +157,7 @@ impl WorkspaceApp {
         match self.active_sidebar_section {
             SidebarSection::Sessions
             | SidebarSection::Forwards
-            | SidebarSection::Extensions
-            | SidebarSection::CloudSync => self.active_sidebar_section,
+            | SidebarSection::Extensions => self.active_sidebar_section,
             // Tauri separates activity-bar tab buttons from sidebar sections.
             // Keep tab-only entries from replacing the Sessions sidebar body.
             SidebarSection::Connections
@@ -216,7 +212,6 @@ mod sidebar_persistence_tests {
             SidebarSection::Terminal,
             SidebarSection::Network,
             SidebarSection::Extensions,
-            SidebarSection::CloudSync,
             SidebarSection::Assistant,
             SidebarSection::HostTools,
             SidebarSection::Automation,
