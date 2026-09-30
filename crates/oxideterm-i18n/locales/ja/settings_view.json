@@ -71,7 +71,6 @@
       "connections": "接続",
       "ssh": "SSHキー",
       "ai": "OxideSens",
-      "knowledge": "ナレッジベース",
       "local": "ローカルターミナル",
       "privilege": "権限昇格資格情報",
       "reconnect": "自動再接続",

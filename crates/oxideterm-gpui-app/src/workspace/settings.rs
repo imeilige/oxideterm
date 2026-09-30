@@ -260,7 +260,6 @@ pub(in crate::workspace) use update::{
 
 fn settings_tab_lucide(icon: SettingsTabIcon) -> LucideIcon {
     match icon {
-        SettingsTabIcon::BookOpen => LucideIcon::BookOpen,
         SettingsTabIcon::Code2 => LucideIcon::Code2,
         SettingsTabIcon::HardDrive => LucideIcon::HardDrive,
         SettingsTabIcon::HelpCircle => LucideIcon::HelpCircle,

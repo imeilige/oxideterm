@@ -212,10 +212,6 @@ pub fn settings_tab_section_count(
         SettingsTab::Sftp => 3,
         SettingsTab::Ide => 4,
         SettingsTab::Ai => ai_settings_section_count(dynamic.ai_page),
-        SettingsTab::Knowledge => knowledge_settings_section_count(
-            dynamic.knowledge_has_error,
-            dynamic.knowledge_has_selected_collection,
-        ),
         SettingsTab::Keybindings => {
             keybinding_settings_section_count(dynamic.visible_keybinding_scope_count)
         }
@@ -258,10 +254,6 @@ pub fn keybinding_settings_section_count(visible_scope_count: usize) -> usize {
     1 + visible_scope_count.max(1)
 }
 
-pub fn knowledge_settings_section_count(has_error: bool, has_selected_collection: bool) -> usize {
-    2 + usize::from(has_error) + usize::from(has_selected_collection)
-}
-
 pub fn settings_section_list_identity(
     tab: SettingsTab,
     terminal_page: TerminalSettingsPage,
@@ -277,8 +269,6 @@ pub struct SettingsDynamicSectionCounts {
     pub terminal_page: TerminalSettingsPage,
     pub ai_page: AiSettingsPage,
     pub visible_keybinding_scope_count: usize,
-    pub knowledge_has_error: bool,
-    pub knowledge_has_selected_collection: bool,
 }
 
 #[cfg(test)]

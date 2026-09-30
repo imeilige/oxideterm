@@ -71,7 +71,6 @@
       "connections": "연결",
       "ssh": "SSH 키",
       "ai": "OxideSens",
-      "knowledge": "지식 베이스",
       "local": "로컬 터미널",
       "privilege": "권한 상승 자격 증명",
       "reconnect": "자동 재연결",

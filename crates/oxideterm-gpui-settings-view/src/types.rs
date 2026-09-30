@@ -32,7 +32,6 @@ pub fn settings_tab_from_ai_section(section: &str) -> Option<SettingsTab> {
         "sftp" => Some(SettingsTab::Sftp),
         "ide" => Some(SettingsTab::Ide),
         "ai" | "assistant" => Some(SettingsTab::Ai),
-        "knowledge" | "rag" => Some(SettingsTab::Knowledge),
         "keybindings" | "keyboard" => Some(SettingsTab::Keybindings),
         "help" => Some(SettingsTab::Help),
         _ => None,

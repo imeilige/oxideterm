@@ -71,7 +71,6 @@
       "connections": "连接",
       "ssh": "SSH 密钥",
       "ai": "OxideSens",
-      "knowledge": "知识库",
       "local": "本地终端",
       "privilege": "提权凭据",
       "reconnect": "自动重连",

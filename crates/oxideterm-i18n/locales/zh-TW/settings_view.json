@@ -71,7 +71,6 @@
       "connections": "連線",
       "ssh": "SSH 金鑰",
       "ai": "OxideSens",
-      "knowledge": "知識庫",
       "local": "本機終端機",
       "privilege": "提權憑證",
       "reconnect": "自動重連",

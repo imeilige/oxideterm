@@ -38,7 +38,6 @@ pub enum SettingsTab {
     Sftp,
     Ide,
     Ai,
-    Knowledge,
     Keybindings,
     Help,
 }
@@ -392,7 +391,6 @@ impl SettingsTab {
             Self::Privilege,
             Self::Ide,
             Self::Ai,
-            Self::Knowledge,
             Self::Help,
         ]
     }
@@ -409,7 +407,6 @@ impl SettingsTab {
             Self::Sftp => "sftp",
             Self::Ide => "ide",
             Self::Ai => "ai",
-            Self::Knowledge => "knowledge",
             Self::Keybindings => "keybindings",
             Self::Help => "help",
         }
@@ -431,7 +428,7 @@ impl SettingsTab {
                 Self::Sftp,
                 Self::Privilege,
             ],
-            &[Self::Ide, Self::Ai, Self::Knowledge],
+            &[Self::Ide, Self::Ai],
             &[Self::Help],
         ]
     }
@@ -448,7 +445,6 @@ impl SettingsTab {
             Self::Sftp => "settings_view.tabs.sftp",
             Self::Ide => "settings_view.tabs.ide",
             Self::Ai => "settings_view.tabs.ai",
-            Self::Knowledge => "settings_view.tabs.knowledge",
             Self::Keybindings => "settings_view.tabs.keybindings",
             Self::Help => "settings_view.tabs.help",
         }
@@ -466,7 +462,6 @@ impl SettingsTab {
             Self::Sftp => "settings_view.sftp.title",
             Self::Ide => "settings_view.ide.title",
             Self::Ai => "settings_view.ai.title",
-            Self::Knowledge => "settings_view.knowledge.title",
             Self::Keybindings => "settings_view.keybindings.title",
             Self::Help => "settings_view.help.title",
         }
@@ -484,7 +479,6 @@ impl SettingsTab {
             Self::Sftp => "settings_view.sftp.description",
             Self::Ide => "settings_view.ide.description",
             Self::Ai => "settings_view.ai.description",
-            Self::Knowledge => "settings_view.knowledge.description",
             Self::Keybindings => "settings_view.keybindings.description",
             Self::Help => "settings_view.help.description",
         }
@@ -500,7 +494,6 @@ impl SettingsTab {
             Self::Network => SettingsTabIcon::Network,
             Self::Ide => SettingsTabIcon::Code2,
             Self::Ai => SettingsTabIcon::Sparkles,
-            Self::Knowledge => SettingsTabIcon::BookOpen,
             Self::Keybindings => SettingsTabIcon::Keyboard,
             Self::Help => SettingsTabIcon::HelpCircle,
         }
@@ -729,7 +722,6 @@ impl SettingsInput {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SettingsTabIcon {
-    BookOpen,
     Code2,
     HardDrive,
     HelpCircle,

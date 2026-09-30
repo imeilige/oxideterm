@@ -682,33 +682,6 @@ fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
             &["settings_view.mcp.description"],
         ),
         settings_search_entry(
-            SettingsTab::Knowledge,
-            0,
-            "settings_view.knowledge.collections",
-            &["settings_view.knowledge.create_description"],
-        ),
-        settings_search_entry(
-            SettingsTab::Knowledge,
-            1,
-            "settings_view.knowledge.semantic_search",
-            &[
-                "settings_view.knowledge.configure_embeddings",
-                "settings_view.ai.embedding_title",
-                "settings_view.ai.embedding_provider",
-                "settings_view.ai.embedding_model",
-            ],
-        ),
-        settings_search_entry(
-            SettingsTab::Knowledge,
-            2,
-            "settings_view.knowledge.import_files",
-            &[
-                "settings_view.knowledge.file_filter_documents",
-                "settings_view.knowledge.generate_embeddings",
-                "settings_view.knowledge.reindex",
-            ],
-        ),
-        settings_search_entry(
             SettingsTab::Keybindings,
             0,
             "settings_view.keybindings.title",
@@ -945,11 +918,7 @@ impl WorkspaceApp {
             .to_string();
         let Some(result) = settings_search_results(&self.i18n, &query)
             .into_iter()
-            .find(|result| {
-                result.tab != SettingsTab::Knowledge
-                    || result.section_index != 2
-                    || self.knowledge_has_selected_collection(cx)
-            })
+            .next()
         else {
             return false;
         };
@@ -990,18 +959,9 @@ impl WorkspaceApp {
                     }
                 }
             }
-            if result.tab == SettingsTab::Knowledge && result.section_index == 1 {
-                ai.expand_knowledge_embedding_config();
-                cx.notify();
-            }
         });
         let tab = result.tab;
-        // Knowledge displays a transient error card before its indexed content cards.
-        let knowledge_error_offset = usize::from(
-            tab == SettingsTab::Knowledge
-                && self.settings_dynamic_section_counts(cx).knowledge_has_error,
-        );
-        let target_section_index = result.section_index + knowledge_error_offset;
+        let target_section_index = result.section_index;
         if result.terminal_page == Some(TerminalSettingsPage::Awareness)
             && result.section_index == 3
         {
@@ -1110,11 +1070,6 @@ impl WorkspaceApp {
             });
         let results = settings_search_results(&self.i18n, query)
             .into_iter()
-            .filter(|result| {
-                result.tab != SettingsTab::Knowledge
-                    || result.section_index != 2
-                    || self.knowledge_has_selected_collection(cx)
-            })
             .collect::<Vec<_>>();
         let result_scroll = self.selectable_text_scroll_handle("settings-search-results-scroll");
         let mut result_list = div()
@@ -1243,7 +1198,6 @@ mod settings_search_tests {
                 1,
             ),
             ("Deploy Path", SettingsTab::Ide, None, 3),
-            ("Semantic Search", SettingsTab::Knowledge, None, 1),
         ] {
             let results = settings_search_results(&i18n, query);
             let result = results

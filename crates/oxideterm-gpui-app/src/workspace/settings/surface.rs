@@ -81,8 +81,10 @@ impl WorkspaceApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        // The Knowledge settings tab was removed. Knowledge actions that request
+        // settings now land on General so the workspace keeps a valid surface.
         self.settings_workspace.update(cx, |settings, cx| {
-            settings.set_active_tab(SettingsTab::Knowledge, cx);
+            settings.set_active_tab(SettingsTab::General, cx);
         });
         self.close_settings_select();
         self.focused_settings_input = None;
@@ -638,16 +640,6 @@ impl WorkspaceApp {
                     _ => {}
                 }
             }
-            SettingsTab::Knowledge => {
-                let ai = self.ai_entity.read(cx);
-                ai.knowledge_selected_collection_id().hash(&mut hasher);
-                ai.knowledge_document_page_index().hash(&mut hasher);
-                ai.knowledge_embedding_config_expanded().hash(&mut hasher);
-                ai.knowledge_error().is_some().hash(&mut hasher);
-                ai.knowledge_import_progress().hash(&mut hasher);
-                ai.knowledge_embedding_progress().hash(&mut hasher);
-                ai.knowledge_reindex_progress().hash(&mut hasher);
-            }
             SettingsTab::Keybindings => {
                 // Keep the search control mounted while scope filtering replaces tables.
                 if index > 0 {
@@ -687,17 +679,10 @@ impl WorkspaceApp {
         cx: &App,
     ) -> SettingsDynamicSectionCounts {
         let route = self.settings_workspace.read(cx).route_snapshot();
-        let knowledge_has_selected_collection = if route.active_tab == SettingsTab::Knowledge {
-            self.knowledge_has_selected_collection(cx)
-        } else {
-            false
-        };
         SettingsDynamicSectionCounts {
             terminal_page: route.terminal_page,
             ai_page: route.ai_page,
             visible_keybinding_scope_count: self.visible_keybinding_scope_count(cx),
-            knowledge_has_error: self.ai_entity.read(cx).knowledge_error().is_some(),
-            knowledge_has_selected_collection,
         }
     }
 
@@ -774,7 +759,6 @@ impl WorkspaceApp {
             SettingsTab::Sftp => self.settings_sftp_section(section_index, cx),
             SettingsTab::Ide => self.settings_ide_section(section_index, cx),
             SettingsTab::Ai => div().into_any_element(),
-            SettingsTab::Knowledge => self.settings_knowledge_section(section_index, cx),
             SettingsTab::Keybindings => self.settings_keybindings_section(section_index, cx),
             SettingsTab::Help => self.settings_help_section(section_index, cx),
         }
