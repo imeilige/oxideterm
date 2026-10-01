@@ -36,8 +36,6 @@ pub(in crate::workspace) enum WorkspaceRuntimeEffect {
     },
     RetryNodeConnect {
         node_id: NodeId,
-        attempt: u32,
-        max_attempts: u32,
     },
     ReconnectRecoveredBeforeRetry {
         node_id: NodeId,
@@ -91,12 +89,8 @@ pub(in crate::workspace) enum ReconnectRuntimeEffect {
     },
     GraceExpired {
         node_id: NodeId,
-        detail: String,
     },
-    SftpTransfersSnapshotted {
-        node_id: NodeId,
-        entered_grace_period: bool,
-    },
+    SftpTransfersSnapshotted,
     RemoteShellIntegrationGateFinished {
         notice: Option<settings::RemoteShellIntegrationNotice>,
     },
@@ -108,12 +102,7 @@ pub(in crate::workspace) enum ReconnectRuntimeEffect {
 #[derive(Debug)]
 pub(in crate::workspace) enum ReconnectFailureAction {
     InitialConnect,
-    Retry {
-        attempt: u32,
-        max_attempts: u32,
-        delay: Duration,
-        job_id: String,
-    },
+    Retry { delay: Duration, job_id: String },
     FinishReconnect,
 }
 
@@ -121,7 +110,6 @@ pub(in crate::workspace) enum ReconnectFailureAction {
 pub(in crate::workspace) enum NodeRuntimeEffect {
     ConnectionStatusChanged {
         node_id: NodeId,
-        connection_id: String,
         status: String,
         state: NodeReadiness,
         reason: String,
@@ -2398,11 +2386,7 @@ impl WorkspaceRuntimeEntity {
                         .reconnect_orchestrator
                         .advance(&node_id.0, ReconnectPhase::SshConnect);
                     let _ = self.reconnect_orchestrator.begin_ssh_attempt(&node_id.0);
-                    Some(WorkspaceRuntimeEffect::RetryNodeConnect {
-                        node_id,
-                        attempt,
-                        max_attempts,
-                    })
+                    Some(WorkspaceRuntimeEffect::RetryNodeConnect { node_id })
                 }
             }
             ReconnectScheduleAction::CleanupReconnectJob {
@@ -2628,8 +2612,6 @@ impl WorkspaceRuntimeEntity {
                                         self.reconnect_orchestrator.active_job_id(&node_id.0)
                                     })
                                     .map(|job_id| ReconnectFailureAction::Retry {
-                                        attempt: retry.attempt,
-                                        max_attempts: retry.max_attempts,
                                         delay: retry.delay,
                                         job_id,
                                     })
@@ -2688,7 +2670,7 @@ impl WorkspaceRuntimeEntity {
                         .reconnect_orchestrator
                         .advance(&node_id.0, ReconnectPhase::SshConnect);
                     let _ = self.reconnect_orchestrator.begin_ssh_attempt(&node_id.0);
-                    ReconnectRuntimeEffect::GraceExpired { node_id, detail }
+                    ReconnectRuntimeEffect::GraceExpired { node_id }
                 })
             }
             ReconnectWorkerResult::SftpTransfersSnapshotted {
@@ -2717,10 +2699,7 @@ impl WorkspaceRuntimeEntity {
                         .reconnect_orchestrator
                         .advance(&node_id.0, ReconnectPhase::GracePeriod);
                 }
-                ReconnectRuntimeEffect::SftpTransfersSnapshotted {
-                    node_id,
-                    entered_grace_period,
-                }
+                ReconnectRuntimeEffect::SftpTransfersSnapshotted
             }),
             ReconnectWorkerResult::RemoteShellIntegrationGateFinished {
                 node_id,
@@ -2826,7 +2805,6 @@ impl WorkspaceRuntimeEntity {
                     );
                     Some(NodeRuntimeEffect::ConnectionStatusChanged {
                         node_id,
-                        connection_id,
                         status,
                         state,
                         reason,

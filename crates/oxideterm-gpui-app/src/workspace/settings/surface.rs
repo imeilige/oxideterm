@@ -449,48 +449,6 @@ impl WorkspaceApp {
                 // of the height signature prevents scroll anchoring from
                 // jumping when the icon picker updates its selected badge.
             }
-            SettingsTab::Network => {
-                self.settings_workspace
-                    .read(cx)
-                    .expanded_mcp_client
-                    .hash(&mut hasher);
-                settings.network.upstream_proxy.is_some().hash(&mut hasher);
-                settings
-                    .network
-                    .upstream_proxy
-                    .as_ref()
-                    .map(|proxy| matches!(proxy.auth, SettingsUpstreamProxyAuth::Password { .. }))
-                    .hash(&mut hasher);
-                settings
-                    .network
-                    .upstream_proxy_disclaimer_accepted
-                    .hash(&mut hasher);
-                settings.network.application_proxy_mode.hash(&mut hasher);
-                settings.general.update_proxy.mode.hash(&mut hasher);
-                settings.general.update_proxy.protocol.hash(&mut hasher);
-                self.settings_workspace
-                    .read(cx)
-                    .network_proxy_layout_flags()
-                    .hash(&mut hasher);
-                for client in self.public_mcp.clients() {
-                    client.client_ref.as_str().hash(&mut hasher);
-                    client.label.hash(&mut hasher);
-                    client.enabled.hash(&mut hasher);
-                    client.approval_mode.hash(&mut hasher);
-                    client.tool_groups.hash(&mut hasher);
-                }
-                for approval in self.public_mcp.approvals().iter().filter(|approval| {
-                    approval.status == oxideterm_public_mcp::ApprovalStatus::Pending
-                }) {
-                    // A different frozen action can have a different wrapped command height.
-                    approval.approval_ref.as_str().hash(&mut hasher);
-                }
-                self.public_mcp
-                    .revealed_credential()
-                    .is_some()
-                    .hash(&mut hasher);
-                self.public_mcp.startup_error().is_some().hash(&mut hasher);
-            }
             SettingsTab::Help => {
                 settings.general.update_channel.hash(&mut hasher);
             }
@@ -645,7 +603,6 @@ impl WorkspaceApp {
             SettingsTab::Privilege => {
                 self.settings_privilege_credentials_section(section_index, cx)
             }
-            SettingsTab::Network => self.settings_network_section(section_index, cx),
             SettingsTab::Sftp => self.settings_sftp_section(section_index, cx),
             SettingsTab::Keybindings => self.settings_keybindings_section(section_index, cx),
             SettingsTab::Help => self.settings_help_section(section_index, cx),

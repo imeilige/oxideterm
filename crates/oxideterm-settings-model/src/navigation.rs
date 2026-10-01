@@ -211,7 +211,6 @@ pub fn settings_tab_section_count(
         // Reconnect controls share one card and therefore one virtual section.
         SettingsTab::Connections => 6,
         SettingsTab::Privilege => 1,
-        SettingsTab::Network => 4,
         SettingsTab::Sftp => 3,
         SettingsTab::Keybindings => {
             keybinding_settings_section_count(dynamic.visible_keybinding_scope_count)

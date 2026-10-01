@@ -62,13 +62,8 @@ const CONNECTION_TYPE_TELNET: &str = "telnet";
 const CONNECTION_TYPE_MOSH: &str = "mosh";
 
 pub(in crate::workspace) struct PublicMcpWorkspaceBridge {
-    endpoint_url: Option<String>,
-    startup_error: Option<String>,
     server: Option<PublicMcpHttpServer>,
-    port_draft: String,
-    client_registry_ready: bool,
     state: Arc<PublicMcpState>,
-    settings_path: PathBuf,
     receiver: Option<DomainRequestReceiver>,
     delivery_task: Option<Task<()>>,
     revealed_credential: Option<ClientCredential>,
@@ -241,7 +236,6 @@ enum PublicMcpCommandState {
 struct PublicMcpCommandRecord {
     client_ref: ClientRef,
     node_ref: NodeRef,
-    owner_group: ToolGroup,
     state: PublicMcpCommandState,
     stdout: Zeroizing<Vec<u8>>,
     stderr: Zeroizing<Vec<u8>>,
@@ -321,7 +315,7 @@ impl PublicMcpWorkspaceBridge {
         } else {
             preferred_port
         };
-        let (server, endpoint_url, server_error) = if client_registry_ready {
+        let (server, _) = if client_registry_ready {
             let started =
                 start_http_server(runtime, state.clone(), initial_port).or_else(|first_error| {
                     // Only automatic mode may move away from the previous discovery port.
@@ -333,25 +327,19 @@ impl PublicMcpWorkspaceBridge {
                 });
             match started {
                 Ok(server) => {
-                    let endpoint_url = Some(server.endpoint_url());
                     // A persistence failure must not hide a healthy live endpoint.
                     let _ =
                         persist_endpoint_state(&endpoint_state_path, server.port(), preferred_port);
-                    (Some(server), endpoint_url, None)
+                    (Some(server), None)
                 }
-                Err(error) => (None, None, Some(error.to_string())),
+                Err(error) => (None, Some(error.to_string())),
             }
         } else {
-            (None, None, None)
+            (None, None)
         };
         Self {
-            endpoint_url,
-            startup_error: registry_error.or(server_error),
             server,
-            port_draft: preferred_port.to_string(),
-            client_registry_ready,
             state,
-            settings_path: settings_path.to_path_buf(),
             receiver: Some(receiver),
             delivery_task: None,
             revealed_credential: None,
@@ -367,75 +355,12 @@ impl PublicMcpWorkspaceBridge {
         }
     }
 
-    pub(in crate::workspace) fn endpoint_url(&self) -> Option<&str> {
-        self.endpoint_url.as_deref()
-    }
-
-    pub(in crate::workspace) fn startup_error(&self) -> Option<&str> {
-        self.startup_error.as_deref()
-    }
-
-    pub(in crate::workspace) fn port_draft(&self) -> &str {
-        &self.port_draft
-    }
-
-    pub(in crate::workspace) fn set_port_draft(&mut self, draft: String) {
-        self.port_draft = draft;
-    }
-
-    pub(in crate::workspace) fn apply_preferred_port(
-        &mut self,
-        runtime: &tokio::runtime::Handle,
-        preferred_port: u16,
-    ) -> std::io::Result<()> {
-        if !self.client_registry_ready {
-            return Err(std::io::Error::other(
-                "The Public MCP client registry is unavailable",
-            ));
-        }
-        let current_port = self.server.as_ref().map(PublicMcpHttpServer::port);
-        let endpoint_state_path = public_mcp_endpoint_state_path(&self.settings_path);
-
-        if preferred_port == 0 && current_port.is_some() {
-            // Automatic mode can keep the healthy listener and choose again on a later startup.
-            persist_endpoint_state(
-                &endpoint_state_path,
-                current_port.unwrap_or_default(),
-                preferred_port,
-            )?;
-        } else if current_port == Some(preferred_port) {
-            persist_endpoint_state(&endpoint_state_path, preferred_port, preferred_port)?;
-        } else {
-            // Bind the replacement before dropping the current listener so a failed choice
-            // never takes a working endpoint offline.
-            let replacement = start_http_server(runtime, self.state.clone(), preferred_port)?;
-            let replacement_url = replacement.endpoint_url();
-            persist_endpoint_state(&endpoint_state_path, replacement.port(), preferred_port)?;
-            self.server = Some(replacement);
-            self.endpoint_url = Some(replacement_url);
-        }
-
-        self.port_draft = preferred_port.to_string();
-        self.startup_error = None;
-        Ok(())
-    }
-
-    pub(in crate::workspace) fn record_action_error(&mut self, error: String) {
-        self.startup_error = Some(error);
-    }
-
     pub(in crate::workspace) fn clients(&self) -> Vec<ClientProjection> {
         self.state.clients.list()
     }
 
     pub(in crate::workspace) fn approvals(&self) -> Vec<oxideterm_public_mcp::ApprovalProjection> {
         self.state.approvals.list()
-    }
-
-    pub(in crate::workspace) fn revealed_credential(&self) -> Option<&str> {
-        self.revealed_credential
-            .as_ref()
-            .map(ClientCredential::expose)
     }
 
     pub(in crate::workspace) fn create_client(
@@ -476,12 +401,7 @@ impl PublicMcpWorkspaceBridge {
             true,
         );
         self.revealed_credential = Some(registered.credential);
-        self.startup_error = None;
         Ok(())
-    }
-
-    pub(in crate::workspace) fn dismiss_revealed_credential(&mut self) {
-        self.revealed_credential.take();
     }
 
     pub(in crate::workspace) fn set_client_enabled(
@@ -600,9 +520,6 @@ impl PublicMcpWorkspaceBridge {
             .approvals
             .set_status(approval_ref, status)
             .map_err(|error| error.to_string());
-        if result.is_ok() {
-            self.startup_error = None;
-        }
         result
     }
 
@@ -961,50 +878,6 @@ impl WorkspaceApp {
         );
     }
 
-    pub(in crate::workspace) fn set_public_mcp_client_enabled(
-        &mut self,
-        client_ref: &ClientRef,
-        enabled: bool,
-        cx: &mut Context<Self>,
-    ) -> Result<(), String> {
-        self.public_mcp.set_client_enabled(client_ref, enabled)?;
-        if !enabled {
-            self.revoke_public_mcp_client_runtime(client_ref, cx);
-            self.public_mcp.remove_client_connection_refs(client_ref);
-        }
-        Ok(())
-    }
-
-    pub(in crate::workspace) fn set_public_mcp_client_approval_mode(
-        &mut self,
-        client_ref: &ClientRef,
-        approval_mode: ClientApprovalMode,
-        cx: &mut Context<Self>,
-    ) -> Result<(), String> {
-        self.public_mcp
-            .set_client_approval_mode(client_ref, approval_mode)?;
-        // A mode transition cannot inherit actions or runtime handles from the old policy.
-        self.revoke_public_mcp_client_runtime(client_ref, cx);
-        Ok(())
-    }
-
-    pub(in crate::workspace) fn set_public_mcp_client_tool_group(
-        &mut self,
-        client_ref: &ClientRef,
-        tool_group: ToolGroup,
-        enabled: bool,
-        cx: &mut Context<Self>,
-    ) -> Result<(), String> {
-        self.public_mcp
-            .set_client_tool_group(client_ref, tool_group, enabled)?;
-        if enabled {
-            self.enable_public_mcp_client_tool_group(client_ref, tool_group, cx);
-        } else {
-            self.disable_public_mcp_client_tool_group(client_ref, tool_group, cx);
-        }
-        Ok(())
-    }
-
     fn enable_public_mcp_client_tool_group(
         &mut self,
         client_ref: &ClientRef,
@@ -1072,31 +945,6 @@ impl WorkspaceApp {
             | ToolGroup::HostToolsOperate
             | ToolGroup::ForwardRead => {}
         }
-    }
-
-    pub(in crate::workspace) fn remove_public_mcp_client(
-        &mut self,
-        client_ref: &ClientRef,
-        cx: &mut Context<Self>,
-    ) -> Result<(), String> {
-        self.public_mcp.remove_client(client_ref)?;
-        self.revoke_public_mcp_client_runtime(client_ref, cx);
-        self.public_mcp.remove_client_connection_refs(client_ref);
-        Ok(())
-    }
-
-    pub(in crate::workspace) fn public_mcp_target_label(
-        &self,
-        client_ref: &ClientRef,
-        target: &str,
-    ) -> String {
-        self.public_mcp.target_label(
-            client_ref,
-            target,
-            &self.connection_store,
-            &self.node_router,
-            &self.forwarding_service,
-        )
     }
 
     fn revoke_public_mcp_client_runtime(&mut self, client_ref: &ClientRef, cx: &mut Context<Self>) {
@@ -2230,7 +2078,6 @@ impl WorkspaceApp {
             PublicMcpCommandRecord {
                 client_ref: request.client_ref.clone(),
                 node_ref,
-                owner_group,
                 state: PublicMcpCommandState::Running,
                 stdout: Zeroizing::new(Vec::new()),
                 stderr: Zeroizing::new(Vec::new()),
@@ -2496,29 +2343,6 @@ impl PublicMcpWorkspaceBridge {
                 .iter()
                 .filter_map(|(command_ref, record)| {
                     (&record.client_ref == client_ref).then_some(command_ref.clone())
-                })
-                .collect::<Vec<_>>();
-            remove_command_operations(&mut handles, &command_refs);
-            command_refs
-                .into_iter()
-                .filter_map(|command_ref| handles.commands.remove(&command_ref))
-                .map(|record| record.cancellation)
-                .collect::<Vec<_>>()
-        };
-        for cancellation in cancellations {
-            cancellation.cancel();
-        }
-    }
-
-    fn revoke_client_commands_for_group(&self, client_ref: &ClientRef, tool_group: ToolGroup) {
-        let cancellations = {
-            let mut handles = self.runtime_handles.lock();
-            let command_refs = handles
-                .commands
-                .iter()
-                .filter_map(|(command_ref, record)| {
-                    (&record.client_ref == client_ref && record.owner_group == tool_group)
-                        .then_some(command_ref.clone())
                 })
                 .collect::<Vec<_>>();
             remove_command_operations(&mut handles, &command_refs);

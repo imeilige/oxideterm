@@ -7,10 +7,9 @@ use gpui::{
 use oxideterm_settings::{
     AppIconVariant, FrostedGlassMode, HighlightRule, HighlightRuleSet, Language,
     MAX_HIGHLIGHT_RULE_SETS, MAX_HIGHLIGHT_RULES, PersistedSettings,
-    RECOMMENDED_FOCUS_HANDOFF_COMMANDS, RemoteShellIntegrationMode, SettingsApplicationProxyMode,
-    SettingsUpstreamProxyAuth, SettingsUpstreamProxyConfig, SettingsUpstreamProxyProtocol,
-    TerminalSemanticScheme, UpdateChannel, UpdateProxyMode, UpdateProxyProtocol,
-    create_default_highlight_rule, reindex_highlight_rules, sanitize_highlight_rule_sets,
+    RECOMMENDED_FOCUS_HANDOFF_COMMANDS, RemoteShellIntegrationMode, TerminalSemanticScheme,
+    UpdateChannel, create_default_highlight_rule, reindex_highlight_rules,
+    sanitize_highlight_rule_sets,
 };
 use oxideterm_settings_model::{
     AcpAgentPreset, AiProviderModelChipItem, AiProviderModelPanel, AiSettingsPage,
@@ -39,7 +38,6 @@ use oxideterm_settings_model::{
     settings_section_list_item_count as settings_model_section_list_item_count,
     take_cloud_sync_form_input_value, theme_editor_from_settings,
 };
-use oxideterm_ssh::{HostKeyStatus, UpstreamProxyConfig, probe_upstream_proxy_route};
 use oxideterm_theme::BUILT_IN_THEMES;
 
 pub(in crate::workspace) use pages::open_path_external;
@@ -117,7 +115,6 @@ use oxideterm_gpui_ui::{
 };
 use oxideterm_i18n::I18n;
 use oxideterm_network_proxy::install_application_proxy_policy_from_settings;
-use oxideterm_session_adapter::upstream_proxy_config_from_global_settings;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::workspace) enum PortableSettingsDialog {
@@ -205,10 +202,10 @@ pub(in crate::workspace) use entity::{
     ConnectionImportSnapshot, DataDirectoryConfirm, DataDirectoryOperationResult,
     KeybindingFileOperationResult, KeybindingRecordingFooterAction, KeybindingRecordingKeyAction,
     KeybindingResetConfirmKeyAction, LaunchAtLoginError, ManagedKeyDialogSnapshot,
-    NetworkProxyPasswordSnapshot, NetworkProxyTestSnapshot, PortablePasswordDialogSnapshot,
-    PortableStatusRefresh, PrivilegeCredentialDraft, PrivilegeCredentialSnapshot,
-    SettingsNavigationDraftAction, SettingsWorkspaceEntity, SettingsWorkspaceEvent,
-    SettingsWorkspaceToast, SshConfigImportSnapshot, ThemeEditorOperationResult, ThemeImportResult,
+    PortablePasswordDialogSnapshot, PortableStatusRefresh, PrivilegeCredentialDraft,
+    PrivilegeCredentialSnapshot, SettingsNavigationDraftAction, SettingsWorkspaceEntity,
+    SettingsWorkspaceEvent, SettingsWorkspaceToast, SshConfigImportSnapshot,
+    ThemeEditorOperationResult, ThemeImportResult,
 };
 mod general_terminal_pages;
 pub(in crate::workspace) use general_terminal_pages::SETTINGS_TERMINAL_CUSTOM_FONT_INPUT_WIDTH;
@@ -217,7 +214,6 @@ mod local_terminal;
 use local_terminal::application_semantic_scheme_label;
 pub(in crate::workspace) use local_terminal::expand_local_terminal_cwd;
 mod navigation_editor;
-mod network_page;
 mod pages;
 mod portable_runtime;
 mod privilege_credentials_page;
@@ -240,10 +236,6 @@ pub(in crate::workspace) use cli_companion::{
 use connections_page::{
     connection_idle_timeout_options, connection_import_duplicate_strategy_label,
     connection_import_source_label, connection_import_source_options,
-};
-use network_page::{
-    NetworkProxyAuthMode, network_application_proxy_mode_label, network_proxy_auth_label,
-    network_proxy_protocol_label,
 };
 use pages::settings_keybinding_scope_matches;
 pub(in crate::workspace) use remote_shell_integration::{

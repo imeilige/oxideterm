@@ -52,8 +52,6 @@ impl SettingsSelectAnchorExt for SettingsSelect {
         match self {
             Self::Language => SelectAnchorId::SettingsLanguage,
             Self::UpdateChannel => SelectAnchorId::SettingsUpdateChannel,
-            Self::UpdateProxyMode => SelectAnchorId::SettingsUpdateProxyMode,
-            Self::UpdateProxyProtocol => SelectAnchorId::SettingsUpdateProxyProtocol,
             Self::AppearanceTheme => SelectAnchorId::SettingsAppearanceTheme,
             Self::AppearanceDensity => SelectAnchorId::SettingsAppearanceDensity,
             Self::AppearanceAnimation => SelectAnchorId::SettingsAppearanceAnimation,
@@ -89,11 +87,6 @@ impl SettingsSelectAnchorExt for SettingsSelect {
             Self::ReconnectMaxAttempts => SelectAnchorId::SettingsReconnectMaxAttempts,
             Self::ReconnectBaseDelay => SelectAnchorId::SettingsReconnectBaseDelay,
             Self::ReconnectMaxDelay => SelectAnchorId::SettingsReconnectMaxDelay,
-            Self::NetworkApplicationProxyMode => {
-                SelectAnchorId::SettingsNetworkApplicationProxyMode
-            }
-            Self::NetworkProxyProtocol => SelectAnchorId::SettingsNetworkProxyProtocol,
-            Self::NetworkProxyAuth => SelectAnchorId::SettingsNetworkProxyAuth,
             Self::AiProviderTemplate => SelectAnchorId::SettingsAiProviderTemplate,
             Self::AiEmbeddingProvider => SelectAnchorId::SettingsAiEmbeddingProvider,
             Self::KnowledgeCollectionScope => SelectAnchorId::SettingsKnowledgeCollectionScope,

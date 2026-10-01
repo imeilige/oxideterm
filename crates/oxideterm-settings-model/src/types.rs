@@ -34,7 +34,6 @@ pub enum SettingsTab {
     Appearance,
     Connections,
     Privilege,
-    Network,
     Sftp,
     Keybindings,
     Help,
@@ -80,8 +79,6 @@ pub enum SettingsKeybindingScopeFilter {
 pub enum SettingsSelect {
     Language,
     UpdateChannel,
-    UpdateProxyMode,
-    UpdateProxyProtocol,
     AppearanceTheme,
     AppearanceDensity,
     AppearanceAnimation,
@@ -113,9 +110,6 @@ pub enum SettingsSelect {
     ReconnectMaxAttempts,
     ReconnectBaseDelay,
     ReconnectMaxDelay,
-    NetworkApplicationProxyMode,
-    NetworkProxyProtocol,
-    NetworkProxyAuth,
     AiProviderTemplate,
     AiEmbeddingProvider,
     KnowledgeCollectionScope,
@@ -165,17 +159,6 @@ pub enum SettingsInput {
     ConnectionDefaultUsername,
     ConnectionDefaultPort,
     ConnectionImportTargetGroup,
-    NetworkProxyHost,
-    NetworkProxyPort,
-    NetworkProxyNoProxy,
-    NetworkProxyUsername,
-    NetworkProxyPassword,
-    NetworkProxyTestHost,
-    NetworkProxyTestPort,
-    PublicMcpPort,
-    UpdateProxyHost,
-    UpdateProxyPort,
-    UpdateProxyNoProxy,
     SftpSpeedLimitKbps,
     InBandTransferMaxChunkBytes,
     InBandTransferMaxFileCount,
@@ -378,7 +361,6 @@ impl SettingsTab {
             Self::Terminal,
             Self::Portable,
             Self::Connections,
-            Self::Network,
             Self::Sftp,
             Self::Privilege,
             Self::Help,
@@ -393,7 +375,6 @@ impl SettingsTab {
             Self::Appearance => "appearance",
             Self::Connections => "connections",
             Self::Privilege => "privilege",
-            Self::Network => "network",
             Self::Sftp => "sftp",
             Self::Keybindings => "keybindings",
             Self::Help => "help",
@@ -410,12 +391,7 @@ impl SettingsTab {
         &[
             &[Self::General, Self::Appearance, Self::Keybindings],
             &[Self::Terminal, Self::Portable],
-            &[
-                Self::Connections,
-                Self::Network,
-                Self::Sftp,
-                Self::Privilege,
-            ],
+            &[Self::Connections, Self::Sftp, Self::Privilege],
             &[Self::Help],
         ]
     }
@@ -428,7 +404,6 @@ impl SettingsTab {
             Self::Appearance => "settings_view.tabs.appearance",
             Self::Connections => "settings_view.connections.keys_and_connections_title",
             Self::Privilege => "settings_view.tabs.privilege",
-            Self::Network => "settings_view.tabs.network",
             Self::Sftp => "settings_view.tabs.sftp",
             Self::Keybindings => "settings_view.tabs.keybindings",
             Self::Help => "settings_view.tabs.help",
@@ -443,7 +418,6 @@ impl SettingsTab {
             Self::Appearance => "settings_view.appearance.title",
             Self::Connections => "settings_view.connections.keys_and_connections_title",
             Self::Privilege => "settings_view.privilege_credentials.title",
-            Self::Network => "settings_view.network.title",
             Self::Sftp => "settings_view.sftp.title",
             Self::Keybindings => "settings_view.keybindings.title",
             Self::Help => "settings_view.help.title",
@@ -458,7 +432,6 @@ impl SettingsTab {
             Self::Appearance => "settings_view.appearance.description",
             Self::Connections => "settings_view.connections.keys_and_connections_description",
             Self::Privilege => "settings_view.privilege_credentials.description",
-            Self::Network => "settings_view.network.description",
             Self::Sftp => "settings_view.sftp.description",
             Self::Keybindings => "settings_view.keybindings.description",
             Self::Help => "settings_view.help.description",
@@ -472,7 +445,6 @@ impl SettingsTab {
             Self::Terminal => SettingsTabIcon::Terminal,
             Self::Connections => SettingsTabIcon::Shield,
             Self::Privilege => SettingsTabIcon::Key,
-            Self::Network => SettingsTabIcon::Network,
             Self::Keybindings => SettingsTabIcon::Keyboard,
             Self::Help => SettingsTabIcon::HelpCircle,
         }
@@ -541,17 +513,6 @@ impl SettingsInput {
             Self::ConnectionDefaultUsername => 9,
             Self::ConnectionDefaultPort => 10,
             Self::ConnectionImportTargetGroup => 20,
-            Self::NetworkProxyHost => 32_000,
-            Self::NetworkProxyPort => 32_001,
-            Self::NetworkProxyNoProxy => 32_002,
-            Self::NetworkProxyUsername => 32_003,
-            Self::NetworkProxyPassword => 32_004,
-            Self::NetworkProxyTestHost => 32_005,
-            Self::NetworkProxyTestPort => 32_006,
-            Self::PublicMcpPort => 32_007,
-            Self::UpdateProxyHost => 32_100,
-            Self::UpdateProxyPort => 32_101,
-            Self::UpdateProxyNoProxy => 32_102,
             Self::SftpSpeedLimitKbps => 12,
             Self::InBandTransferMaxChunkBytes => 13,
             Self::InBandTransferMaxFileCount => 14,
@@ -672,7 +633,6 @@ impl SettingsInput {
                 | Self::ManagedKeyFilePassphrase
                 | Self::ManagedKeyPastePrivateKey
                 | Self::ManagedKeyPastePassphrase
-                | Self::NetworkProxyPassword
         )
     }
 

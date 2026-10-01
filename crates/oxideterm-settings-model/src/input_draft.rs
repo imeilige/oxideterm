@@ -17,9 +17,8 @@ use oxideterm_settings::{
     MAX_AI_TOOL_MAX_CALLS_PER_ROUND, MAX_AI_TOOL_MAX_ROUNDS, MAX_TERMINAL_FONT_WEIGHT,
     MAX_TERMINAL_PADDING, MIN_AI_TOOL_MAX_CALLS_PER_ROUND, MIN_AI_TOOL_MAX_ROUNDS,
     MIN_TERMINAL_FONT_WEIGHT, PersistedSettings, RECOMMENDED_FOCUS_HANDOFF_COMMANDS,
-    SettingsUpstreamProxyAuth, UpdateProxyMode, parse_terminal_session_log_content_template,
-    parse_terminal_session_log_directory_template, parse_terminal_session_log_file_name_template,
-    reindex_highlight_rules,
+    parse_terminal_session_log_content_template, parse_terminal_session_log_directory_template,
+    parse_terminal_session_log_file_name_template, reindex_highlight_rules,
 };
 use oxideterm_terminal_semantic::SEMANTIC_CLASSES;
 
@@ -85,40 +84,6 @@ pub fn persisted_settings_input_value(
         SettingsInput::ConnectionDefaultUsername => settings.connection_defaults.username.clone(),
         SettingsInput::ConnectionDefaultPort => settings.connection_defaults.port.to_string(),
         SettingsInput::ConnectionImportTargetGroup => return None,
-        SettingsInput::NetworkProxyHost => settings
-            .network
-            .upstream_proxy
-            .as_ref()
-            .map(|proxy| proxy.host.clone())
-            .unwrap_or_default(),
-        SettingsInput::NetworkProxyPort => settings
-            .network
-            .upstream_proxy
-            .as_ref()
-            .map(|proxy| proxy.port.to_string())
-            .unwrap_or_else(|| "1080".to_string()),
-        SettingsInput::NetworkProxyNoProxy => settings
-            .network
-            .upstream_proxy
-            .as_ref()
-            .map(|proxy| proxy.no_proxy.clone())
-            .unwrap_or_default(),
-        SettingsInput::NetworkProxyUsername => settings
-            .network
-            .upstream_proxy
-            .as_ref()
-            .and_then(|proxy| match &proxy.auth {
-                SettingsUpstreamProxyAuth::Password { username, .. } => Some(username.clone()),
-                SettingsUpstreamProxyAuth::None => None,
-            })
-            .unwrap_or_default(),
-        SettingsInput::NetworkProxyPassword => String::new(),
-        SettingsInput::NetworkProxyTestHost
-        | SettingsInput::NetworkProxyTestPort
-        | SettingsInput::PublicMcpPort => return None,
-        SettingsInput::UpdateProxyHost => settings.general.update_proxy.host.clone(),
-        SettingsInput::UpdateProxyPort => settings.general.update_proxy.port.to_string(),
-        SettingsInput::UpdateProxyNoProxy => settings.general.update_proxy.no_proxy.clone(),
         SettingsInput::SftpSpeedLimitKbps => settings.sftp.speed_limit_kbps.to_string(),
         SettingsInput::InBandTransferMaxChunkBytes => settings
             .terminal
@@ -430,44 +395,6 @@ pub fn apply_persisted_settings_input_draft(
             .map(|value| settings.connection_defaults.port = value.clamp(1, 65_535))
             .into(),
         SettingsInput::ConnectionImportTargetGroup => SettingsInputDraftApply::Unhandled,
-        SettingsInput::NetworkProxyHost => {
-            edit_upstream_proxy(settings, |proxy| proxy.host = draft.trim().to_string())
-        }
-        SettingsInput::NetworkProxyPort => parse_i64(draft)
-            .map(|value| {
-                edit_upstream_proxy(settings, |proxy| proxy.port = value.clamp(1, 65_535) as u16);
-            })
-            .into(),
-        SettingsInput::NetworkProxyNoProxy => {
-            edit_upstream_proxy(settings, |proxy| proxy.no_proxy = draft.trim().to_string())
-        }
-        SettingsInput::NetworkProxyUsername => edit_upstream_proxy(settings, |proxy| {
-            proxy.auth = SettingsUpstreamProxyAuth::Password {
-                username: draft.trim().to_string(),
-                keychain_id: match &proxy.auth {
-                    SettingsUpstreamProxyAuth::Password { keychain_id, .. } => keychain_id.clone(),
-                    SettingsUpstreamProxyAuth::None => None,
-                },
-            };
-        }),
-        SettingsInput::NetworkProxyPassword => SettingsInputDraftApply::Unhandled,
-        SettingsInput::NetworkProxyTestHost
-        | SettingsInput::NetworkProxyTestPort
-        | SettingsInput::PublicMcpPort => SettingsInputDraftApply::Unhandled,
-        SettingsInput::UpdateProxyHost => {
-            settings.general.update_proxy.host = draft.trim().to_string();
-            SettingsInputDraftApply::Applied
-        }
-        SettingsInput::UpdateProxyPort => parse_i64(draft)
-            .map(|value| {
-                settings.general.update_proxy.port = value.clamp(1, 65_535) as u16;
-                settings.general.update_proxy.mode = UpdateProxyMode::Custom;
-            })
-            .into(),
-        SettingsInput::UpdateProxyNoProxy => {
-            settings.general.update_proxy.no_proxy = draft.trim().to_string();
-            SettingsInputDraftApply::Applied
-        }
         SettingsInput::SftpSpeedLimitKbps => parse_i64(draft)
             .map(|value| settings.sftp.speed_limit_kbps = value.max(0))
             .into(),
@@ -764,16 +691,6 @@ fn edit_highlight_rule(
     };
     edit(rule);
     *rules = reindex_highlight_rules(rules.clone());
-    SettingsInputDraftApply::Applied
-}
-
-fn edit_upstream_proxy(
-    settings: &mut PersistedSettings,
-    edit: impl FnOnce(&mut oxideterm_settings::SettingsUpstreamProxyConfig),
-) -> SettingsInputDraftApply {
-    if let Some(proxy) = settings.network.upstream_proxy.as_mut() {
-        edit(proxy);
-    }
     SettingsInputDraftApply::Applied
 }
 

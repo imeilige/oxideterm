@@ -123,18 +123,6 @@ pub(in crate::workspace) enum ManagedKeyDialogSnapshot {
     },
 }
 
-pub(in crate::workspace) struct NetworkProxyPasswordSnapshot {
-    pub(in crate::workspace) password_present: bool,
-    pub(in crate::workspace) password_status: Option<String>,
-}
-
-pub(in crate::workspace) struct NetworkProxyTestSnapshot {
-    pub(in crate::workspace) test_host: String,
-    pub(in crate::workspace) test_port: String,
-    pub(in crate::workspace) test_pending: bool,
-    pub(in crate::workspace) test_result: Option<Result<u128, String>>,
-}
-
 /// Editable privilege credential state with a zeroizing secret owner.
 pub(in crate::workspace) struct PrivilegeCredentialDraft {
     pub(super) credential_id: Option<String>,
@@ -406,15 +394,6 @@ pub(in crate::workspace) struct SettingsWorkspaceEntity {
     pub(super) managed_key_dialog_presence: oxideterm_gpui_ui::motion::ExitPresence,
     pub(super) managed_key_dialog_exit_task: Option<Task<()>>,
     pub(super) managed_key_file_picker_task: Option<Task<()>>,
-    pub(super) expanded_mcp_client: Option<String>,
-    pub(super) network_proxy_password: Zeroizing<String>,
-    pub(super) network_proxy_password_status: Option<String>,
-    pub(super) network_proxy_test_host: String,
-    pub(super) network_proxy_test_port: String,
-    pub(super) network_proxy_test_pending: bool,
-    pub(super) network_proxy_test_result: Option<Result<u128, String>>,
-    pub(super) network_proxy_test_task: Option<Task<()>>,
-    pub(super) network_proxy_test_abort: Option<tokio::task::AbortHandle>,
     pub(super) privilege_draft: PrivilegeCredentialDraft,
     pub(super) privilege_error: Option<String>,
     pub(super) privilege_editor_open: bool,
@@ -557,15 +536,6 @@ impl SettingsWorkspaceEntity {
             managed_key_dialog_presence: oxideterm_gpui_ui::motion::ExitPresence::visible(),
             managed_key_dialog_exit_task: None,
             managed_key_file_picker_task: None,
-            expanded_mcp_client: None,
-            network_proxy_password: Zeroizing::new(String::new()),
-            network_proxy_password_status: None,
-            network_proxy_test_host: String::new(),
-            network_proxy_test_port: "22".to_string(),
-            network_proxy_test_pending: false,
-            network_proxy_test_result: None,
-            network_proxy_test_task: None,
-            network_proxy_test_abort: None,
             privilege_draft: PrivilegeCredentialDraft::default(),
             privilege_error: None,
             privilege_editor_open: false,
@@ -2109,9 +2079,6 @@ impl SettingsWorkspaceEntity {
             SettingsInput::ManagedKeyPastePrivateKey => Some(&self.managed_key_paste_private_key),
             SettingsInput::ManagedKeyPastePassphrase => Some(&self.managed_key_paste_passphrase),
             SettingsInput::ManagedKeyRenameName => Some(&self.managed_key_rename_name),
-            SettingsInput::NetworkProxyPassword => Some(&self.network_proxy_password),
-            SettingsInput::NetworkProxyTestHost => Some(&self.network_proxy_test_host),
-            SettingsInput::NetworkProxyTestPort => Some(&self.network_proxy_test_port),
             SettingsInput::LocalPrivilegeLabel => Some(&self.privilege_draft.label),
             SettingsInput::LocalPrivilegeUsernameHint => Some(&self.privilege_draft.username_hint),
             SettingsInput::LocalPrivilegeSecret => Some(&self.privilege_draft.secret),
@@ -2158,9 +2125,6 @@ impl SettingsWorkspaceEntity {
                 self.managed_key_dialog,
                 Some(SettingsManagedKeyDialog::Rename { .. })
             ),
-            SettingsInput::NetworkProxyPassword
-            | SettingsInput::NetworkProxyTestHost
-            | SettingsInput::NetworkProxyTestPort => true,
             SettingsInput::LocalPrivilegeLabel
             | SettingsInput::LocalPrivilegeUsernameHint
             | SettingsInput::LocalPrivilegeSecret
@@ -2246,10 +2210,6 @@ impl SettingsWorkspaceEntity {
             | SettingsInput::ManagedKeyPastePrivateKey
             | SettingsInput::ManagedKeyPastePassphrase
             | SettingsInput::ManagedKeyRenameName => self.managed_key_status = None,
-            SettingsInput::NetworkProxyPassword => self.network_proxy_password_status = None,
-            SettingsInput::NetworkProxyTestHost | SettingsInput::NetworkProxyTestPort => {
-                self.network_proxy_test_result = None;
-            }
             SettingsInput::LocalPrivilegeLabel
             | SettingsInput::LocalPrivilegeUsernameHint
             | SettingsInput::LocalPrivilegeSecret
@@ -2291,9 +2251,6 @@ impl SettingsWorkspaceEntity {
                 Some(&mut self.managed_key_paste_passphrase)
             }
             SettingsInput::ManagedKeyRenameName => Some(&mut self.managed_key_rename_name),
-            SettingsInput::NetworkProxyPassword => Some(&mut self.network_proxy_password),
-            SettingsInput::NetworkProxyTestHost => Some(&mut self.network_proxy_test_host),
-            SettingsInput::NetworkProxyTestPort => Some(&mut self.network_proxy_test_port),
             SettingsInput::LocalPrivilegeLabel => Some(&mut self.privilege_draft.label),
             SettingsInput::LocalPrivilegeUsernameHint => {
                 Some(&mut self.privilege_draft.username_hint)
@@ -2306,14 +2263,6 @@ impl SettingsWorkspaceEntity {
                 Some(&mut self.connection_import_target_group)
             }
             _ => None,
-        }
-    }
-}
-
-impl Drop for SettingsWorkspaceEntity {
-    fn drop(&mut self) {
-        if let Some(abort) = self.network_proxy_test_abort.take() {
-            abort.abort();
         }
     }
 }
@@ -2366,7 +2315,6 @@ mod tests {
     fn secret_render_projections_do_not_copy_entity_owned_plaintext() {
         let portable_source = include_str!("portable_runtime/actions.rs");
         let managed_key_source = include_str!("connections_page.rs");
-        let proxy_source = include_str!("network_page.rs");
 
         for forbidden in [
             concat!("portable_current_password", ".to_string()"),
@@ -2388,9 +2336,6 @@ mod tests {
         ] {
             assert!(!managed_key_source.contains(forbidden), "{forbidden}");
         }
-        assert!(
-            !proxy_source.contains(concat!("password: self.network_proxy_password", ".clone()"))
-        );
     }
 
     #[test]

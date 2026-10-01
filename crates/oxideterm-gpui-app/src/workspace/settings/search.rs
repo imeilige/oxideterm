@@ -454,47 +454,6 @@ fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
             &["settings_view.privilege_credentials.description"],
         ),
         settings_search_entry(
-            SettingsTab::Network,
-            0,
-            "settings_view.network.shared_proxy",
-            &[
-                "settings_view.network.shared_proxy_hint",
-                "settings_view.network.host",
-                "settings_view.network.port",
-                "settings_view.network.auth",
-                "settings_view.network.no_proxy",
-                "settings_view.network.remote_dns",
-                "settings_view.network.test_title",
-            ],
-        ),
-        settings_search_entry(
-            SettingsTab::Network,
-            1,
-            "settings_view.network.routing",
-            &["settings_view.network.routing_hint"],
-        ),
-        settings_search_entry(
-            SettingsTab::Network,
-            2,
-            "settings_view.general.connection_uri_integration",
-            &[
-                "settings_view.general.connection_uri_integration_hint",
-                "settings_view.general.external_connection_uris",
-                "settings_view.general.external_connection_uris_hint",
-            ],
-        ),
-        settings_search_entry(
-            SettingsTab::Network,
-            3,
-            "settings_view.network.public_mcp",
-            &[
-                "settings_view.network.public_mcp_hint",
-                "settings_view.network.public_mcp_port",
-                "settings_view.network.external_clients",
-                "settings_view.network.pending_approvals",
-            ],
-        ),
-        settings_search_entry(
             SettingsTab::Sftp,
             0,
             "settings_view.sftp.opening",

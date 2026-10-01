@@ -407,7 +407,6 @@ impl WorkspaceApp {
         match event {
             runtime_entity::NodeRuntimeEffect::ConnectionStatusChanged {
                 node_id,
-                connection_id: _,
                 status,
                 state,
                 reason,
