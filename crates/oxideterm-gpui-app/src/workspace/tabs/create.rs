@@ -511,7 +511,7 @@ impl WorkspaceApp {
                 },
             )
         });
-        let mut preference_overrides = terminal_preference_overrides(
+        let preference_overrides = terminal_preference_overrides(
             terminal_options,
             &self.settings_store.settings().terminal,
         );
@@ -619,7 +619,7 @@ impl WorkspaceApp {
         });
         let mut preferences =
             self.prepare_terminal_preferences_for_tab_kind(&TabKind::LocalTerminal, cx);
-        let mut preference_overrides = terminal_preference_overrides(
+        let preference_overrides = terminal_preference_overrides(
             terminal_options,
             &self.settings_store.settings().terminal,
         );
@@ -687,7 +687,7 @@ impl WorkspaceApp {
         config.bootstrap.session_id = format!("mosh-{}", session_id.0);
         let mut preferences =
             self.prepare_terminal_preferences_for_tab_kind(&TabKind::MoshTerminal, cx);
-        let mut preference_overrides = terminal_preference_overrides(
+        let preference_overrides = terminal_preference_overrides(
             terminal_options,
             &self.settings_store.settings().terminal,
         );

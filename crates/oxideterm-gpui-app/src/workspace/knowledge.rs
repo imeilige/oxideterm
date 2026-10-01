@@ -1849,7 +1849,7 @@ impl WorkspaceApp {
         let store = self.ai_entity.read(cx).rag_store();
         let labels = self.knowledge_editor_labels();
         let tokens = self.tokens;
-        let has_background_image = self.background_surface_active("knowledge");
+        let has_background_image = false;
         cx.spawn(async move |workspace, cx| {
             let load_document_id = document_id.clone();
             let load_store = store.clone();
@@ -2111,7 +2111,7 @@ impl WorkspaceApp {
                     ),
             )
         };
-        let has_background_image = self.background_surface_active("knowledge");
+        let has_background_image = false;
         let embedding_running = self
             .ai_entity
             .read(cx)

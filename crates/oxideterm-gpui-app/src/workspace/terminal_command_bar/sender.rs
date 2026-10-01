@@ -185,11 +185,7 @@ impl WorkspaceApp {
         let ghost_text = (focused && !suggestions_open)
             .then(|| self.terminal_command_sender_compact_ghost_text(snapshot, &draft, cx))
             .flatten();
-        let background = if self.window_background_preferences().is_some() {
-            self.workspace_chrome_background(theme.bg)
-        } else {
-            rgba((theme.bg << 8) | TERMINAL_SENDER_COMPACT_BACKGROUND_ALPHA)
-        };
+        let background = rgba((theme.bg << 8) | TERMINAL_SENDER_COMPACT_BACKGROUND_ALPHA);
         let terminal_settings = &self.settings_store.settings().terminal;
         let workspace = cx.entity();
         let compact_input = text_input_anchor_probe(
@@ -1491,7 +1487,7 @@ impl WorkspaceApp {
         let font_size = terminal_settings.font_size as f32;
         let line_height = terminal_settings.line_height as f32;
         let tokens = self.tokens;
-        let background_active = self.window_background_preferences().is_some();
+        let background_active = false;
         self.terminal_command_sender.update(cx, |sender, cx| {
             sender.sync_editor_appearance(
                 tokens,

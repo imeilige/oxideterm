@@ -1,7 +1,6 @@
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct GeneralSettings {
     pub language: Language,
-    pub update_channel: UpdateChannel,
     #[serde(
         rename = "minimizeToTrayOnClose",
         default = "default_minimize_to_tray_on_close"
@@ -12,8 +11,6 @@ pub struct GeneralSettings {
         default = "default_external_connection_uris_enabled"
     )]
     pub external_connection_uris_enabled: bool,
-    #[serde(default)]
-    pub update_proxy: UpdateProxySettings,
     #[serde(flatten)]
     pub extra: ExtraFields,
 }
@@ -22,10 +19,8 @@ impl Default for GeneralSettings {
     fn default() -> Self {
         Self {
             language: Language::ZhCn,
-            update_channel: UpdateChannel::default(),
             minimize_to_tray_on_close: default_minimize_to_tray_on_close(),
             external_connection_uris_enabled: default_external_connection_uris_enabled(),
-            update_proxy: UpdateProxySettings::default(),
             extra: ExtraFields::new(),
         }
     }
@@ -388,14 +383,6 @@ pub struct TerminalSettings {
     #[serde(default)]
     pub remote_shell_integration_mode: RemoteShellIntegrationMode,
     pub command_marks: TerminalCommandMarksSettings,
-    pub background_enabled: bool,
-    pub background_image: Option<String>,
-    pub background_opacity: f64,
-    pub background_blur: i64,
-    pub background_fit: BackgroundFit,
-    #[serde(default)]
-    pub background_scope: BackgroundScope,
-    pub background_enabled_tabs: Vec<String>,
     // Semantic coloring supplements only terminal cells without explicit ANSI styling.
     #[serde(default = "default_terminal_semantic_coloring")]
     pub semantic_coloring: bool,
@@ -419,9 +406,6 @@ pub struct TerminalSettings {
     pub extra: ExtraFields,
 }
 
-pub const DEFAULT_TERMINAL_BACKGROUND_OPACITY: f64 = 0.15;
-pub const MIN_TERMINAL_BACKGROUND_OPACITY: f64 = 0.03;
-pub const MAX_TERMINAL_BACKGROUND_OPACITY: f64 = 1.0;
 pub const DEFAULT_TERMINAL_FONT_WEIGHT: i64 = 400;
 pub const MIN_TERMINAL_FONT_WEIGHT: i64 = 100;
 pub const MAX_TERMINAL_FONT_WEIGHT: i64 = 900;
@@ -527,13 +511,6 @@ impl Default for TerminalSettings {
             triggers: TerminalTriggerSettings::default(),
             remote_shell_integration_mode: RemoteShellIntegrationMode::Ask,
             command_marks: TerminalCommandMarksSettings::default(),
-            background_enabled: true,
-            background_image: None,
-            background_opacity: DEFAULT_TERMINAL_BACKGROUND_OPACITY,
-            background_blur: 0,
-            background_fit: BackgroundFit::Cover,
-            background_scope: BackgroundScope::Content,
-            background_enabled_tabs: vec!["terminal".to_string(), "local_terminal".to_string()],
             semantic_coloring: false,
             selection_highlighting: false,
             semantic_scheme: TerminalSemanticScheme::default(),
@@ -560,7 +537,6 @@ mod tests {
         for field in [
             "triggers",
             "broadcastGroups",
-            "backgroundScope",
             "backspaceSequence",
             "deleteSequence",
             "remoteShellIntegrationMode",
@@ -577,7 +553,6 @@ mod tests {
         )
         .unwrap();
         assert!(!disabled.enabled);
-        assert_eq!(settings.background_scope, BackgroundScope::Content);
         assert_eq!(
             settings.backspace_sequence,
             TerminalBackspaceSequence::Delete

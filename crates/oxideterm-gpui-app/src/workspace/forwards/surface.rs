@@ -123,7 +123,7 @@ impl WorkspaceApp {
         // Detached renders are also mount boundaries for Entity-owned sampling.
         self.sync_forwarding_sampling_visibility(cx);
         self.sync_forwards_section_list_state(tab_id, &node_id, cx);
-        let has_background = self.background_surface_active("forwards");
+        let has_background = false;
         let state = self.forwarding.read(cx).section_list_state.clone();
         let workspace = cx.entity();
         let spec = self.forwards_section_list_spec();
@@ -267,7 +267,7 @@ impl WorkspaceApp {
         let Some(section) = self.forwards_sections(cx).get(index).copied() else {
             return div().into_any_element();
         };
-        let has_background = self.background_surface_active("forwards");
+        let has_background = false;
         let mut inner = div()
             .w_full()
             .min_w(px(0.0))

@@ -50,9 +50,8 @@ Typical terminal workflow:
 Terminal-adjacent helpers stay tied to the active terminal pane:
 
 - Use the terminal context menu or command bar for copy, paste, search, command selection, and explicit transfer actions.
-- Configure terminal background images from Settings; the background is visual state, not terminal scrollback.
 - When an X/Y/ZMODEM prompt appears after a real transfer command such as `rz`, `sz`, `rx`, or `rb`, choose the local file or directory and watch progress from the visible prompt/notification.
-- Manage privilege credentials from Settings. Do not place sudo/su passwords in connection names, notes, quick commands, AI prompts, logs, or support bundles.
+- Do not place sudo/su passwords in connection names, notes, quick commands, AI prompts, logs, or support bundles.
 
 ### Advanced command sender
 
@@ -208,8 +207,7 @@ Use Settings for interactive configuration:
 
 - General app behavior.
 - Appearance, theme, and whole-window opacity.
-- Terminal renderer, shell, font, encoding, background images, transfer helpers, and local terminal behavior.
-- Privilege credentials and their prompt/scope settings.
+- Terminal renderer, shell, font, encoding, transfer helpers, and local terminal behavior.
 - SSH, reconnect, SFTP, and IDE behavior.
 - AI providers, model selection, memory, tool use, and Knowledge embedding or retrieval settings.
 - Keybindings, help, and update information.

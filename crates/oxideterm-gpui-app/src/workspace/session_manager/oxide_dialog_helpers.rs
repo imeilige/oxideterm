@@ -323,7 +323,6 @@ pub(super) fn oxide_settings_field_label(field: &str, i18n: &oxideterm_i18n::I18
     // These mappings mirror Tauri's OxideImportModal field formatter.
     match field {
         "language" => i18n.t("settings_view.general.language"),
-        "updateChannel" => i18n.t("settings_view.general.update_channel"),
         "theme" => i18n.t("settings_view.appearance.theme"),
         "fontFamily" => i18n.t("settings_view.terminal.font_family"),
         "customFontFamily" => i18n.t("settings_view.terminal.custom_font_stack"),
@@ -335,12 +334,6 @@ pub(super) fn oxide_settings_field_label(field: &str, i18n: &oxideterm_i18n::I18
         "paddingVertical" => i18n.t("settings_view.terminal.padding_vertical"),
         "cursorStyle" => i18n.t("settings_view.terminal.cursor_style"),
         "cursorBlink" => i18n.t("settings_view.terminal.cursor_blink"),
-        "backgroundEnabled" => i18n.t("settings_view.terminal.bg_enabled"),
-        "backgroundImage" => i18n.t("settings_view.terminal.bg_label"),
-        "backgroundOpacity" => i18n.t("settings_view.terminal.bg_opacity"),
-        "backgroundBlur" => i18n.t("settings_view.terminal.bg_blur"),
-        "backgroundFit" => i18n.t("settings_view.terminal.bg_fit"),
-        "backgroundEnabledTabs" => i18n.t("settings_view.terminal.bg_tabs"),
         "scrollback" => i18n.t("settings_view.terminal.scrollback"),
         "smoothScroll" => i18n.t("settings_view.terminal.smooth_scroll"),
         "renderer" => i18n.t("settings_view.terminal.renderer"),

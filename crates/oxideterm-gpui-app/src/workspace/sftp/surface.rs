@@ -543,7 +543,7 @@ impl WorkspaceApp {
                 cx,
             );
         }
-        let has_background = self.background_surface_active("sftp");
+        let has_background = false;
         let context_menu_exit_delay = oxideterm_gpui_ui::motion::duration(
             &self.tokens,
             oxideterm_gpui_ui::motion::MotionDuration::Micro,

@@ -179,7 +179,6 @@ flowchart LR
         AiProviders["AI 供应商"]
         McpServers["MCP 服务器"]
         SyncBackend["云同步后端"]
-        UpdateServer["更新通道"]
     end
 
     App --> Config
@@ -195,7 +194,6 @@ flowchart LR
     App --> AiProviders
     App --> McpServers
     App --> SyncBackend
-    App --> UpdateServer
 ```
 
 ### 用户侧摘要
@@ -259,7 +257,6 @@ Tauri 架构把通信分为数据平面和控制平面。Native GPUI 去掉了 W
 - 打开图形/VNC 会话。
 - 确认终端文件传输提示。
 - 修改设置。
-- 管理提权凭据。
 - 执行云同步操作。
 - 执行已批准 AI 工具。
 - 生成支持包。
@@ -272,7 +269,6 @@ Tauri 架构把通信分为数据平面和控制平面。Native GPUI 去掉了 W
 - 保存连接。
 - 转发规则。
 - 插件状态。
-- 提权凭据元数据。
 - AI 对话和摘要。
 - 云同步快照。
 - 备份。
@@ -598,11 +594,10 @@ SSH 终端职责：
 - emulator 文本网格和 scrollback。
 - 光标、选择区、命令标记和 inline hint。
 - Kitty/Sixel/iTerm2 等终端图像协议。
-- 应用级背景图片、不透明度和模糊。
-- 原生整个窗口透明度，与背景图片不透明度分别应用。
+- 原生整个窗口透明度。
 - 右键菜单和命令栏 overlay。
 
-只有 emulator 文本属于终端缓冲区。背景图片和应用 overlay 是渲染状态。终端图像 placement 是与当前 screen buffer 绑定的协议状态，因此 alternate-screen 切换会清理图像 placement，避免 yazi 这类 TUI 退出后继续绘制预览残留。
+只有 emulator 文本属于终端缓冲区。应用 overlay 是渲染状态。终端图像 placement 是与当前 screen buffer 绑定的协议状态，因此 alternate-screen 切换会清理图像 placement，避免 yazi 这类 TUI 退出后继续绘制预览残留。
 
 ### 提权与文件传输辅助
 
@@ -852,24 +847,20 @@ AI 和插件能力句柄不是直接重连阶段。它们通过运行时边界�
 - 外观和主题。
 - 终端行为。
 - 本地终端行为。
-- 终端图像、背景图片和传输辅助。
+- 终端图像和传输辅助。
 - SSH 行为。
-- 提权凭据。
 - SFTP 行为。
 - IDE 行为。
 - AI 供应商和模型设置。
 - AI 记忆、工具调用，以及知识库嵌入与检索设置。
 - 插件。
 - 云同步。
-- 便携运行时。
 - 快捷键。
-- 帮助和更新通道。
+- 帮助。
 
 ### 持久化规则
 
 设置应保存配置，而不是凭据值。凭据字段应写入凭据感知存储。
-
-提权凭据条目需要拆分：标签、提示匹配器、启用状态和保存节点作用域属于配置；密码或等价秘密值只能通过凭据感知边界保存。
 
 ### CLI 关系
 
@@ -1134,7 +1125,7 @@ flowchart TB
 | `workspace/runtime_entity.rs` | 持有长期节点订阅、重连 worker、运行时关闭和终端消费者登记 | 关闭终端消费者不会意外关闭共享节点或传输 |
 | `workspace/ide.rs` 与 IDE crate | 打开文件夹、路由文件操作、管理编辑器状态 | 远端编辑体现为工作区，而不是裸 SFTP 操作 |
 | `workspace/forwards/*` | 渲染转发表单、规则、状态和动作 | 端口转发可见、可恢复、可从桌面应用管理 |
-| `workspace/settings/*` | 渲染终端、外观、AI、SFTP、IDE、提权凭据、便携运行时、更新和快捷键设置页 | 配置以应用为主入口，并通过共享设置模型持久化 |
+| `workspace/settings/*` | 渲染终端、外观、AI、SFTP、IDE、连接和快捷键设置页 | 配置以应用为主入口，并通过共享设置模型持久化 |
 | `workspace/cloud_sync/*` | 渲染同步状态、确认流程和备份动作 | 云同步与备份操作显式展示，尽量可预演和可恢复 |
 | `workspace/plugin_entity.rs`、`plugin_manager.rs`、`plugin_lifecycle/*`、`plugin_ui.rs` | 协调插件发现、生命周期、宿主 API 快照、设置、凭据和界面调用 | 插件可以扩展应用页面，但不拥有核心运行时状态 |
 | `workspace/sidebar/ai/*` | 渲染 AI 对话、模型选择、流式输出、上下文、Agent Skills、工具事件和对话记录状态 | OxideSens 是集成在工作区内的助手，并有明确工具边界 |
@@ -1142,7 +1133,7 @@ flowchart TB
 | `workspace/terminal_context_actions.rs` | 构建选择、搜索、传输和命令路由等终端右键动作 | 终端动作使用统一应用菜单风格，同时仍通过明确 session API 分发 |
 | `workspace/quick_commands*` 与 `terminal_command_bar/*` | 存储快捷命令、命令行补全来源和发送器控件 | 重复终端动作可以变成可复用的桌面控件 |
 | `workspace/terminal_command_sender.rs` 与 `terminal_command_bar/sender.rs` | `TerminalCommandSenderEntity` 管理定时、重复、多目标终端输入、目标快照、取消和进度 | 任务不依赖根视图轮询，也不会创建 SSH 连接；Entity 仍由 `WorkspaceApp` 协调，并使用已经存在的终端目标 |
-| `workspace/local_terminal_background.rs` 与 `workspace/root/background.rs` | 解析应用和终端背景图片渲染 | 背景图片属于视觉设置，不是终端缓冲区内容 |
+| `workspace/local_terminal_background.rs` | 跟踪在主窗口后继续运行的分离本地终端会话 | 分离 shell 是独立会话，不是背景图层 |
 | `workspace/notification_center.rs` | 收集并渲染可操作的应用通知 | 后台失败和恢复动作不会阻塞终端输入，但仍然可见 |
 | `workspace/onboarding/*` | 渲染首次启动设置和设置状态 | 用户可以从主应用完成配置，而不是从 CLI 文档开始 |
 
@@ -1214,7 +1205,7 @@ flowchart TB
 | 设置 | `oxideterm-settings`, `oxideterm-settings-model`, `oxideterm-gpui-settings-view` | 设置通过共享模型加载和保存，再由 GPUI 页面渲染 |
 | 保存连接 | `oxideterm-connections`, 会话管理器模块 | 连接记录是持久对象；活跃节点是运行时对象 |
 | 转发 | `oxideterm-forwarding`, 应用转发模块 | 规则是配置；监听器是运行时状态 |
-| 提权凭据 | 设置提权页面、终端提权提示、凭据感知存储 | 作用域和提示匹配器是配置；secret 值留在普通设置之外 |
+| 提权凭据 | 终端提权提示、凭据感知存储 | 作用域和提示匹配器是配置；secret 值留在普通设置之外 |
 | 终端 modem 传输 | `oxideterm-modem-transfer`, `oxideterm-gpui-terminal` modem worker | 协议状态属于终端运行时；文件选择和进度属于 UI |
 | 图形会话 | `oxideterm-wsl-graphics`, `oxideterm-remote-desktop`, `oxideterm-gpui-remote-desktop`, `oxideterm-rdp-helper`, `oxideterm-vnc-helper`, 应用图形/远程桌面模块 | WSL 生命周期、远程协议 helper、viewer framebuffer 和终端缓冲区各自归属清晰 |
 | 插件 | `oxideterm-plugin-*`, 插件管理器和生命周期模块 | manifest、设置、宿主 API 调用和插件凭据有各自边界 |
@@ -1669,7 +1660,7 @@ stateDiagram-v2
 | SSH 节点 | SSH 路由器 / 注册表 | 在线句柄不持久化 | SSH 认证层 | 否 | 不保留同一个 socket | 重连或重新打开 |
 | 终端会话 | 终端面板 / 运行时 | 通常只保留历史或设置 | 默认无 | 通常否 | 只有后端节点恢复并重建通道时才可能恢复 | 重新打开终端 |
 | 终端图像 placement | 终端图像状态 | 无 | 无 | 否 | screen-buffer 切换时清理 | 由应用输出重新渲染 |
-| 提权凭据 | 设置提权页面 / 终端辅助 | 只保存作用域元数据 | 凭据存储 | 保存时是 | 通过本地或保存节点作用域保留 | 修改作用域、重新输入 secret、禁用辅助 |
+| 提权凭据 | 终端辅助 | 只保存作用域元数据 | 凭据存储 | 保存时是 | 通过本地或保存节点作用域保留 | 修改作用域、重新输入 secret、禁用辅助 |
 | Modem 传输 | 终端运行时 / modem worker | 只落地目标文件 | 默认无 | 否 | 通常取消后重试 | 重试传输或选择其他路径 |
 | SFTP 会话 | SFTP 运行时 | 在线句柄不持久化 | SSH 认证层 | 否 | 重连后重新获取 | 刷新或重连 |
 | 传输 | 传输管理器 | 按配置保留传输历史 | 默认无 | 只保留部分状态或历史 | 操作支持时可重试 | 重试、取消、清理部分文件 |
@@ -1856,7 +1847,6 @@ flowchart LR
 | ACP agent session 和主机工具 | `oxideterm-acp-adapter`, `oxideterm-acp-host-tools`, `workspace/acp_workspace.rs` |
 | 插件 | `oxideterm-plugin-manifest`, `oxideterm-plugin-registry`, `oxideterm-plugin-host-api`, `oxideterm-plugin-wasm-runtime`, 应用插件 Entity |
 | 云同步和便携运行时 | `oxideterm-cloud-sync`, `oxideterm-gpui-cloud-sync`, `oxideterm-portable-runtime` |
-| 通知与更新 | `oxideterm-notification-center`, `oxideterm-update` |
 | CLI 伴侣工具 | `oxideterm-cli` |
 
 ---

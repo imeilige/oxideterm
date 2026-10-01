@@ -297,7 +297,7 @@ impl WorkspaceApp {
     }
 
     pub(super) fn cloud_sync_has_background(&self) -> bool {
-        self.background_surface_active("cloud_sync")
+        false
     }
 
     pub(super) fn cloud_sync_local_snapshot(

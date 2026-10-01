@@ -77,13 +77,13 @@ impl WorkspaceApp {
                 .is_some_and(|edit| edit.doc_id == document.id);
         let mut options = oxideterm_gpui_ui::EntityListRowOptions::new()
             .active(selected)
-            .has_background_image(self.background_surface_active("knowledge"));
+            .has_background_image(false);
         if open_in_workspace {
             options = options
                 .compact()
                 .hover_background(oxideterm_gpui_ui::color_for_background(
                     self.tokens.ui.bg_hover,
-                    self.background_surface_active("knowledge"),
+                    false,
                     0x66,
                 ));
         }

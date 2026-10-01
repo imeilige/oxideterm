@@ -1,15 +1,11 @@
 use std::{
     collections::{HashSet, VecDeque},
-    path::{Path, PathBuf},
+    path::PathBuf,
     sync::Arc,
     time::{Duration, SystemTime},
 };
 
 use gpui::{Context, EventEmitter, KeyDownEvent, Task, Timer};
-use oxideterm_connections::{
-    ConnectionImportDuplicateStrategy, ConnectionImportPreview, ConnectionImportSource,
-    PrivilegeCredentialKind,
-};
 use oxideterm_gpui_settings_view::{SettingsInput, SettingsKeybindingScopeFilter};
 use oxideterm_gpui_ui::confirm::ConfirmDialogAction;
 use oxideterm_settings_model::{
@@ -22,10 +18,7 @@ use zeroize::Zeroizing;
 
 use crate::workspace::browser_behavior;
 
-use super::update::NativeUpdateRuntime;
-use super::{
-    CliCompanionStatus, PortableSettingsAction, PortableSettingsDialog, SettingsManagedKeyDialog,
-};
+use super::{CliCompanionStatus, SettingsManagedKeyDialog};
 
 const EXTERNAL_STORE_WATCH_INTERVAL: Duration = Duration::from_millis(530);
 
@@ -76,30 +69,6 @@ impl ExternalStoreWatch {
     }
 }
 
-/// Non-secret result produced by the portable runtime status worker.
-pub(in crate::workspace) struct PortableStatusRefresh {
-    pub(in crate::workspace) status:
-        Result<oxideterm_portable_runtime::PortableStatusSnapshot, String>,
-    pub(in crate::workspace) exportable_secret_count: usize,
-}
-
-/// Read-only projection used after releasing the settings Entity borrow.
-#[derive(Clone)]
-pub(in crate::workspace) struct PortableStatusSnapshot {
-    pub(in crate::workspace) status: Option<oxideterm_portable_runtime::PortableStatusSnapshot>,
-    pub(in crate::workspace) error: Option<String>,
-    pub(in crate::workspace) exportable_secret_count: Option<usize>,
-    pub(in crate::workspace) refresh_pending: bool,
-}
-
-pub(in crate::workspace) struct PortablePasswordDialogSnapshot {
-    pub(in crate::workspace) open: bool,
-    pub(in crate::workspace) pending: bool,
-    pub(in crate::workspace) error: Option<String>,
-    pub(in crate::workspace) current_password_present: bool,
-    pub(in crate::workspace) presence: oxideterm_gpui_ui::motion::ExitPresence,
-}
-
 /// Copies only non-secret render state for the active managed-key dialog.
 pub(in crate::workspace) enum ManagedKeyDialogSnapshot {
     ImportFile {
@@ -123,41 +92,6 @@ pub(in crate::workspace) enum ManagedKeyDialogSnapshot {
     },
 }
 
-/// Editable privilege credential state with a zeroizing secret owner.
-pub(in crate::workspace) struct PrivilegeCredentialDraft {
-    pub(super) credential_id: Option<String>,
-    pub(super) label: String,
-    pub(super) kind: PrivilegeCredentialKind,
-    pub(super) username_hint: String,
-    pub(super) prompt_patterns: String,
-    pub(super) secret: Zeroizing<String>,
-    pub(super) enabled: bool,
-}
-
-impl Default for PrivilegeCredentialDraft {
-    fn default() -> Self {
-        Self {
-            credential_id: None,
-            label: String::new(),
-            kind: PrivilegeCredentialKind::SudoPassword,
-            username_hint: String::new(),
-            prompt_patterns: String::new(),
-            secret: Zeroizing::new(String::new()),
-            enabled: true,
-        }
-    }
-}
-
-pub(in crate::workspace) struct PrivilegeCredentialSnapshot {
-    pub(in crate::workspace) credential_id: Option<String>,
-    pub(in crate::workspace) label: String,
-    pub(in crate::workspace) kind: PrivilegeCredentialKind,
-    pub(in crate::workspace) username_hint: String,
-    pub(in crate::workspace) prompt_patterns: String,
-    pub(in crate::workspace) enabled: bool,
-    pub(in crate::workspace) error: Option<String>,
-}
-
 #[derive(Clone)]
 pub(in crate::workspace) struct CliCompanionSnapshot {
     pub(in crate::workspace) status: Option<CliCompanionStatus>,
@@ -171,16 +105,6 @@ pub(in crate::workspace) struct SshConfigImportSnapshot {
     pub(in crate::workspace) selected_hosts: HashSet<String>,
     pub(in crate::workspace) status: Option<String>,
     pub(in crate::workspace) presence: oxideterm_gpui_ui::motion::ExitPresence,
-}
-
-/// Read-only projection for the connection importer settings surface.
-pub(in crate::workspace) struct ConnectionImportSnapshot {
-    pub(in crate::workspace) source: ConnectionImportSource,
-    pub(in crate::workspace) paths: Vec<String>,
-    pub(in crate::workspace) preview: Option<ConnectionImportPreview>,
-    pub(in crate::workspace) selected_draft_ids: HashSet<String>,
-    pub(in crate::workspace) duplicate_strategy: ConnectionImportDuplicateStrategy,
-    pub(in crate::workspace) status: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -205,11 +129,6 @@ pub(in crate::workspace) enum DataDirectoryOperationResult {
     Changed,
     Reset,
     Failed(String),
-}
-
-pub(in crate::workspace) enum BackgroundGalleryOperationResult {
-    Updated(Option<String>),
-    Failed,
 }
 
 pub(in crate::workspace) enum ThemeImportResult {
@@ -283,12 +202,6 @@ pub(in crate::workspace) struct LaunchAtLoginSnapshot {
 }
 
 /// Converts managed gallery paths once at the filesystem boundary.
-fn background_gallery_strings(settings_path: &Path) -> anyhow::Result<Vec<String>> {
-    Ok(oxideterm_settings::list_background_images(settings_path)?
-        .into_iter()
-        .map(|path| path.to_string_lossy().into_owned())
-        .collect())
-}
 
 fn is_theme_editor_input(input: SettingsInput) -> bool {
     matches!(
@@ -365,22 +278,8 @@ pub(in crate::workspace) struct SettingsWorkspaceEntity {
     route: SettingsRouteState,
     external_store_watch: Option<ExternalStoreWatch>,
     external_store_watch_task: Option<Task<()>>,
-    portable_status: Option<oxideterm_portable_runtime::PortableStatusSnapshot>,
-    portable_status_error: Option<String>,
-    portable_exportable_secret_count: Option<usize>,
-    portable_refresh_pending: bool,
-    portable_refresh_task: Option<Task<()>>,
-    pub(super) portable_dialog: Option<PortableSettingsDialog>,
-    pub(super) portable_action_pending: Option<PortableSettingsAction>,
-    pub(super) portable_action_error: Option<String>,
-    pub(super) portable_current_password: Zeroizing<String>,
-    pub(super) portable_new_password: Zeroizing<String>,
-    pub(super) portable_confirm_password: Zeroizing<String>,
     pub(super) settings_focused_input: Option<SettingsInput>,
     pub(super) terminal_cjk_font_custom: bool,
-    pub(super) portable_dialog_presence: oxideterm_gpui_ui::motion::ExitPresence,
-    pub(super) portable_dialog_exit_task: Option<Task<()>>,
-    pub(super) portable_action_task: Option<Task<()>>,
     pub(super) managed_key_dialog: Option<SettingsManagedKeyDialog>,
     pub(super) managed_key_status: Option<String>,
     pub(super) managed_key_file_path: String,
@@ -393,24 +292,13 @@ pub(in crate::workspace) struct SettingsWorkspaceEntity {
     pub(super) managed_key_dialog_presence: oxideterm_gpui_ui::motion::ExitPresence,
     pub(super) managed_key_dialog_exit_task: Option<Task<()>>,
     pub(super) managed_key_file_picker_task: Option<Task<()>>,
-    pub(super) privilege_draft: PrivilegeCredentialDraft,
-    pub(super) privilege_error: Option<String>,
-    pub(super) privilege_editor_open: bool,
-    pub(super) privilege_scope_id: Option<String>,
     pub(super) cli_companion_status: Option<CliCompanionStatus>,
     pub(super) cli_companion_loading: bool,
     pub(super) cli_companion_error: Option<String>,
     pub(super) cli_companion_task: Option<Task<()>>,
     pub(super) ssh_config_import_dialog_open: bool,
     pub(super) ssh_config_selected_hosts: HashSet<String>,
-    pub(super) connection_import_status: Option<String>,
-    pub(super) connection_import_source: ConnectionImportSource,
-    pub(super) connection_import_paths: Vec<String>,
-    pub(super) connection_import_preview: Option<ConnectionImportPreview>,
-    pub(super) selected_connection_import_drafts: HashSet<String>,
-    pub(super) connection_import_duplicate_strategy: ConnectionImportDuplicateStrategy,
-    pub(super) connection_import_target_group: String,
-    pub(super) connection_import_path_picker_task: Option<Task<()>>,
+    pub(super) ssh_config_import_status: Option<String>,
     pub(super) ssh_config_import_dialog_presence: oxideterm_gpui_ui::motion::ExitPresence,
     pub(super) ssh_config_import_dialog_exit_task: Option<Task<()>>,
     data_directory_confirm: Option<DataDirectoryConfirm>,
@@ -418,12 +306,6 @@ pub(in crate::workspace) struct SettingsWorkspaceEntity {
     data_directory_picker_task: Option<Task<()>>,
     data_directory_confirm_exit_task: Option<Task<()>>,
     data_directory_results: VecDeque<DataDirectoryOperationResult>,
-    background_blur_preview: Option<i64>,
-    background_blur_commit_generation: u64,
-    background_blur_commit_task: Option<Task<()>>,
-    background_images: Arc<[String]>,
-    background_gallery_task: Option<Task<()>>,
-    background_gallery_results: VecDeque<BackgroundGalleryOperationResult>,
     theme_import_task: Option<Task<()>>,
     theme_import_results: VecDeque<ThemeImportResult>,
     theme_editor: Option<Arc<ThemeEditorState>>,
@@ -451,7 +333,6 @@ pub(in crate::workspace) struct SettingsWorkspaceEntity {
     launch_at_login_error: Option<LaunchAtLoginError>,
     launch_at_login_generation: u64,
     launch_at_login_task: Option<Task<()>>,
-    pub(super) native_update: NativeUpdateRuntime,
 }
 
 #[derive(Clone, Copy)]
@@ -477,21 +358,11 @@ pub(in crate::workspace) enum SettingsWorkspaceToast {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::workspace) enum SettingsWorkspaceEvent {
     ExternalStoresChanged,
-    ResetNativeUpdateOverlay,
-    ShowNativeUpdateNotification,
-    ShowNativeUpdateToast(SettingsWorkspaceToast),
-    RequestAutomaticNativeUpdateCheck,
-    RequestQuitAfterNativeUpdate,
     DataDirectoryConfirmOpened,
     DataDirectoryOperationReady,
-    BackgroundBlurCommitReady(i64),
-    BackgroundGalleryOperationReady,
     ThemeImportReady,
     ThemeEditorOperationReady,
     KeybindingFileOperationReady,
-    PortablePasswordChangeFinished {
-        success: bool,
-    },
     CliCompanionFinished {
         operation: CliCompanionOperation,
         success: bool,
@@ -501,27 +372,13 @@ pub(in crate::workspace) enum SettingsWorkspaceEvent {
 impl EventEmitter<SettingsWorkspaceEvent> for SettingsWorkspaceEntity {}
 
 impl SettingsWorkspaceEntity {
-    pub(in crate::workspace) fn new(cx: &mut Context<Self>) -> Self {
+    pub(in crate::workspace) fn new(_cx: &mut Context<Self>) -> Self {
         Self {
             route: SettingsRouteState::default(),
             external_store_watch: None,
             external_store_watch_task: None,
-            portable_status: None,
-            portable_status_error: None,
-            portable_exportable_secret_count: None,
-            portable_refresh_pending: false,
-            portable_refresh_task: None,
-            portable_dialog: None,
-            portable_action_pending: None,
-            portable_action_error: None,
-            portable_current_password: Zeroizing::new(String::new()),
-            portable_new_password: Zeroizing::new(String::new()),
-            portable_confirm_password: Zeroizing::new(String::new()),
             settings_focused_input: None,
             terminal_cjk_font_custom: false,
-            portable_dialog_presence: oxideterm_gpui_ui::motion::ExitPresence::visible(),
-            portable_dialog_exit_task: None,
-            portable_action_task: None,
             managed_key_dialog: None,
             managed_key_status: None,
             managed_key_file_path: String::new(),
@@ -534,24 +391,13 @@ impl SettingsWorkspaceEntity {
             managed_key_dialog_presence: oxideterm_gpui_ui::motion::ExitPresence::visible(),
             managed_key_dialog_exit_task: None,
             managed_key_file_picker_task: None,
-            privilege_draft: PrivilegeCredentialDraft::default(),
-            privilege_error: None,
-            privilege_editor_open: false,
-            privilege_scope_id: None,
             cli_companion_status: None,
             cli_companion_loading: false,
             cli_companion_error: None,
             cli_companion_task: None,
             ssh_config_import_dialog_open: false,
             ssh_config_selected_hosts: HashSet::new(),
-            connection_import_status: None,
-            connection_import_source: ConnectionImportSource::SecureCrt,
-            connection_import_paths: Vec::new(),
-            connection_import_preview: None,
-            selected_connection_import_drafts: HashSet::new(),
-            connection_import_duplicate_strategy: ConnectionImportDuplicateStrategy::Skip,
-            connection_import_target_group: String::new(),
-            connection_import_path_picker_task: None,
+            ssh_config_import_status: None,
             ssh_config_import_dialog_presence: oxideterm_gpui_ui::motion::ExitPresence::visible(),
             ssh_config_import_dialog_exit_task: None,
             data_directory_confirm: None,
@@ -559,12 +405,6 @@ impl SettingsWorkspaceEntity {
             data_directory_picker_task: None,
             data_directory_confirm_exit_task: None,
             data_directory_results: VecDeque::new(),
-            background_blur_preview: None,
-            background_blur_commit_generation: 0,
-            background_blur_commit_task: None,
-            background_images: Arc::from([]),
-            background_gallery_task: None,
-            background_gallery_results: VecDeque::new(),
             theme_import_task: None,
             theme_import_results: VecDeque::new(),
             theme_editor: None,
@@ -592,7 +432,6 @@ impl SettingsWorkspaceEntity {
             launch_at_login_error: None,
             launch_at_login_generation: 0,
             launch_at_login_task: None,
-            native_update: NativeUpdateRuntime::new(cx),
         }
     }
 
@@ -1276,270 +1115,6 @@ impl SettingsWorkspaceEntity {
         std::mem::take(&mut self.data_directory_results)
     }
 
-    pub(in crate::workspace) fn background_blur_preview(&self) -> Option<i64> {
-        self.background_blur_preview
-    }
-
-    pub(in crate::workspace) fn update_background_blur_preview(
-        &mut self,
-        persisted_value: i64,
-        preview_value: i64,
-        delay: Duration,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        if self.background_blur_preview == Some(preview_value)
-            || (self.background_blur_preview.is_none() && persisted_value == preview_value)
-        {
-            return false;
-        }
-
-        self.background_blur_preview = Some(preview_value);
-        self.background_blur_commit_generation =
-            self.background_blur_commit_generation.wrapping_add(1);
-        let generation = self.background_blur_commit_generation;
-        self.background_blur_commit_task = None;
-
-        if delay.is_zero() {
-            self.finish_background_blur_commit(generation, cx);
-            return true;
-        }
-
-        // Replacing this retained task cancels the previous debounce without
-        // leaving a detached root timer alive after another slider movement.
-        self.background_blur_commit_task = Some(cx.spawn(async move |settings, cx| {
-            cx.background_executor().timer(delay).await;
-            let _ = settings.update(cx, |settings, cx| {
-                settings.background_blur_commit_task = None;
-                settings.finish_background_blur_commit(generation, cx);
-            });
-        }));
-        cx.notify();
-        true
-    }
-
-    fn finish_background_blur_commit(&mut self, generation: u64, cx: &mut Context<Self>) {
-        if self.background_blur_commit_generation != generation {
-            return;
-        }
-        let Some(value) = self.background_blur_preview.take() else {
-            return;
-        };
-        cx.emit(SettingsWorkspaceEvent::BackgroundBlurCommitReady(value));
-        cx.notify();
-    }
-
-    pub(in crate::workspace) fn initialize_background_gallery(&mut self, images: Vec<String>) {
-        self.background_images = Arc::from(images);
-    }
-
-    pub(in crate::workspace) fn background_images_snapshot(&self) -> Arc<[String]> {
-        Arc::clone(&self.background_images)
-    }
-
-    pub(in crate::workspace) fn start_background_image_import(
-        &mut self,
-        selection: impl std::future::Future<Output = Option<Vec<PathBuf>>> + 'static,
-        settings_path: PathBuf,
-        current_path: Option<PathBuf>,
-        runtime: tokio::runtime::Handle,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        if self.background_gallery_task.is_some() {
-            return false;
-        }
-
-        self.background_gallery_task = Some(cx.spawn(async move |settings, cx| {
-            let Some(paths) = selection.await else {
-                let _ = settings.update(cx, |settings, cx| {
-                    settings.background_gallery_task = None;
-                    cx.notify();
-                });
-                return;
-            };
-            let source_paths = paths
-                .into_iter()
-                .filter(|path| oxideterm_settings::is_supported_background_image(path))
-                .collect::<Vec<_>>();
-            if source_paths.is_empty() {
-                let _ = settings.update(cx, |settings, cx| {
-                    settings.background_gallery_task = None;
-                    cx.notify();
-                });
-                return;
-            }
-
-            let result = runtime
-                .spawn_blocking(move || -> anyhow::Result<(Vec<String>, Option<String>)> {
-                    let mut active_path = current_path.filter(|path| {
-                        path.is_file()
-                            && oxideterm_settings::is_supported_background_image(path.as_path())
-                    });
-                    if let Some(current) = active_path.as_ref()
-                        && !oxideterm_settings::is_managed_background_image(&settings_path, current)
-                    {
-                        // Preserve a compatibility path inside the managed
-                        // gallery before another image becomes active.
-                        active_path = oxideterm_settings::import_background_images(
-                            &settings_path,
-                            std::slice::from_ref(current),
-                        )?
-                        .into_iter()
-                        .next();
-                    }
-
-                    let imported = oxideterm_settings::import_background_images(
-                        &settings_path,
-                        &source_paths,
-                    )?;
-                    if active_path.is_none() {
-                        active_path = imported.first().cloned();
-                    }
-                    let mut gallery = background_gallery_strings(&settings_path)?;
-                    let active_path = active_path.map(|path| path.to_string_lossy().into_owned());
-                    if let Some(active) = active_path.as_ref()
-                        && !gallery.contains(active)
-                    {
-                        gallery.insert(0, active.clone());
-                    }
-                    Ok((gallery, active_path))
-                })
-                .await
-                .map_err(|_| ())
-                .and_then(|result| result.map_err(|_| ()));
-
-            let _ = settings.update(cx, |settings, cx| {
-                settings.background_gallery_task = None;
-                settings.finish_background_gallery_operation(result, cx);
-            });
-        }));
-        cx.notify();
-        true
-    }
-
-    pub(in crate::workspace) fn remove_background_image(
-        &mut self,
-        settings_path: PathBuf,
-        image_path: String,
-        current_path: Option<String>,
-        runtime: tokio::runtime::Handle,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        if self.background_gallery_task.is_some()
-            || crate::workspace::is_bundled_workspace_background(
-                &settings_path,
-                Path::new(&image_path),
-            )
-        {
-            return false;
-        }
-
-        if !oxideterm_settings::is_managed_background_image(&settings_path, Path::new(&image_path))
-        {
-            // Compatibility paths are user-owned; removing one only updates
-            // the gallery and never deletes the source file.
-            let mut gallery = self.background_images.to_vec();
-            gallery.retain(|candidate| candidate != &image_path);
-            let active_path = current_path.filter(|active| active != &image_path);
-            self.finish_background_gallery_operation(Ok((gallery, active_path)), cx);
-            return true;
-        }
-
-        self.background_gallery_task = Some(cx.spawn(async move |settings, cx| {
-            let result = runtime
-                .spawn_blocking(move || -> anyhow::Result<(Vec<String>, Option<String>)> {
-                    oxideterm_settings::remove_background_image(
-                        &settings_path,
-                        Path::new(&image_path),
-                    )?;
-                    let mut gallery = background_gallery_strings(&settings_path)?;
-                    let active_path = current_path.filter(|active| active != &image_path);
-                    if let Some(active) = active_path.as_ref()
-                        && !gallery.contains(active)
-                    {
-                        gallery.insert(0, active.clone());
-                    }
-                    Ok((gallery, active_path))
-                })
-                .await
-                .map_err(|_| ())
-                .and_then(|result| result.map_err(|_| ()));
-
-            let _ = settings.update(cx, |settings, cx| {
-                settings.background_gallery_task = None;
-                settings.finish_background_gallery_operation(result, cx);
-            });
-        }));
-        cx.notify();
-        true
-    }
-
-    pub(in crate::workspace) fn clear_background_image_gallery(
-        &mut self,
-        settings_path: PathBuf,
-        current_path: Option<String>,
-        runtime: tokio::runtime::Handle,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        if self.background_gallery_task.is_some() {
-            return false;
-        }
-
-        self.background_gallery_task = Some(cx.spawn(async move |settings, cx| {
-            let result = runtime
-                .spawn_blocking(move || -> anyhow::Result<(Vec<String>, Option<String>)> {
-                    for image_path in oxideterm_settings::list_background_images(&settings_path)? {
-                        if !crate::workspace::is_bundled_workspace_background(
-                            &settings_path,
-                            &image_path,
-                        ) {
-                            oxideterm_settings::remove_background_image(
-                                &settings_path,
-                                &image_path,
-                            )?;
-                        }
-                    }
-                    let gallery = background_gallery_strings(&settings_path)?;
-                    let active_path = current_path.filter(|active| gallery.contains(active));
-                    Ok((gallery, active_path))
-                })
-                .await
-                .map_err(|_| ())
-                .and_then(|result| result.map_err(|_| ()));
-
-            let _ = settings.update(cx, |settings, cx| {
-                settings.background_gallery_task = None;
-                settings.finish_background_gallery_operation(result, cx);
-            });
-        }));
-        cx.notify();
-        true
-    }
-
-    fn finish_background_gallery_operation(
-        &mut self,
-        result: Result<(Vec<String>, Option<String>), ()>,
-        cx: &mut Context<Self>,
-    ) {
-        match result {
-            Ok((gallery, active_path)) => {
-                self.background_images = Arc::from(gallery);
-                self.background_gallery_results
-                    .push_back(BackgroundGalleryOperationResult::Updated(active_path));
-            }
-            Err(()) => self
-                .background_gallery_results
-                .push_back(BackgroundGalleryOperationResult::Failed),
-        }
-        cx.emit(SettingsWorkspaceEvent::BackgroundGalleryOperationReady);
-        cx.notify();
-    }
-
-    pub(in crate::workspace) fn take_background_gallery_results(
-        &mut self,
-    ) -> VecDeque<BackgroundGalleryOperationResult> {
-        std::mem::take(&mut self.background_gallery_results)
-    }
-
     pub(in crate::workspace) fn start_theme_import(
         &mut self,
         selection: impl std::future::Future<Output = Option<PathBuf>> + 'static,
@@ -1915,88 +1490,6 @@ impl SettingsWorkspaceEntity {
         std::mem::take(&mut self.keybinding_file_operation_results)
     }
 
-    pub(in crate::workspace) fn portable_status_snapshot(&self) -> PortableStatusSnapshot {
-        PortableStatusSnapshot {
-            status: self.portable_status.clone(),
-            error: self.portable_status_error.clone(),
-            exportable_secret_count: self.portable_exportable_secret_count,
-            refresh_pending: self.portable_refresh_pending,
-        }
-    }
-
-    pub(in crate::workspace) fn portable_mode(&self) -> Option<bool> {
-        self.portable_status
-            .as_ref()
-            .map(|status| status.is_portable)
-    }
-
-    pub(in crate::workspace) fn start_portable_status_refresh(
-        &mut self,
-        force: bool,
-        runtime: Arc<tokio::runtime::Runtime>,
-        worker: impl FnOnce() -> PortableStatusRefresh + Send + 'static,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        if self.portable_refresh_pending {
-            return false;
-        }
-        if !force
-            && (self.portable_status.is_some() || self.portable_status_error.is_some())
-            && self.portable_exportable_secret_count.is_some()
-        {
-            return false;
-        }
-
-        self.portable_refresh_pending = true;
-        self.portable_refresh_task = Some(cx.spawn(async move |settings, cx| {
-            let result = runtime.spawn_blocking(worker).await;
-            let _ = settings.update(cx, |settings, cx| {
-                settings
-                    .finish_portable_status_refresh(result.map_err(|error| error.to_string()), cx);
-            });
-        }));
-        cx.notify();
-        true
-    }
-
-    fn finish_portable_status_refresh(
-        &mut self,
-        result: Result<PortableStatusRefresh, String>,
-        cx: &mut Context<Self>,
-    ) {
-        self.portable_refresh_task = None;
-        self.portable_refresh_pending = false;
-        match result {
-            Ok(PortableStatusRefresh {
-                status: Ok(status),
-                exportable_secret_count,
-            }) => {
-                self.portable_status = Some(status);
-                self.portable_status_error = None;
-                self.portable_exportable_secret_count = Some(exportable_secret_count);
-            }
-            Ok(PortableStatusRefresh {
-                status: Err(error),
-                exportable_secret_count,
-            }) => {
-                self.portable_status = None;
-                self.portable_status_error = Some(error);
-                self.portable_exportable_secret_count = Some(exportable_secret_count);
-            }
-            Err(error) => {
-                self.portable_status = None;
-                self.portable_status_error = Some(error);
-            }
-        }
-        cx.notify();
-    }
-
-    pub(in crate::workspace) fn invalidate_portable_status(&mut self, cx: &mut Context<Self>) {
-        self.portable_status = None;
-        self.portable_status_error = None;
-        cx.notify();
-    }
-
     pub(in crate::workspace) fn settings_entity_focused_input(&self) -> Option<SettingsInput> {
         self.settings_focused_input
     }
@@ -2067,9 +1560,6 @@ impl SettingsWorkspaceEntity {
                 .and_then(|editor| editor.ui_colors.get(index))
                 .map(String::as_str),
             SettingsInput::KeybindingSearch => Some(&self.keybinding_search_query),
-            SettingsInput::PortableCurrentPassword => Some(&self.portable_current_password),
-            SettingsInput::PortableNewPassword => Some(&self.portable_new_password),
-            SettingsInput::PortableConfirmPassword => Some(&self.portable_confirm_password),
             SettingsInput::ManagedKeyFilePath => Some(&self.managed_key_file_path),
             SettingsInput::ManagedKeyFileName => Some(&self.managed_key_file_name),
             SettingsInput::ManagedKeyFilePassphrase => Some(&self.managed_key_file_passphrase),
@@ -2077,15 +1567,6 @@ impl SettingsWorkspaceEntity {
             SettingsInput::ManagedKeyPastePrivateKey => Some(&self.managed_key_paste_private_key),
             SettingsInput::ManagedKeyPastePassphrase => Some(&self.managed_key_paste_passphrase),
             SettingsInput::ManagedKeyRenameName => Some(&self.managed_key_rename_name),
-            SettingsInput::LocalPrivilegeLabel => Some(&self.privilege_draft.label),
-            SettingsInput::LocalPrivilegeUsernameHint => Some(&self.privilege_draft.username_hint),
-            SettingsInput::LocalPrivilegeSecret => Some(&self.privilege_draft.secret),
-            SettingsInput::LocalPrivilegePromptPatterns => {
-                Some(&self.privilege_draft.prompt_patterns)
-            }
-            SettingsInput::ConnectionImportTargetGroup => {
-                Some(&self.connection_import_target_group)
-            }
             _ => None,
         }
     }
@@ -2095,16 +1576,12 @@ impl SettingsWorkspaceEntity {
         input: SettingsInput,
         cx: &mut Context<Self>,
     ) -> bool {
-        let portable_open = self.portable_dialog == Some(PortableSettingsDialog::ChangePassword);
         let can_focus = match input {
             SettingsInput::SettingsSearch => self.settings_search_open,
             SettingsInput::CustomThemeName
             | SettingsInput::CustomThemeTerminalColor(_)
             | SettingsInput::CustomThemeUiColor(_) => self.theme_editor.is_some(),
             SettingsInput::KeybindingSearch => true,
-            SettingsInput::PortableCurrentPassword
-            | SettingsInput::PortableNewPassword
-            | SettingsInput::PortableConfirmPassword => portable_open,
             SettingsInput::ManagedKeyFilePath
             | SettingsInput::ManagedKeyFileName
             | SettingsInput::ManagedKeyFilePassphrase => matches!(
@@ -2123,11 +1600,6 @@ impl SettingsWorkspaceEntity {
                 self.managed_key_dialog,
                 Some(SettingsManagedKeyDialog::Rename { .. })
             ),
-            SettingsInput::LocalPrivilegeLabel
-            | SettingsInput::LocalPrivilegeUsernameHint
-            | SettingsInput::LocalPrivilegeSecret
-            | SettingsInput::LocalPrivilegePromptPatterns => true,
-            SettingsInput::ConnectionImportTargetGroup => true,
             _ => false,
         };
         if !can_focus {
@@ -2198,9 +1670,6 @@ impl SettingsWorkspaceEntity {
 
     fn clear_settings_entity_input_error(&mut self, input: SettingsInput) {
         match input {
-            SettingsInput::PortableCurrentPassword
-            | SettingsInput::PortableNewPassword
-            | SettingsInput::PortableConfirmPassword => self.portable_action_error = None,
             SettingsInput::ManagedKeyFilePath
             | SettingsInput::ManagedKeyFileName
             | SettingsInput::ManagedKeyFilePassphrase
@@ -2208,10 +1677,6 @@ impl SettingsWorkspaceEntity {
             | SettingsInput::ManagedKeyPastePrivateKey
             | SettingsInput::ManagedKeyPastePassphrase
             | SettingsInput::ManagedKeyRenameName => self.managed_key_status = None,
-            SettingsInput::LocalPrivilegeLabel
-            | SettingsInput::LocalPrivilegeUsernameHint
-            | SettingsInput::LocalPrivilegeSecret
-            | SettingsInput::LocalPrivilegePromptPatterns => self.privilege_error = None,
             _ => {}
         }
     }
@@ -2235,9 +1700,6 @@ impl SettingsWorkspaceEntity {
                 .map(Arc::make_mut)
                 .and_then(|editor| editor.ui_colors.get_mut(index)),
             SettingsInput::KeybindingSearch => Some(&mut self.keybinding_search_query),
-            SettingsInput::PortableCurrentPassword => Some(&mut self.portable_current_password),
-            SettingsInput::PortableNewPassword => Some(&mut self.portable_new_password),
-            SettingsInput::PortableConfirmPassword => Some(&mut self.portable_confirm_password),
             SettingsInput::ManagedKeyFilePath => Some(&mut self.managed_key_file_path),
             SettingsInput::ManagedKeyFileName => Some(&mut self.managed_key_file_name),
             SettingsInput::ManagedKeyFilePassphrase => Some(&mut self.managed_key_file_passphrase),
@@ -2249,17 +1711,6 @@ impl SettingsWorkspaceEntity {
                 Some(&mut self.managed_key_paste_passphrase)
             }
             SettingsInput::ManagedKeyRenameName => Some(&mut self.managed_key_rename_name),
-            SettingsInput::LocalPrivilegeLabel => Some(&mut self.privilege_draft.label),
-            SettingsInput::LocalPrivilegeUsernameHint => {
-                Some(&mut self.privilege_draft.username_hint)
-            }
-            SettingsInput::LocalPrivilegeSecret => Some(&mut self.privilege_draft.secret),
-            SettingsInput::LocalPrivilegePromptPatterns => {
-                Some(&mut self.privilege_draft.prompt_patterns)
-            }
-            SettingsInput::ConnectionImportTargetGroup => {
-                Some(&mut self.connection_import_target_group)
-            }
             _ => None,
         }
     }
@@ -2311,16 +1762,8 @@ mod tests {
 
     #[test]
     fn secret_render_projections_do_not_copy_entity_owned_plaintext() {
-        let portable_source = include_str!("portable_runtime/actions.rs");
         let managed_key_source = include_str!("connections_page.rs");
 
-        for forbidden in [
-            concat!("portable_current_password", ".to_string()"),
-            concat!("portable_new_password", ".to_string()"),
-            concat!("portable_confirm_password", ".to_string()"),
-        ] {
-            assert!(!portable_source.contains(forbidden), "{forbidden}");
-        }
         for forbidden in [
             concat!(
                 "file_passphrase: self.managed_key_file_passphrase",
@@ -2344,72 +1787,6 @@ mod tests {
         assert!(
             workspace_source.contains("zeroize::Zeroize::zeroize(&mut self.settings_input_draft)")
         );
-    }
-
-    #[gpui::test]
-    fn hidden_settings_page_keeps_worker_completion_exact_once(cx: &mut TestAppContext) {
-        let entity = cx.new(SettingsWorkspaceEntity::new);
-        let runtime = Arc::new(
-            tokio::runtime::Builder::new_multi_thread()
-                .worker_threads(1)
-                .enable_all()
-                .build()
-                .expect("visibility test runtime"),
-        );
-        let worker_completions = Arc::new(AtomicUsize::new(0));
-        let worker_completions_for_task = Arc::clone(&worker_completions);
-        let (worker_release_tx, worker_release_rx) = std::sync::mpsc::sync_channel(1);
-        let (worker_done_tx, worker_done_rx) = std::sync::mpsc::sync_channel(1);
-        entity.update(cx, |entity, cx| {
-            entity.set_active_tab(SettingsTab::Portable, cx);
-            assert!(entity.start_portable_status_refresh(
-                true,
-                runtime,
-                move || {
-                    worker_release_rx
-                        .recv()
-                        .expect("worker release sender should remain alive");
-                    worker_completions_for_task.fetch_add(1, Ordering::AcqRel);
-                    worker_done_tx
-                        .send(())
-                        .expect("worker completion receiver should remain alive");
-                    super::PortableStatusRefresh {
-                        status: Err("portable unavailable while hidden".to_string()),
-                        exportable_secret_count: 0,
-                    }
-                },
-                cx,
-            ));
-            // The worker result remains lifecycle-significant after the page hides.
-            entity.set_active_tab(SettingsTab::Help, cx);
-        });
-        cx.executor().allow_parking();
-        cx.run_until_parked();
-        worker_release_tx
-            .send(())
-            .expect("portable worker should remain alive while hidden");
-        worker_done_rx
-            .recv_timeout(Duration::from_secs(2))
-            .expect("portable worker should finish after release");
-        let worker_delivery_deadline = std::time::Instant::now() + Duration::from_secs(2);
-        while entity.read_with(cx, |entity, _cx| entity.portable_refresh_pending) {
-            assert!(
-                std::time::Instant::now() < worker_delivery_deadline,
-                "portable worker completion should reach the Entity while hidden"
-            );
-            cx.run_until_parked();
-            std::thread::sleep(Duration::from_millis(1));
-        }
-        entity.read_with(cx, |entity, _cx| {
-            let snapshot = entity.portable_status_snapshot();
-            assert_eq!(worker_completions.load(Ordering::Acquire), 1);
-            assert!(!snapshot.refresh_pending);
-            assert_eq!(
-                snapshot.error.as_deref(),
-                Some("portable unavailable while hidden")
-            );
-            assert!(entity.portable_refresh_task.is_none());
-        });
     }
 
     #[gpui::test]
@@ -2464,59 +1841,6 @@ mod tests {
         drop(entity);
         cx.update(|_cx| {});
         cx.run_until_parked();
-    }
-
-    #[gpui::test]
-    fn portable_status_refresh_is_single_flight_and_entity_owned(cx: &mut TestAppContext) {
-        let entity = cx.new(SettingsWorkspaceEntity::new);
-        let runtime = Arc::new(
-            tokio::runtime::Builder::new_multi_thread()
-                .worker_threads(1)
-                .enable_all()
-                .build()
-                .expect("test runtime"),
-        );
-
-        entity.update(cx, |entity, cx| {
-            assert!(entity.start_portable_status_refresh(
-                false,
-                runtime,
-                || super::PortableStatusRefresh {
-                    status: Err("unavailable".to_string()),
-                    exportable_secret_count: 2,
-                },
-                cx,
-            ));
-            assert!(
-                !entity.start_portable_status_refresh(
-                    false,
-                    Arc::new(
-                        tokio::runtime::Builder::new_multi_thread()
-                            .worker_threads(1)
-                            .enable_all()
-                            .build()
-                            .expect("second test runtime"),
-                    ),
-                    || unreachable!("single-flight worker"),
-                    cx,
-                )
-            );
-            entity.portable_refresh_task = None;
-            entity.finish_portable_status_refresh(
-                Ok(super::PortableStatusRefresh {
-                    status: Err("unavailable".to_string()),
-                    exportable_secret_count: 2,
-                }),
-                cx,
-            );
-        });
-
-        entity.update(cx, |entity, _cx| {
-            let snapshot = entity.portable_status_snapshot();
-            assert!(!snapshot.refresh_pending);
-            assert_eq!(snapshot.error.as_deref(), Some("unavailable"));
-            assert_eq!(snapshot.exportable_secret_count, Some(2));
-        });
     }
 
     #[gpui::test]

@@ -15,8 +15,7 @@ impl WorkspaceApp {
 
     pub(in crate::workspace) fn register_tab_surface(&mut self, tab: &Tab, cx: &mut App) {
         let tab_id = tab.id;
-        let surface_kind =
-            crate::workspace::root::helpers::tab_background_key(&tab.kind).to_string();
+        let surface_kind = crate::workspace::root::helpers::tab_surface_kind(&tab.kind).to_string();
         let surface_label = if tab.title.trim().is_empty() {
             surface_kind.clone()
         } else {

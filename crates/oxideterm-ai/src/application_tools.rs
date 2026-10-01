@@ -301,17 +301,17 @@ pub(crate) fn extended_application_tool_definitions() -> Vec<AiToolDefinition> {
         ),
         tool(
             "manage_credential",
-            "Open credential management or delete one managed SSH key, privilege credential, or saved remote-desktop credential. AI cannot read or create raw secret values.",
+            "Delete one managed SSH key, privilege credential, or saved remote-desktop credential. AI cannot read or create raw secret values.",
             json!({
                 "type": "object",
                 "properties": {
-                    "action": { "type": "string", "enum": ["open_manager", "delete"] },
+                    "action": { "type": "string", "enum": ["delete"] },
                     "kind": { "type": "string", "enum": ["managed_ssh_key", "privilege", "remote_desktop"] },
                     "id": { "type": "string", "maxLength": MAX_IDENTIFIER_CHARS },
                     "connection_id": { "type": "string", "maxLength": MAX_IDENTIFIER_CHARS },
                     "force": { "type": "boolean" }
                 },
-                "required": ["action"],
+                "required": ["action", "kind", "id"],
                 "additionalProperties": false
             }),
         ),
@@ -924,12 +924,9 @@ fn validate_manage_credential(
     require_fields(
         object,
         &["action", "kind", "id", "connection_id", "force"],
-        &["action"],
+        &["action", "kind", "id"],
     )?;
-    let action = required_enum(object, "action", &["open_manager", "delete"])?;
-    if action == "open_manager" {
-        return Ok(());
-    }
+    required_enum(object, "action", &["delete"])?;
     let kind = required_enum(
         object,
         "kind",

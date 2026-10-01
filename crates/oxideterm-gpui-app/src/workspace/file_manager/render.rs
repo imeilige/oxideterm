@@ -23,7 +23,7 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = self.tokens.ui;
-        let has_background = self.background_surface_active("file_manager");
+        let has_background = false;
         let (filtered, filtered_rows) = self.file_manager.update(cx, |file_manager, _cx| {
             (file_manager.sorted_files(), file_manager.sorted_file_rows())
         });

@@ -205,17 +205,17 @@ pub fn settings_tab_section_count(
                 4
             }
         }
-        SettingsTab::Portable => 1,
         SettingsTab::Terminal => terminal_settings_section_count(dynamic.terminal_page),
-        SettingsTab::Appearance => 5,
+        SettingsTab::Appearance => 4,
         // Reconnect controls share one card and therefore one virtual section.
-        SettingsTab::Connections => 6,
-        SettingsTab::Privilege => 1,
+        SettingsTab::Connections => 5,
         SettingsTab::Sftp => 3,
         SettingsTab::Keybindings => {
             keybinding_settings_section_count(dynamic.visible_keybinding_scope_count)
         }
-        SettingsTab::Help => 6,
+        // Diagnostics and the legal notice remain; the version, tech-stack,
+        // resources, and safety cards were retired with the update feature.
+        SettingsTab::Help => 2,
     }
 }
 
@@ -224,7 +224,7 @@ pub fn terminal_settings_section_count(page: TerminalSettingsPage) -> usize {
         TerminalSettingsPage::Display => 5,
         TerminalSettingsPage::Input => 3,
         // The dedicated keybindings page owns shortcut discovery and editing.
-        TerminalSettingsPage::Local => 4,
+        TerminalSettingsPage::Local => 3,
         TerminalSettingsPage::CommandBar => 3,
         TerminalSettingsPage::Awareness => 3,
         TerminalSettingsPage::Transfer => 1,

@@ -1054,9 +1054,7 @@ impl WorkspaceApp {
                     TabKind::SessionManager => self.i18n.t("sidebar.panels.saved_connections"),
                     TabKind::CloudSync => self.i18n.t("plugin.cloud_sync.panel_title"),
                     TabKind::Knowledge => self.i18n.t("sidebar.panels.knowledge"),
-                    TabKind::RemoteDesktop => {
-                        self.i18n.t("settings_view.terminal.bg_tab_remote_desktop")
-                    }
+                    TabKind::RemoteDesktop => self.i18n.t("settings_view.tabs.remote_desktop"),
                     TabKind::Forwards => self.i18n.t("sidebar.panels.forwarding"),
                     TabKind::Sftp => self.i18n.t("sidebar.panels.sftp"),
                     TabKind::FileManager => self.i18n.t("settings_view.help.category_file_manager"),

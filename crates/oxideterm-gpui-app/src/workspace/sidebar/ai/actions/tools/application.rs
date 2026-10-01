@@ -756,21 +756,13 @@ impl WorkspaceApp {
     pub(in crate::workspace) fn execute_ai_manage_credential(
         &mut self,
         arguments: &serde_json::Value,
-        window: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Result<serde_json::Value, String> {
         let action = arguments
             .get("action")
             .and_then(serde_json::Value::as_str)
             .ok_or_else(|| "A credential action is required.".to_string())?;
-        if action == "open_manager" {
-            let scope_id = arguments
-                .get("connection_id")
-                .and_then(serde_json::Value::as_str)
-                .map(str::to_string);
-            self.open_privilege_credentials_settings(scope_id, window, cx);
-            return Ok(serde_json::json!({ "accepted": true, "action": action }));
-        }
         let kind = arguments
             .get("kind")
             .and_then(serde_json::Value::as_str)

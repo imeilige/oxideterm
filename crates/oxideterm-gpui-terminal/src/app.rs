@@ -37,7 +37,6 @@ use oxideterm_trzsz::TrzszState;
 use parking_lot::Mutex;
 use zeroize::Zeroizing;
 
-use crate::background_cache::BackgroundImageRenderCache;
 use crate::command_facts::{
     CommandFactLedger, SharedTerminalCommandHistory, TerminalAiCommandRecord,
     TerminalAutosuggestCandidate, TerminalAutosuggestCommandRecord, TerminalAutosuggestInputState,
@@ -148,7 +147,6 @@ const ACTIVE_PROCESS_INFO_REFRESH_INTERVAL: Duration = Duration::from_secs(1);
 const EDITOR_INTEGRATION_HEARTBEAT_TIMEOUT: Duration = Duration::from_millis(2500);
 const EDITOR_CLIPBOARD_REQUEST_TIMEOUT: Duration = Duration::from_secs(2);
 const TERMINAL_SEARCH_DEBOUNCE: Duration = Duration::from_millis(24);
-const BACKGROUND_IMAGE_COMPLETION_POLL_INTERVAL: Duration = Duration::from_millis(32);
 const TERMINAL_AUTOSUGGEST_MAX_CANDIDATES: usize = 8;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -543,8 +541,6 @@ pub struct TerminalPane {
     last_latency_sampled_input: Option<Instant>,
     image_cache: ImageRenderCache,
     layout_cache: Arc<Mutex<TerminalLayoutCache>>,
-    background_image_cache: BackgroundImageRenderCache,
-    background_image_poll_active: bool,
     bounds: Option<Bounds<Pixels>>,
     viewport_scale_factor_bits: Option<u32>,
     last_pty_resize: Option<(usize, usize, u16, u16)>,
@@ -957,7 +953,7 @@ impl TerminalPane {
     pub fn new_recording_playback(
         cols: usize,
         rows: usize,
-        mut preferences: TerminalUiPreferences,
+        preferences: TerminalUiPreferences,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Result<Self> {
@@ -974,7 +970,7 @@ impl TerminalPane {
 
     fn from_session(
         terminal: SharedTerminalSession,
-        mut preferences: TerminalUiPreferences,
+        preferences: TerminalUiPreferences,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Result<Self> {
@@ -1240,12 +1236,6 @@ impl TerminalPane {
                 cache
             },
             layout_cache: Arc::new(Mutex::new(TerminalLayoutCache::default())),
-            background_image_cache: {
-                let mut cache = BackgroundImageRenderCache::default();
-                cache.set_byte_limit(preferences.render_policy.image_cache_bytes);
-                cache
-            },
-            background_image_poll_active: false,
             bounds: None,
             viewport_scale_factor_bits: None,
             last_pty_resize: None,
@@ -1692,7 +1682,7 @@ impl TerminalPane {
     }
 
     pub(crate) fn sync_terminal_output_events_enabled(&mut self) {
-        let recording_requires_output = self
+        let _recording_requires_output = self
             .recorder
             .as_ref()
             .is_some_and(|recorder| recorder.status().state == TerminalRecordingState::Recording);
@@ -1816,8 +1806,6 @@ impl TerminalPane {
         self.theme = preferences.theme.clone();
         self.command_history = preferences.command_history.clone();
         self.image_cache
-            .set_byte_limit(preferences.render_policy.image_cache_bytes);
-        self.background_image_cache
             .set_byte_limit(preferences.render_policy.image_cache_bytes);
         self.preferences = preferences;
         self.refresh_paste_editor(cx);

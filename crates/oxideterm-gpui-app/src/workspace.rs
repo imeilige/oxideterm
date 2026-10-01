@@ -32,7 +32,6 @@ mod public_mcp;
 mod remote_desktop;
 mod runtime_entity;
 mod root {
-    pub(super) mod background;
     pub(super) mod helpers;
     pub(super) mod host_tools;
     pub(super) mod init;
@@ -150,9 +149,8 @@ use oxideterm_connection_monitor::{
     visible_tmux_session_rows,
 };
 use oxideterm_connections::{
-    ConnectionStore, ConnectionTerminalOptions,
-    MoshIpFamily as SavedMoshIpFamily, MoshPredictionMode,
-    MoshUdpPortSelection as SavedMoshUdpPortSelection, PrivilegeCredentialKind,
+    ConnectionStore, ConnectionTerminalOptions, MoshIpFamily as SavedMoshIpFamily,
+    MoshPredictionMode, MoshUdpPortSelection as SavedMoshUdpPortSelection, PrivilegeCredentialKind,
     SaveConnectionRequest, SavedPrivilegeCredential, SshConfigSyncService,
 };
 use oxideterm_forwarding::{
@@ -164,9 +162,8 @@ use oxideterm_gpui_platform::{
     window_opacity::{apply_window_opacity, normalized_window_opacity},
 };
 use oxideterm_gpui_terminal::{
-    BackgroundImageRenderCache, PrivilegePromptMatch, SemanticShellDialect,
-    SharedTerminalCommandHistory, SharedTerminalSession, TerminalAutosuggestLabels,
-    TerminalBackgroundFit, TerminalBackgroundPreferences, TerminalBroadcastInputKind,
+    PrivilegePromptMatch, SemanticShellDialect, SharedTerminalCommandHistory,
+    SharedTerminalSession, TerminalAutosuggestLabels, TerminalBroadcastInputKind,
     TerminalCommandSelectionLabels, TerminalContextAction, TerminalHighlightMatchScope,
     TerminalHighlightRenderMode, TerminalHighlightRule as UiHighlightRule,
     TerminalHighlightRuleSetOverride, TerminalInputBroadcaster,
@@ -176,7 +173,8 @@ use oxideterm_gpui_terminal::{
     TerminalSerialControlLabels, TerminalTmuxLabels, TerminalTrzszLabels,
     TerminalUiPreferenceOverrides, TerminalUiPreferences, TerminalUiTheme,
     TerminalWorkingDirectorySource, detect_custom_privilege_prompt,
-    resolved_terminal_semantic_scheme, terminal_semantic_line_band, terminal_semantic_variant_color,
+    resolved_terminal_semantic_scheme, terminal_semantic_line_band,
+    terminal_semantic_variant_color,
 };
 use oxideterm_gpui_ui::scroll::ScrollableElement;
 use oxideterm_gpui_ui::{
@@ -184,7 +182,7 @@ use oxideterm_gpui_ui::{
     material_surface,
     modal::{popover_backdrop, set_tauri_backdrop_blur_allowed},
     text_input::{TextInputView, text_input},
-    toast::{ToastVariant, ToastView, toast_action, toast_close},
+    toast::{ToastVariant, ToastView, toast_close},
     toaster::toaster,
     tooltip::tooltip_surface,
 };
@@ -200,12 +198,10 @@ use oxideterm_session_adapter::{
     terminal_encoding_from_settings as session_terminal_encoding,
 };
 use oxideterm_settings::{
-    AI_SIDEBAR_ABSOLUTE_MAX_WIDTH, AI_SIDEBAR_ABSOLUTE_MIN_WIDTH, BackgroundFit, BackgroundScope,
+    AI_SIDEBAR_ABSOLUTE_MAX_WIDTH, AI_SIDEBAR_ABSOLUTE_MIN_WIDTH,
     CursorStyle as SettingsCursorStyle, FontFamily, FrostedGlassMode, GLOBAL_HIGHLIGHT_RULE_SET_ID,
-    HighlightRule, HighlightRuleMatchScope, HighlightRuleRenderMode, Language,
-    MAX_TERMINAL_BACKGROUND_OPACITY, MAX_WINDOW_OPACITY, MIN_TERMINAL_BACKGROUND_OPACITY,
-    MIN_WINDOW_OPACITY, PersistedSettings, SettingsStore, background_images_directory,
-    default_settings_path, ensure_bundled_background_image, list_background_images,
+    HighlightRule, HighlightRuleMatchScope, HighlightRuleRenderMode, Language, MAX_WINDOW_OPACITY,
+    MIN_WINDOW_OPACITY, PersistedSettings, SettingsStore, default_settings_path,
 };
 use oxideterm_settings_model::{
     AiMcpServerDraft, AiProviderKeyStatusDelivery, SettingsNavigationLayout,
@@ -273,8 +269,8 @@ use self::overlay::{
 };
 use self::pane_tree::SplitDrag;
 pub(crate) use self::root::helpers::tokens_from_settings as portable_bootstrap_tokens_from_settings;
+use self::root::helpers::*;
 use self::root::state::{ReconnectWorkerResult, WorkspaceSshNode, WorkspaceSshNodeEndpoint};
-use self::root::{background::*, helpers::*};
 use self::session_manager::{SessionManagerState, SessionManagerWorkspaceEvent};
 use self::sidebar::AiInlinePanelState;
 #[cfg(test)]
@@ -833,9 +829,6 @@ pub(crate) struct WorkspaceApp {
     workspace_input: Entity<ime::WorkspaceInputEntity>,
     _workspace_input_observation: Subscription,
     input_caret: ime::WorkspaceCaretVisibility,
-    native_update_notification_open: bool,
-    native_update_notification_presence: oxideterm_gpui_ui::motion::ExitPresence,
-    native_update_release_notes_scroll: MarkdownVirtualListScrollHandle,
     settings_legal_notice_scroll: MarkdownVirtualListScrollHandle,
     _window_intents: Entity<WorkspaceWindowIntentEntity>,
     _window_intent_subscription: Subscription,

@@ -10,7 +10,7 @@ use gpui::{App, Context, Task};
 use oxideterm_connections::{ConnectionInfo, ConnectionStore};
 use oxideterm_gpui_terminal::{TerminalNotice, TerminalNoticeVariant};
 use oxideterm_public_mcp::{
-    ApprovalRef, ApprovalStatus, ArtifactRef, AuditQuery, ClientApprovalMode, ClientCredential,
+    ApprovalStatus, ArtifactRef, AuditQuery, ClientApprovalMode, ClientCredential,
     ClientProjection, ClientRef, ClientRegistry, CommandRef, ConnectionRef, DesktopRef,
     DomainBroker, DomainMessage, DomainRequest, DomainRequestReceiver, FileSessionRef, ForwardRef,
     NodeRef, OperationRef, PublicMcpHttpServer, PublicMcpState, PublicToolCall, RecordingRef,
@@ -556,7 +556,6 @@ impl PublicMcpWorkspaceBridge {
             .or_insert_with(|| (client_ref.clone(), internal_key));
         connection_ref
     }
-
 }
 
 impl Drop for PublicMcpWorkspaceBridge {

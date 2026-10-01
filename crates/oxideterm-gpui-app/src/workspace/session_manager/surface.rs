@@ -151,7 +151,7 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = self.tokens.ui;
-        let has_background = self.background_surface_active("session_manager");
+        let has_background = false;
         let (
             view_mode,
             status,

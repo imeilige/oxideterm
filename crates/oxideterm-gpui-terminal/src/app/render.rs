@@ -3,8 +3,8 @@ use std::{path::PathBuf, sync::Arc, time::Instant};
 use gpui::{
     Anchor, AnchoredPositionMode, AnyElement, App, ClipboardItem, Context, ExternalPaths,
     FocusHandle, Focusable, FontWeight, IntoColor, MouseButton, MouseDownEvent, MouseMoveEvent,
-    MouseUpEvent, ObjectFit, Render, RenderImage, SharedString, StyledImage, Window, anchored,
-    deferred, div, point, prelude::*, px, rgb, rgba,
+    MouseUpEvent, Render, SharedString, Window, anchored, deferred, div, point, prelude::*, px,
+    rgb, rgba,
 };
 use oxideterm_gpui_ui::button::{
     ButtonRadius, ContextChipOptions, IconButtonOptions, context_chip, icon_button,
@@ -29,12 +29,10 @@ use oxideterm_terminal::{
 };
 
 use super::{
-    BACKGROUND_IMAGE_COMPLETION_POLL_INTERVAL, ImageRenderCache, ModemProgressState,
-    SmoothScrollSnapshotCache, TerminalCommandNavigationDirection, TerminalContextAction,
-    TerminalContextMenu, TerminalPane, TerminalPaneEvent, TmuxPromptKind, TmuxPromptState,
-    command_mark_ui_available,
+    ImageRenderCache, ModemProgressState, SmoothScrollSnapshotCache,
+    TerminalCommandNavigationDirection, TerminalContextAction, TerminalContextMenu, TerminalPane,
+    TerminalPaneEvent, TmuxPromptKind, TmuxPromptState, command_mark_ui_available,
 };
-use crate::background_cache::background_display_target;
 use crate::terminal_ui::*;
 use crate::terminal_view::*;
 
@@ -206,13 +204,6 @@ fn clamp_terminal_context_menu_position(
 
 const TERMINAL_VISUAL_BELL_OVERLAY_ALPHA: u8 = 0x66;
 
-fn terminal_pane_base_is_transparent(has_window_background: bool) -> bool {
-    // Content-scoped images paint inside the pane above its fallback color.
-    // A window-scoped image always needs a transparent pane base, including
-    // visual-bell frames, so ordinary shell BEL events cannot hide the image.
-    has_window_background
-}
-
 fn terminal_visual_bell_overlay_color(bell_background: u32) -> u32 {
     serial_color_alpha(bell_background, TERMINAL_VISUAL_BELL_OVERLAY_ALPHA)
 }
@@ -363,29 +354,7 @@ impl Render for TerminalPane {
         let search_matches = self.current_search_matches();
         let selection_highlight_query = self.selection_highlight_query();
 
-        let background = self.preferences.background.clone().filter(|_background| {
-            // Keep terminal repaint frames off the filesystem hot path; image
-            // fallback and the background loader handle missing files.
-            self.preferences.render_policy.allow_background_images
-        });
-        let background_display = self
-            .bounds
-            .map(|bounds| background_display_target(bounds.size, window.scale_factor()))
-            .unwrap_or_else(|| {
-                // The viewport bounds are only known after the first layout pass,
-                // so fall back to the window content area.
-                background_display_target(window.bounds().size, window.scale_factor())
-            });
-        let background_layer = background.as_ref().map(|background| {
-            terminal_background_layer(
-                background.clone(),
-                self.background_image_cache
-                    .render_background_image(background, background_display),
-            )
-        });
-        self.ensure_background_image_completion_poll(cx);
-        let transparent_pane_base =
-            terminal_pane_base_is_transparent(self.preferences.transparent_background);
+        let transparent_pane_base = self.preferences.transparent_background;
         let bell_flash_layer = self.bell_flash.then(|| {
             // Keep the flash above image backgrounds but below terminal text.
             // This preserves visual feedback without replacing the background.
@@ -468,7 +437,7 @@ impl Render for TerminalPane {
             self.preferences.semantic_shell,
         )
         .row_timestamps(row_timestamps)
-        .transparent_background(background.is_some() || self.preferences.transparent_background)
+        .transparent_background(self.preferences.transparent_background)
         .ghost_text(self.terminal_ghost_text())
         .viewport_rows(viewport_rows)
         .scrollbar_display_offset(scrollbar_display_offset)
@@ -578,7 +547,6 @@ impl Render for TerminalPane {
             .on_scroll_wheel(cx.listener(|this, event, _window, cx| {
                 this.handle_scroll(event, cx);
             }))
-            .when_some(background_layer, |pane, background| pane.child(background))
             .when_some(bell_flash_layer, |pane, flash| pane.child(flash))
             .child(
                 div()
@@ -855,10 +823,6 @@ impl TerminalPane {
         for image in self.image_cache.take_retired_images() {
             // GPUI keeps painted RenderImage values in the window sprite atlas
             // until the owner explicitly drops the image id.
-            cx.drop_image(image, Some(window));
-        }
-        for image in self.background_image_cache.take_retired_images() {
-            // Background blur images use the same atlas path as terminal images.
             cx.drop_image(image, Some(window));
         }
     }
@@ -1825,37 +1789,6 @@ fn serial_color_alpha(rgb_color: u32, alpha: u8) -> u32 {
 }
 
 impl TerminalPane {
-    fn ensure_background_image_completion_poll(&mut self, cx: &mut Context<Self>) {
-        if self.background_image_poll_active || !self.background_image_cache.has_pending() {
-            return;
-        }
-        self.background_image_poll_active = true;
-        cx.spawn(async move |weak, cx| {
-            loop {
-                cx.background_executor()
-                    .timer(BACKGROUND_IMAGE_COMPLETION_POLL_INTERVAL)
-                    .await;
-                let Ok(pending) = weak.update(cx, |this, cx| {
-                    let changed = this.background_image_cache.drain_completed();
-                    let pending = this.background_image_cache.has_pending();
-                    if changed {
-                        cx.notify();
-                    }
-                    if !pending {
-                        this.background_image_poll_active = false;
-                    }
-                    pending
-                }) else {
-                    break;
-                };
-                if !pending {
-                    break;
-                }
-            }
-        })
-        .detach();
-    }
-
     fn render_snapshot_for_smooth_scroll(&mut self) -> (TerminalSnapshot, gpui::Pixels, usize) {
         let snapshot = self.snapshot.clone();
         let viewport_rows = snapshot.rows;
@@ -2711,49 +2644,6 @@ impl TerminalPane {
     }
 }
 
-fn terminal_background_layer(
-    background: TerminalBackgroundPreferences,
-    image: Option<Arc<RenderImage>>,
-) -> AnyElement {
-    let image = if background.fit == TerminalBackgroundFit::Tile && background.blur <= 0.01 {
-        gpui::img(background.path.clone()).with_fallback(|| div().size_full().into_any_element())
-    } else if let Some(image) = image {
-        gpui::img(image)
-    } else {
-        return div()
-            .absolute()
-            .top_0()
-            .left_0()
-            .right_0()
-            .bottom_0()
-            .into_any_element();
-    };
-
-    div()
-        .absolute()
-        .top_0()
-        .left_0()
-        .right_0()
-        .bottom_0()
-        .overflow_hidden()
-        .child(
-            image
-                .size_full()
-                .object_fit(terminal_background_object_fit(background.fit))
-                .opacity(background.opacity.clamp(0.0, 1.0)),
-        )
-        .into_any_element()
-}
-
-fn terminal_background_object_fit(fit: TerminalBackgroundFit) -> ObjectFit {
-    match fit {
-        TerminalBackgroundFit::Cover => ObjectFit::Cover,
-        TerminalBackgroundFit::Contain => ObjectFit::Contain,
-        TerminalBackgroundFit::Fill => ObjectFit::Fill,
-        TerminalBackgroundFit::Tile => ObjectFit::None,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use gpui::AppContext;
@@ -2763,8 +2653,7 @@ mod tests {
 
     use super::{
         TERMINAL_VISUAL_BELL_OVERLAY_ALPHA, external_paths_for_local_terminal,
-        terminal_cursor_shape_for_render, terminal_pane_base_is_transparent,
-        terminal_visual_bell_overlay_color,
+        terminal_cursor_shape_for_render, terminal_visual_bell_overlay_color,
     };
 
     struct AutosuggestTestView {
@@ -2960,9 +2849,7 @@ mod tests {
     }
 
     #[test]
-    fn terminal_pane_base_keeps_window_background_visible_during_visual_bell() {
-        assert!(terminal_pane_base_is_transparent(true));
-        assert!(!terminal_pane_base_is_transparent(false));
+    fn visual_bell_overlay_keeps_its_translucent_alpha() {
         assert_eq!(
             terminal_visual_bell_overlay_color(0x17131a) & 0xff,
             u32::from(TERMINAL_VISUAL_BELL_OVERLAY_ALPHA)

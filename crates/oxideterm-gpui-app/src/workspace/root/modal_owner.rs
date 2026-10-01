@@ -14,7 +14,6 @@ pub(in crate::workspace) enum ActiveTabWindowModalKind {
     KnowledgeDelete,
     KeybindingReset,
     ManagedKey,
-    PortablePassword,
     SessionManagerGroupManager,
     SessionManagerDelete,
     ForwardEdit,
@@ -120,9 +119,6 @@ pub(in crate::workspace) enum ActiveWindowModalOwner {
     LegalNotice {
         phase: oxideterm_gpui_ui::motion::ExitPhase,
     },
-    NativeUpdateReleaseNotes {
-        phase: oxideterm_gpui_ui::motion::ExitPhase,
-    },
     Shortcuts,
     MermaidZoom,
 }
@@ -172,7 +168,6 @@ impl ActiveWindowModalOwner {
             Self::VersionMigration => 40,
             Self::Onboarding => 41,
             Self::LegalNotice { .. } => 42,
-            Self::NativeUpdateReleaseNotes { .. } => 43,
             Self::Shortcuts => 44,
             Self::MermaidZoom => 46,
         }
@@ -202,8 +197,7 @@ impl ActiveWindowModalOwner {
             | Self::SettingsSshConfigImport { phase }
             | Self::OxideImport { phase }
             | Self::OxideExport { phase }
-            | Self::LegalNotice { phase }
-            | Self::NativeUpdateReleaseNotes { phase } => phase,
+            | Self::LegalNotice { phase } => phase,
             Self::NewConnection
             | Self::LocalShellLauncher
             | Self::JumpServer
@@ -320,7 +314,6 @@ pub(in crate::workspace) struct ActiveWindowModalProjection {
     pub(in crate::workspace) onboarding_open: bool,
     pub(in crate::workspace) shortcuts_open: bool,
     pub(in crate::workspace) mermaid_zoom_open: bool,
-    pub(in crate::workspace) native_update_toast_visible: bool,
 }
 
 impl ActiveWindowModalProjection {
@@ -373,11 +366,6 @@ impl ActiveWindowModalProjection {
             }
             overlay::WorkspaceOverlayConfirmOwnerKind::LegalNotice => {
                 ActiveWindowModalOwner::LegalNotice {
-                    phase: snapshot.phase,
-                }
-            }
-            overlay::WorkspaceOverlayConfirmOwnerKind::NativeUpdateReleaseNotes => {
-                ActiveWindowModalOwner::NativeUpdateReleaseNotes {
                     phase: snapshot.phase,
                 }
             }
@@ -477,7 +465,6 @@ impl ActiveWindowModalProjection {
         // handoffs, the broadcast menu, and AI floating controls are excluded.
         // They are transient nonblocking layers and keep their own focused
         // input or Escape handling instead of consuming every window key.
-        let _native_update_toast_visible = self.native_update_toast_visible;
         [
             new_connection_owner,
             local_shell_owner,
@@ -657,7 +644,6 @@ impl WorkspaceApp {
                     .handle_for_role(window_registry::WindowRole::Main)
                     .is_some_and(|handle| handle.window_id() == state.window_id)
             }),
-            native_update_toast_visible: self.native_update_notification_open,
         }
         .top_owner()
     }
@@ -727,12 +713,7 @@ impl WorkspaceApp {
             TabKind::Settings => {
                 let settings = self.settings_workspace.read(cx);
                 let ai = self.ai_entity.read(cx);
-                if settings.portable_password_dialog_open() {
-                    Some(ActiveTabWindowModalSnapshot {
-                        kind: ActiveTabWindowModalKind::PortablePassword,
-                        phase: settings.portable_password_dialog_phase(),
-                    })
-                } else if settings.managed_key_dialog_open() {
+                if settings.managed_key_dialog_open() {
                     Some(ActiveTabWindowModalSnapshot {
                         kind: ActiveTabWindowModalKind::ManagedKey,
                         phase: settings.managed_key_dialog_phase(),
@@ -1042,9 +1023,6 @@ impl WorkspaceApp {
             ActiveWindowModalOwner::LegalNotice { .. } => {
                 let _ = self.handle_help_legal_notice_key(event, cx);
             }
-            ActiveWindowModalOwner::NativeUpdateReleaseNotes { .. } => {
-                let _ = self.handle_native_update_release_notes_key(event, cx);
-            }
             ActiveWindowModalOwner::Shortcuts => {
                 self.handle_shortcuts_modal_key(event, cx);
             }
@@ -1071,12 +1049,6 @@ impl WorkspaceApp {
             }
             ActiveTabWindowModalKind::KnowledgeLeaveConfirmation => {
                 self.handle_knowledge_leave_confirmation_key(event, window, cx)
-            }
-            ActiveTabWindowModalKind::PortablePassword => {
-                if event.keystroke.key.as_str() == "escape" {
-                    self.close_portable_password_change_dialog(cx);
-                }
-                true
             }
             ActiveTabWindowModalKind::ManagedKey => {
                 if event.keystroke.key.as_str() == "escape" {

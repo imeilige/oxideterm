@@ -80,7 +80,7 @@ impl WorkspaceApp {
     ) -> AnyElement {
         let theme = self.tokens.ui;
         let active = self.session_manager.read(cx).focused_input() == Some(target);
-        let has_background = self.background_surface_active("session_manager");
+        let has_background = false;
         let marked = self
             .marked_text_for_target(WorkspaceImeTarget::SessionManager(target), cx)
             .unwrap_or_default();

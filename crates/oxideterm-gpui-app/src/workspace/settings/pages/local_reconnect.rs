@@ -76,8 +76,7 @@ impl WorkspaceApp {
                     cx,
                 )],
             ),
-            2 => self.local_privilege_credentials_card(cx),
-            3 => {
+            2 => {
                 let effective_shells = self.effective_local_shells_for_settings(settings);
                 let shell_list = if effective_shells.is_empty() {
                     div()
@@ -169,93 +168,6 @@ impl WorkspaceApp {
             );
         }
         rows
-    }
-
-    pub(in crate::workspace) fn local_privilege_credentials_card(
-        &self,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let theme = self.tokens.ui;
-        let credential_count = self
-            .connection_store
-            .list_privilege_credentials(LOCAL_SHELL_PRIVILEGE_CONNECTION_ID)
-            .map(|credentials| credentials.len())
-            .unwrap_or_default();
-        let scope_id = LOCAL_SHELL_PRIVILEGE_CONNECTION_ID.to_string();
-        let summary = div()
-            .w_full()
-            .min_w(px(0.0))
-            .flex()
-            .items_center()
-            .justify_between()
-            .gap(px(12.0))
-            .child(
-                div()
-                    // The summary owns the remaining row width so localized copy cannot collapse to min-content.
-                    .flex_1()
-                    .min_w(px(0.0))
-                    .child(
-                        div()
-                            .flex()
-                            .items_center()
-                            .gap(px(8.0))
-                            .text_size(px(self.tokens.metrics.ui_text_sm))
-                            .font_weight(gpui::FontWeight::MEDIUM)
-                            .text_color(rgb(theme.text))
-                            .child(Self::render_lucide_icon(
-                                LucideIcon::KeyRound,
-                                16.0,
-                                rgb(theme.text_muted),
-                            ))
-                            .child(self.i18n_replace(
-                                "settings_view.privilege_credentials.credential_count",
-                                &[("count", credential_count.to_string())],
-                            )),
-                    )
-                    .child(
-                        div()
-                            .mt(px(4.0))
-                            .text_size(px(self.tokens.metrics.ui_text_xs))
-                            .text_color(rgb(theme.text_muted))
-                            .child(
-                                self.i18n
-                                    .t("settings_view.privilege_credentials.description"),
-                            ),
-                    ),
-            )
-            .child(
-                self.workspace_toolbar_action_button(
-                    self.i18n.t("terminal.privilege_helper.manage"),
-                    Some(
-                        Self::render_lucide_icon(LucideIcon::Settings, 14.0, rgb(theme.text_muted))
-                            .into_any_element(),
-                    ),
-                    ToolbarButtonOptions {
-                        button: ButtonOptions {
-                            variant: ButtonVariant::Outline,
-                            size: ButtonSize::Sm,
-                            ..ButtonOptions::default()
-                        },
-                        ..ToolbarButtonOptions::default()
-                    },
-                    cx.listener(move |this, _event, window, cx| {
-                        // Local terminal settings intentionally delegate
-                        // credential editing to the unified privilege surface.
-                        this.open_privilege_credentials_settings(
-                            Some(scope_id.clone()),
-                            window,
-                            cx,
-                        );
-                        cx.stop_propagation();
-                    }),
-                ),
-            );
-
-        self.settings_card(
-            "settings_view.local_terminal.privilege_credentials",
-            "settings_view.local_terminal.privilege_credentials_hint",
-            vec![summary.into_any_element()],
-        )
     }
 
     pub(in crate::workspace) fn settings_reconnect_section(

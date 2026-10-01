@@ -130,7 +130,6 @@ class WindowsInstallerScriptTests(unittest.TestCase):
             ):
                 package_native.create_windows_installer(
                     binary=Path("oxideterm-native.exe"),
-                    update_helper=Path("oxideterm-update-helper.exe"),
                     target="x86_64-pc-windows-msvc",
                     version="2.1.0",
                     label="windows_x64",
@@ -146,9 +145,7 @@ class WindowsInstallerScriptTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             payload = root / "payload"
-            (payload / "tools").mkdir(parents=True)
             (payload / "oxideterm-native.exe").write_bytes(b"app payload")
-            (payload / "tools" / "oxideterm-update-helper.exe").write_bytes(b"helper payload")
             installer = root / "setup.exe"
             source = root / "setup.nsi"
             source.write_text(package_native.windows_installer_script(
@@ -166,7 +163,7 @@ class WindowsInstallerScriptTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertEqual(installer.read_bytes()[:2], b"MZ")
 
-    def test_update_mode_stages_files_and_installs_helper_directly(self) -> None:
+    def test_update_mode_stages_files_and_launches_the_app_directly(self) -> None:
         script = package_native.windows_installer_script(
             binary=Path("oxideterm-native.exe"),
             version="1.2.0-gpui-preview.2",
@@ -179,12 +176,7 @@ class WindowsInstallerScriptTests(unittest.TestCase):
         self.assertIn('/OXIDETERM_UPDATE=1', script)
         self.assertIn('SetSilent silent', script)
         self.assertIn('RMDir /r "$INSTDIR\\install"', script)
-        self.assertIn('SetOutPath "$INSTDIR\\tools"', script)
-        self.assertIn('tools/oxideterm-update-helper.exe"', script)
-        self.assertIn('SetOutPath "$INSTDIR\\install"', script)
-        self.assertIn('Exec \'"$INSTDIR\\tools\\oxideterm-update-helper.exe"', script)
-        self.assertIn('--install-dir "$INSTDIR"', script)
-        self.assertIn('--app-exe "$INSTDIR\\oxideterm-native.exe" --launch', script)
+        self.assertIn('Exec \'"$INSTDIR\\oxideterm-native.exe"\'', script)
         self.assertIn('StrCmp $IsOxideUpdate "1" start_menu_shortcut_done', script)
         self.assertIn('StrCmp $IsOxideUpdate "1" desktop_shortcut_done', script)
         self.assertNotIn('$LOCALAPPDATA\\OxideTerm\\oxideterm.exe', script)
@@ -575,7 +567,6 @@ class ReleaseDocumentTests(unittest.TestCase):
             self.assertEqual(
                 {path.name for path in destination.iterdir()},
                 {
-                    "BACKGROUND-ASSETS-LICENSE.md",
                     "GPUI-CE-LICENSE-APACHE",
                     "LICENSE",
                     "MATERIAL-ICON-THEME-LICENSE-MIT",
@@ -591,35 +582,6 @@ class ReleaseDocumentTests(unittest.TestCase):
                 },
             )
             self.assertGreater((destination / "THIRD_PARTY_NOTICES.md").stat().st_size, 0)
-            background_license = (
-                destination / "BACKGROUND-ASSETS-LICENSE.md"
-            ).read_text(encoding="utf-8")
-            self.assertIn("oxide-nocturne-v1.webp", background_license)
-            self.assertIn("CC-BY-4.0", background_license)
-            self.assertIn("does not grant rights", background_license)
-
-    def test_portable_update_manifest_owns_only_release_entries(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            package_root = Path(directory)
-            binary = package_root / "oxideterm-native"
-            update_helper = package_root / "oxideterm-update-helper"
-
-            package_native.write_portable_update_manifest(
-                package_root, binary, update_helper
-            )
-
-            manifest = package_native.json.loads(
-                (package_root / "portable-update.json").read_text(encoding="utf-8")
-            )
-            self.assertEqual(manifest["appExecutable"], binary.name)
-            self.assertEqual(
-                manifest["updateHelper"],
-                f"tools/{update_helper.name}",
-            )
-            self.assertIn("resources", manifest["managedEntries"])
-            self.assertIn("tools", manifest["managedEntries"])
-            self.assertNotIn("data", manifest["managedEntries"])
-            self.assertNotIn("portable.json", manifest["managedEntries"])
 
 
 class ReleaseVersionTests(unittest.TestCase):

@@ -4,7 +4,7 @@
 use super::*;
 use gpui::StatefulInteractiveElement;
 use oxideterm_gpui_ui::dropdown_menu::{
-    DropdownMenuItemKind, dropdown_menu_content, dropdown_menu_item, dropdown_menu_separator,
+    DropdownMenuItemKind, dropdown_menu_content, dropdown_menu_item,
 };
 
 const TERMINAL_RECORDING_MENU_WIDTH: f32 = 220.0;
@@ -16,11 +16,7 @@ impl WorkspaceApp {
         const COMMAND_BAR_BORDER_ALPHA: u32 = 0xb3; // Tauri border-theme-border/70
 
         let theme = self.tokens.ui;
-        let command_bar_background = if self.window_background_preferences().is_some() {
-            self.workspace_chrome_background(theme.bg)
-        } else {
-            rgba((theme.bg << 8) | COMMAND_BAR_BG_ALPHA)
-        };
+        let command_bar_background = rgba((theme.bg << 8) | COMMAND_BAR_BG_ALPHA);
         let workspace = cx.entity();
         // The visible chip and completion providers share Tauri's target-label
         // inference so local shells that are currently inside SSH show the

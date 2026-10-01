@@ -28,7 +28,6 @@ use oxideterm_ai::{
 use oxideterm_gpui_markdown::{
     MarkdownBlockLayout, MarkdownOptions, parser as markdown_parser, render as markdown_render,
 };
-use oxideterm_gpui_settings_view::SettingsTab;
 use oxideterm_gpui_ui::{
     ConfirmDialogVariant, ConfirmDialogView, TextInputView,
     ai::{

@@ -1,5 +1,3 @@
-use std::sync::atomic::{AtomicBool, Ordering};
-
 use gpui::{
     AnchoredPositionMode, Corner, Div, ObjectFit, PathPromptOptions, Rgba, anchored, deferred, img,
     point, relative,
@@ -8,58 +6,41 @@ use oxideterm_settings::{
     AppIconVariant, FrostedGlassMode, HighlightRule, HighlightRuleSet, Language,
     MAX_HIGHLIGHT_RULE_SETS, MAX_HIGHLIGHT_RULES, PersistedSettings,
     RECOMMENDED_FOCUS_HANDOFF_COMMANDS, RemoteShellIntegrationMode, TerminalSemanticScheme,
-    UpdateChannel, create_default_highlight_rule, reindex_highlight_rules,
-    sanitize_highlight_rule_sets,
+    create_default_highlight_rule, reindex_highlight_rules, sanitize_highlight_rule_sets,
 };
 use oxideterm_settings_model::{
-    AcpAgentPreset, AiProviderModelChipItem, AiProviderModelPanel, AiSettingsPage,
-    AiToolPolicyGroup, AiToolPolicyGroupState, CUSTOM_SEMANTIC_SCHEME_PREFIX, CliCompanionStatus,
-    KnowledgeDeleteTarget, MAX_SEMANTIC_RULES, SEMANTIC_CLASSES,
-    SETTINGS_SECTION_HEADER_ITEM_COUNT, SemanticClass, SemanticRuleContext, SemanticRuleDefinition,
-    SemanticSchemeDocument, SettingsDynamicSectionCounts, SettingsInputDraftApply,
-    TERMINAL_THEME_COLOR_FIELDS, ThemeColorField, ThemeEditorSection, ThemeEditorState,
-    UI_THEME_COLOR_FIELDS, add_custom_semantic_rule, ai_add_acp_agent, ai_add_acp_agent_preset,
-    ai_delete_acp_agent, ai_mcp_configs, ai_mcp_server_signature, ai_mcp_transport_label,
-    ai_model_context_window_panels,
-    ai_model_context_window_row as ai_model_context_window_row_model, ai_provider_card_signature,
-    ai_provider_model_chip_rows, ai_provider_model_row_signature, ai_provider_views,
-    ai_tool_auto_approve_total_count, ai_tool_auto_approved_count, ai_tool_policy_groups,
-    ai_update_provider, apply_cloud_sync_form_input_owned, apply_persisted_settings_input_draft,
-    cloud_sync_form_input_value_ref, create_custom_semantic_scheme, current_time_millis,
-    custom_theme_display_name, delete_custom_semantic_rule, delete_custom_semantic_scheme,
-    delete_custom_theme_from_settings, edit_custom_semantic_scheme, editor_terminal_theme,
-    editor_ui_colors, export_custom_semantic_scheme, import_custom_semantic_scheme_named,
-    is_custom_theme_id, parse_color_hex, persisted_settings_input_value, reconnect_attempt_label,
+    AiSettingsPage, CUSTOM_SEMANTIC_SCHEME_PREFIX, CliCompanionStatus, KnowledgeDeleteTarget,
+    MAX_SEMANTIC_RULES, SEMANTIC_CLASSES, SETTINGS_SECTION_HEADER_ITEM_COUNT, SemanticClass,
+    SemanticRuleContext, SemanticRuleDefinition, SemanticSchemeDocument,
+    SettingsDynamicSectionCounts, SettingsInputDraftApply, TERMINAL_THEME_COLOR_FIELDS,
+    ThemeColorField, ThemeEditorSection, ThemeEditorState, UI_THEME_COLOR_FIELDS,
+    add_custom_semantic_rule, ai_mcp_configs, ai_mcp_transport_label, ai_provider_views,
+    apply_cloud_sync_form_input_owned, apply_persisted_settings_input_draft,
+    cloud_sync_form_input_value_ref, create_custom_semantic_scheme, custom_theme_display_name,
+    delete_custom_semantic_rule, delete_custom_semantic_scheme, delete_custom_theme_from_settings,
+    edit_custom_semantic_scheme, editor_terminal_theme, editor_ui_colors,
+    export_custom_semantic_scheme, import_custom_semantic_scheme_named, is_custom_theme_id,
+    parse_color_hex, persisted_settings_input_value, reconnect_attempt_label,
     reconnect_base_delay_options, reconnect_delay_label, reconnect_max_attempt_options,
     reconnect_max_delay_options, save_theme_editor_snapshot_to_settings,
-    set_ai_tool_policy_group_approval, set_ai_user_context_window, settings_multiline_line_ranges,
-    settings_multiline_line_selection,
+    settings_multiline_line_ranges, settings_multiline_line_selection,
     settings_section_list_identity as settings_model_section_list_identity,
     settings_section_list_item_count as settings_model_section_list_item_count,
     take_cloud_sync_form_input_value, theme_editor_from_settings,
 };
 use oxideterm_theme::BUILT_IN_THEMES;
 
-pub(in crate::workspace) use pages::open_path_external;
 use super::*;
 use super::{ai_state::AiSettingsViewSection, ime::WorkspaceImeTarget};
 use oxideterm_ai::{
-    AI_PROVIDER_TEMPLATES, AiProviderKeyDisplayState, AiProviderView,
-    add_provider_from_template as ai_add_provider_from_template,
-    add_provider_model as ai_add_provider_model,
-    apply_provider_model_refresh as ai_apply_provider_model_refresh, generated_provider_id,
+    AiProviderView, apply_provider_model_refresh as ai_apply_provider_model_refresh,
     provider_id as ai_provider_id, provider_key_display_state as ai_provider_key_display_state,
-    provider_string as ai_provider_string,
-    provider_template_by_type as ai_provider_template_by_type, provider_view as ai_provider_view,
+    provider_view as ai_provider_view,
     remove_provider_at_with_scoped_settings as ai_remove_provider_at_with_scoped_settings,
-    set_active_provider_selection as ai_set_active_provider_selection,
 };
 use oxideterm_connections::{
-    ConnectionImportApplyRequest, ConnectionImportDuplicateStrategy, ConnectionImportPreview,
-    ConnectionImportSource, ImportedConnectionAuthType, LOCAL_SHELL_PRIVILEGE_CONNECTION_ID,
-    ManagedSshKeyInfo, ManagedSshKeyOrigin, ManagedSshKeyUsage, SavePrivilegeCredentialRequest,
-    SecretString, SshConfigHost, apply_connection_import, list_available_ssh_keys,
-    list_ssh_config_hosts, preview_connection_import,
+    ManagedSshKeyInfo, ManagedSshKeyOrigin, ManagedSshKeyUsage, SecretString, SshConfigHost,
+    list_available_ssh_keys, list_ssh_config_hosts,
 };
 use oxideterm_gpui_platform::vibrancy::{NativeVibrancyMode, VibrancySupport, available_modes};
 use oxideterm_gpui_settings_view::*;
@@ -70,9 +51,8 @@ use oxideterm_gpui_ui::{
         SplitFooterButtonEdge, SplitFooterButtonOptions, ToolbarButtonIconPosition,
         ToolbarButtonOptions, split_footer_button,
     },
-    checkbox::{CheckboxOptions, CheckboxState, checkbox, checkbox_with_state},
+    checkbox::checkbox,
     entity_row::{EntityListRowOptions, entity_list_row},
-    form_field,
     modal::{
         dialog_content, dialog_description, dialog_footer, dialog_header, dialog_title,
         dismissible_dialog_backdrop, overlay_content_boundary, popover_backdrop,
@@ -175,14 +155,11 @@ mod connections_page;
 mod controls;
 mod entity;
 pub(in crate::workspace) use entity::{
-    BackgroundGalleryOperationResult, CliCompanionOperation, CliCompanionSnapshot,
-    ConnectionImportSnapshot, DataDirectoryConfirm, DataDirectoryOperationResult,
-    KeybindingFileOperationResult, KeybindingRecordingFooterAction, KeybindingRecordingKeyAction,
-    KeybindingResetConfirmKeyAction, LaunchAtLoginError, ManagedKeyDialogSnapshot,
-    PortablePasswordDialogSnapshot, PortableStatusRefresh, PrivilegeCredentialDraft,
-    PrivilegeCredentialSnapshot, SettingsNavigationDraftAction, SettingsWorkspaceEntity,
-    SettingsWorkspaceEvent, SettingsWorkspaceToast, SshConfigImportSnapshot,
-    ThemeEditorOperationResult, ThemeImportResult,
+    CliCompanionOperation, CliCompanionSnapshot, DataDirectoryConfirm,
+    DataDirectoryOperationResult, KeybindingFileOperationResult, KeybindingRecordingFooterAction,
+    KeybindingRecordingKeyAction, KeybindingResetConfirmKeyAction, LaunchAtLoginError,
+    ManagedKeyDialogSnapshot, SettingsNavigationDraftAction, SettingsWorkspaceEntity,
+    SettingsWorkspaceEvent, SshConfigImportSnapshot, ThemeEditorOperationResult, ThemeImportResult,
 };
 mod general_terminal_pages;
 pub(in crate::workspace) use general_terminal_pages::SETTINGS_TERMINAL_CUSTOM_FONT_INPUT_WIDTH;
@@ -192,8 +169,6 @@ use local_terminal::application_semantic_scheme_label;
 pub(in crate::workspace) use local_terminal::expand_local_terminal_cwd;
 mod navigation_editor;
 mod pages;
-mod portable_runtime;
-mod privilege_credentials_page;
 mod remote_shell_integration;
 mod search;
 mod sftp_page;
@@ -202,17 +177,12 @@ mod terminal_controls;
 mod terminal_display;
 mod terminal_triggers;
 pub(in crate::workspace) use terminal_triggers::TerminalTriggersSettingsState;
-mod update;
-mod update_ui;
 
 pub(in crate::workspace) use ai_page::AiTextEditorDialog;
 pub(in crate::workspace) use cli_companion::{
     CLI_COMPANION_COMMAND_NAME, LEGACY_CLI_COMPANION_COMMAND_NAME, cli_install_path,
 };
-use connections_page::{
-    connection_idle_timeout_options, connection_import_duplicate_strategy_label,
-    connection_import_source_label, connection_import_source_options,
-};
+use connections_page::connection_idle_timeout_options;
 use pages::settings_keybinding_scope_matches;
 pub(in crate::workspace) use remote_shell_integration::{
     RemoteShellIntegrationAction, RemoteShellIntegrationCardSnapshot,
@@ -220,15 +190,11 @@ pub(in crate::workspace) use remote_shell_integration::{
     RemoteShellIntegrationGateOutcome, RemoteShellIntegrationNotice,
     RemoteShellIntegrationRuntimeState,
 };
-pub(in crate::workspace) use update::{
-    NativeUpdateRenderState, native_update_progress_hint, native_update_progress_ratio,
-};
 
 fn settings_tab_lucide(icon: SettingsTabIcon) -> LucideIcon {
     match icon {
         SettingsTabIcon::HardDrive => LucideIcon::HardDrive,
         SettingsTabIcon::HelpCircle => LucideIcon::HelpCircle,
-        SettingsTabIcon::Key => LucideIcon::Key,
         SettingsTabIcon::Keyboard => LucideIcon::Keyboard,
         SettingsTabIcon::Monitor => LucideIcon::Monitor,
         SettingsTabIcon::Network => LucideIcon::Network,
@@ -236,23 +202,5 @@ fn settings_tab_lucide(icon: SettingsTabIcon) -> LucideIcon {
         SettingsTabIcon::Square => LucideIcon::Square,
         SettingsTabIcon::Terminal => LucideIcon::Terminal,
         SettingsTabIcon::WifiOff => LucideIcon::WifiOff,
-    }
-}
-
-fn settings_background_tab_lucide(icon: SettingsBackgroundTabIcon) -> LucideIcon {
-    match icon {
-        SettingsBackgroundTabIcon::Activity => LucideIcon::Activity,
-        SettingsBackgroundTabIcon::ArrowLeftRight => LucideIcon::ArrowLeftRight,
-        SettingsBackgroundTabIcon::Bell => LucideIcon::Bell,
-        SettingsBackgroundTabIcon::Cloud => LucideIcon::Cloud,
-        SettingsBackgroundTabIcon::Folder => LucideIcon::Folder,
-        SettingsBackgroundTabIcon::FolderInput => LucideIcon::FolderInput,
-        SettingsBackgroundTabIcon::Gauge => LucideIcon::Gauge,
-        SettingsBackgroundTabIcon::ListTree => LucideIcon::ListTree,
-        SettingsBackgroundTabIcon::Monitor => LucideIcon::Monitor,
-        SettingsBackgroundTabIcon::Network => LucideIcon::Network,
-        SettingsBackgroundTabIcon::Rocket => LucideIcon::Rocket,
-        SettingsBackgroundTabIcon::Settings => LucideIcon::Settings,
-        SettingsBackgroundTabIcon::Terminal => LucideIcon::Terminal,
     }
 }

@@ -124,11 +124,6 @@ rustPlatform.buildRustPackage {
     "--bins"
   ];
 
-  cargoTestFlags = [
-    "-p"
-    "oxideterm-update"
-  ];
-
   strictDeps = true;
   LIBCLANG_PATH = "${libclang.lib}/lib";
 

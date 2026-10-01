@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 use gpui::{
     Font, FontFallbacks, FontFeatures, FontStyle, FontWeight, IntoColor, Pixels, SharedString,
@@ -17,9 +17,7 @@ use oxideterm_terminal_semantic::{
 };
 use oxideterm_theme::{ThemeTokens, default_tokens};
 
-use crate::{
-    command_facts::SharedTerminalCommandHistory,
-};
+use crate::command_facts::SharedTerminalCommandHistory;
 
 pub const MAX_HIGHLIGHT_RULES: usize = 32;
 pub const MAX_HIGHLIGHT_PATTERN_LENGTH: usize = 512;
@@ -112,7 +110,6 @@ pub struct TerminalUiPreferences {
     pub show_performance_overlay: bool,
     pub theme: TerminalUiTheme,
     pub render_policy: EffectiveRenderPolicy,
-    pub background: Option<TerminalBackgroundPreferences>,
     pub transparent_background: bool,
     pub processing_failed_message: String,
     pub paste_labels: TerminalPasteLabels,
@@ -218,7 +215,6 @@ impl Default for TerminalUiPreferences {
             show_performance_overlay: false,
             theme: TerminalUiTheme::default(),
             render_policy: EffectiveRenderPolicy::quality(),
-            background: None,
             transparent_background: false,
             processing_failed_message:
                 "Terminal processing stopped. Reconnect this session to continue.".into(),
@@ -777,22 +773,6 @@ pub struct TerminalHighlightRule {
 pub struct TerminalHighlightRuleSetOverride {
     pub id: String,
     pub rules: Arc<[TerminalHighlightRule]>,
-}
-
-#[derive(Clone, Debug)]
-pub struct TerminalBackgroundPreferences {
-    pub path: PathBuf,
-    pub opacity: f32,
-    pub blur: f32,
-    pub fit: TerminalBackgroundFit,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
-pub enum TerminalBackgroundFit {
-    Cover,
-    Contain,
-    Fill,
-    Tile,
 }
 
 #[derive(Clone)]

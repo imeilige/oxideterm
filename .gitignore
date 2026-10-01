@@ -25,6 +25,7 @@ dist/
 *.dll
 __pycache__/
 *.py[cod]
+crates/oxideterm-gpui-app/resources/helpers/
 
 # Environment
 .env

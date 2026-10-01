@@ -60,9 +60,6 @@ impl WorkspaceApp {
                 if let Some(modal) = self.render_settings_managed_key_dialog(cx) {
                     modals.push(modal);
                 }
-                if let Some(modal) = self.render_portable_password_change_dialog(cx) {
-                    modals.push(modal);
-                }
             }
             TabKind::Knowledge => {
                 if let Some(modal) = self.render_knowledge_create_collection_dialog(cx) {
@@ -97,7 +94,7 @@ impl WorkspaceApp {
                 let Some(node_id) = self.forwarding.read(cx).node_for_tab(tab_id) else {
                     return modals;
                 };
-                let has_background = self.background_surface_active("forwards");
+                let has_background = false;
                 // The renderers preserve the forwarding module's private state boundary
                 // and return an empty element when no corresponding modal is active.
                 modals.push(self.render_forward_edit_modal(
@@ -116,16 +113,12 @@ impl WorkspaceApp {
             TabKind::Sftp => {
                 let _scope = self.enter_sftp_surface(sftp::SftpSurfaceId::Tab(tab_id));
                 if let Some(dialog) = self.sftp_view().read(cx).dialog() {
-                    let has_background = self.terminal_background_preferences("sftp").is_some();
-                    modals.push(self.render_sftp_dialog(dialog, has_background, cx));
+                    modals.push(self.render_sftp_dialog(dialog, false, cx));
                 }
             }
             TabKind::FileManager => {
                 if self.file_manager.read(cx).dialog.is_some() {
-                    let has_background = self
-                        .terminal_background_preferences("file_manager")
-                        .is_some();
-                    modals.push(self.render_file_manager_dialog(window, has_background, cx));
+                    modals.push(self.render_file_manager_dialog(window, false, cx));
                 }
             }
             _ => {}
@@ -153,7 +146,6 @@ impl WorkspaceApp {
 impl WorkspaceApp {
     pub(in crate::workspace) fn render_main_window(
         &mut self,
-        window_background: &Entity<window_shell::WorkspaceWindowBackgroundEntity>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
@@ -242,15 +234,6 @@ impl WorkspaceApp {
         } else {
             content
         };
-        let content = self.wrap_content_background(
-            window_background,
-            content,
-            active_tab_projection
-                .as_ref()
-                .map(|(_, kind, _)| tab_background_key(kind)),
-            window,
-            cx,
-        );
         let active_tab_window_modals = active_tab_projection
             .as_ref()
             .map(|(tab_id, kind, _)| self.render_tab_window_modals(*tab_id, kind, window, cx))
@@ -258,10 +241,6 @@ impl WorkspaceApp {
         // Settings and Knowledge share one root-mounted select portal. Keeping it
         // above tab-owned modals lets both surfaces use the same anchored control.
         let settings_select_overlay = self.render_settings_select_overlay(window, cx);
-        let window_background_layer =
-            self.render_workspace_window_background(window_background, window, cx);
-        let has_window_background = window_background_layer.is_some();
-        let native_update_notification = self.render_native_update_notification(cx);
         let show_connection_cards = !self
             .connection_flow
             .read(cx)
@@ -276,14 +255,7 @@ impl WorkspaceApp {
             );
             self.overlay.update(cx, |overlay, cx| {
                 overlay.set_control_exit_duration(control_exit_duration, cx);
-                overlay.render_layers(
-                    &tokens,
-                    i18n,
-                    mono_font_family,
-                    native_update_notification,
-                    show_connection_cards,
-                    cx,
-                )
+                overlay.render_layers(&tokens, i18n, mono_font_family, show_connection_cards, cx)
             })
         };
         let zen_mode = self.settings_store.settings().sidebar_ui.zen_mode;
@@ -305,11 +277,7 @@ impl WorkspaceApp {
             .relative()
             .flex()
             .flex_col()
-            .bg(workspace_background(
-                &self.tokens,
-                vibrancy_mode,
-                has_window_background,
-            ))
+            .bg(workspace_background(&self.tokens, vibrancy_mode))
             .text_color(rgb(self.tokens.ui.text))
             .font_family(settings_ui_font_family(
                 &self.settings_store.settings().appearance.ui_font_family,
@@ -963,10 +931,6 @@ impl WorkspaceApp {
             .on_action(cx.listener(|this, _: &GoToTab9, window, cx| {
                 this.go_to_tab(8, window, cx);
             }))
-            .when_some(window_background_layer, |root, background| {
-                // Window scope paints exactly one absolute image behind all persistent chrome.
-                root.child(background)
-            })
             .when(titlebar_visible, |root| {
                 root.child(self.render_title_bar(window, cx))
             })
@@ -1285,15 +1249,6 @@ impl WorkspaceApp {
                     )
                 }),
                 |root| root.child(self.render_help_legal_notice_dialog(cx)),
-            )
-            .when(
-                overlay_confirm_snapshot.as_ref().is_some_and(|snapshot| {
-                    matches!(
-                        &snapshot.kind,
-                        WorkspaceOverlayConfirmKind::NativeUpdateReleaseNotes
-                    )
-                }),
-                |root| root.child(self.render_native_update_release_notes_dialog(cx)),
             )
             .when(self.shortcuts_modal.open, |root| {
                 root.child(self.render_shortcuts_modal(cx))

@@ -300,7 +300,7 @@ impl WorkspaceApp {
     }
 
     pub(in crate::workspace) fn settings_background_active(&self) -> bool {
-        self.background_surface_active("settings")
+        false
     }
 
     /// Typography for embedded text editors outside the removed IDE surface.
@@ -1008,23 +1008,6 @@ impl WorkspaceApp {
                     cx.refresh_windows();
                 }
             }
-            SettingsSlider::AppearanceBackgroundOpacity => {
-                let Some(value) = self.settings_slider_value_from_position(
-                    SelectAnchorId::SettingsAppearanceBackgroundOpacitySlider,
-                    x,
-                    (MIN_TERMINAL_BACKGROUND_OPACITY * SETTINGS_PERCENT_SCALE) as f32,
-                    (MAX_TERMINAL_BACKGROUND_OPACITY * SETTINGS_PERCENT_SCALE) as f32,
-                ) else {
-                    return;
-                };
-                let value = value.round() as f64 / SETTINGS_PERCENT_SCALE;
-                if self.settings_store.settings().terminal.background_opacity != value {
-                    self.edit_settings(|settings| settings.terminal.background_opacity = value, cx);
-                }
-            }
-            SettingsSlider::AppearanceBackgroundBlur => {
-                self.set_background_blur_preview_from_position(x, cx);
-            }
         }
     }
 
@@ -1234,21 +1217,13 @@ impl WorkspaceApp {
             SettingsInput::TerminalCommandSpecsJson => {
                 self.terminal_command_specs_editor_initial_value()
             }
-            SettingsInput::PortableCurrentPassword
-            | SettingsInput::PortableNewPassword
-            | SettingsInput::PortableConfirmPassword => String::new(),
             SettingsInput::ManagedKeyFilePath
             | SettingsInput::ManagedKeyFileName
             | SettingsInput::ManagedKeyFilePassphrase
             | SettingsInput::ManagedKeyPasteName
             | SettingsInput::ManagedKeyPastePrivateKey
             | SettingsInput::ManagedKeyPastePassphrase
-            | SettingsInput::ManagedKeyRenameName
-            | SettingsInput::ConnectionImportTargetGroup => String::new(),
-            SettingsInput::LocalPrivilegeLabel
-            | SettingsInput::LocalPrivilegeUsernameHint
-            | SettingsInput::LocalPrivilegeSecret
-            | SettingsInput::LocalPrivilegePromptPatterns => String::new(),
+            | SettingsInput::ManagedKeyRenameName => String::new(),
             _ => String::new(),
         }
     }
@@ -1300,21 +1275,13 @@ impl WorkspaceApp {
             SettingsInput::TerminalCommandSpecsJson => {
                 cx.notify();
             }
-            SettingsInput::PortableCurrentPassword
-            | SettingsInput::PortableNewPassword
-            | SettingsInput::PortableConfirmPassword => {}
             SettingsInput::ManagedKeyFilePath
             | SettingsInput::ManagedKeyFileName
             | SettingsInput::ManagedKeyFilePassphrase
             | SettingsInput::ManagedKeyPasteName
             | SettingsInput::ManagedKeyPastePrivateKey
             | SettingsInput::ManagedKeyPastePassphrase
-            | SettingsInput::ManagedKeyRenameName
-            | SettingsInput::ConnectionImportTargetGroup => {}
-            SettingsInput::LocalPrivilegeLabel
-            | SettingsInput::LocalPrivilegeUsernameHint
-            | SettingsInput::LocalPrivilegeSecret
-            | SettingsInput::LocalPrivilegePromptPatterns => {}
+            | SettingsInput::ManagedKeyRenameName => {}
             _ => {
                 cx.notify();
             }
@@ -1443,34 +1410,6 @@ impl WorkspaceApp {
         // Slider mousemove can fire many times inside one rounded setting step.
         // Callers compare the resulting persisted value before notifying.
         Some(min + percent * (max - min))
-    }
-
-    pub(in crate::workspace) fn set_background_blur_preview_from_position(
-        &mut self,
-        x: f32,
-        cx: &mut Context<Self>,
-    ) {
-        let Some(anchor) = self
-            .select_anchors
-            .get(&SelectAnchorId::SettingsAppearanceBackgroundBlurSlider)
-            .copied()
-        else {
-            return;
-        };
-        let left = f32::from(anchor.bounds.left());
-        let width = f32::from(anchor.bounds.size.width).max(1.0);
-        let percent =
-            slider_pointer_percent(x - left, width, self.tokens.metrics.ui_slider_thumb_size);
-        let value = (percent * 20.0).round() as i64;
-        let persisted_background_blur = self.settings_store.settings().terminal.background_blur;
-        self.settings_workspace.update(cx, |settings, cx| {
-            settings.update_background_blur_preview(
-                persisted_background_blur,
-                value,
-                BACKGROUND_BLUR_COMMIT_DELAY,
-                cx,
-            );
-        });
     }
 }
 

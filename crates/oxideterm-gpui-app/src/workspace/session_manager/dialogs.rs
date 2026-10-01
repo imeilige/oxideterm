@@ -253,7 +253,7 @@ impl WorkspaceApp {
             .collect::<Vec<_>>();
 
         let row_action_menu = self.session_manager.read(cx).row_action_menu.clone();
-        let has_background = self.background_surface_active("session_manager");
+        let has_background = false;
 
         let dialog = modal_backdrop(rgba(
             SESSION_MANAGER_LIGHT_DIALOG_BACKDROP_ALPHA,

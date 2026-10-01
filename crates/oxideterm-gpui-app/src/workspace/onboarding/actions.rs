@@ -225,15 +225,6 @@ impl WorkspaceApp {
         self.open_new_connection_form(window, cx);
     }
 
-    pub(in crate::workspace) fn onboarding_open_connection_importers(
-        &mut self,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.complete_onboarding(cx);
-        self.open_connection_importers_settings(window, cx);
-    }
-
     pub(in crate::workspace) fn onboarding_open_cli_settings(
         &mut self,
         window: &mut Window,

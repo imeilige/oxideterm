@@ -2,8 +2,6 @@ use super::*;
 use crate::workspace::root::init::terminal_highlight_rules;
 use crate::workspace::root::init::terminal_preference_overrides;
 
-const SETTINGS_CONNECTION_IMPORTERS_SECTION_INDEX: usize = 5;
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct SettingsNavSelectionMotion {
     duration: Duration,
@@ -50,30 +48,6 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) {
         self.open_settings_tab(window, cx);
-    }
-
-    pub(in crate::workspace) fn open_connection_importers_settings(
-        &mut self,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.settings_workspace.update(cx, |settings, cx| {
-            settings.set_active_tab(SettingsTab::Connections, cx);
-        });
-        self.close_settings_select();
-        self.focused_settings_input = None;
-        self.settings_slider_drag = None;
-        self.clear_ime_selection();
-        self.sync_settings_section_list_state(cx);
-        // Target the importer row directly so callers do not merely land at
-        // the top of a long Connections settings page.
-        self.settings_section_list_state
-            .scroll_to(gpui::ListOffset {
-                item_ix: SETTINGS_SECTION_HEADER_ITEM_COUNT
-                    + SETTINGS_CONNECTION_IMPORTERS_SECTION_INDEX,
-                offset_in_item: px(0.0),
-            });
-        self.open_settings(window, cx);
     }
 
     pub(in crate::workspace) fn open_knowledge_settings(
@@ -351,7 +325,8 @@ impl WorkspaceApp {
                 // jumping when the icon picker updates its selected badge.
             }
             SettingsTab::Help => {
-                settings.general.update_channel.hash(&mut hasher);
+                // Diagnostics and the legal notice own no persisted row
+                // heights, so the section list is stable for this tab.
             }
             SettingsTab::Connections => {
                 self.connection_store.connections().len().hash(&mut hasher);
@@ -364,44 +339,6 @@ impl WorkspaceApp {
                     .managed_key_status()
                     .is_some()
                     .hash(&mut hasher);
-                if settings_connection_importers_list_item(index) {
-                    // Importer state only changes the final importer card. Invalidating
-                    // earlier measured rows makes GPUI move the current scroll anchor.
-                    self.settings_workspace
-                        .read(cx)
-                        .connection_import_list_signature()
-                        .hash(&mut hasher);
-                }
-            }
-            SettingsTab::Privilege => {
-                self.connection_store.connections().len().hash(&mut hasher);
-                self.connection_store
-                    .connections()
-                    .iter()
-                    .map(|connection| connection.privilege_credentials.len())
-                    .sum::<usize>()
-                    .hash(&mut hasher);
-                self.connection_store
-                    .list_privilege_credentials(LOCAL_SHELL_PRIVILEGE_CONNECTION_ID)
-                    .map(|credentials| credentials.len())
-                    .unwrap_or(0)
-                    .hash(&mut hasher);
-                self.settings_workspace
-                    .read(cx)
-                    .privilege_layout_flags()
-                    .hash(&mut hasher);
-            }
-            SettingsTab::Portable => {
-                let portable = self.settings_workspace.read(cx).portable_status_snapshot();
-                portable.refresh_pending.hash(&mut hasher);
-                portable.error.is_some().hash(&mut hasher);
-                portable.exportable_secret_count.hash(&mut hasher);
-                if let Some(status) = portable.status.as_ref() {
-                    status.is_portable.hash(&mut hasher);
-                    format!("{:?}", status.status).hash(&mut hasher);
-                    status.is_unlocked.hash(&mut hasher);
-                    status.auto_unlock_enabled.hash(&mut hasher);
-                }
             }
             SettingsTab::Keybindings => {
                 // Keep the search control mounted while scope filtering replaces tables.
@@ -486,13 +423,9 @@ impl WorkspaceApp {
         // settings Vec and discarding every non-visible card.
         match tab {
             SettingsTab::General => self.settings_general_section(section_index, cx),
-            SettingsTab::Portable => self.settings_portable_section(section_index, cx),
             SettingsTab::Terminal => self.settings_terminal_section(section_index, cx),
             SettingsTab::Appearance => self.settings_appearance_section(section_index, cx),
             SettingsTab::Connections => self.settings_connections_section(section_index, cx),
-            SettingsTab::Privilege => {
-                self.settings_privilege_credentials_section(section_index, cx)
-            }
             SettingsTab::Sftp => self.settings_sftp_section(section_index, cx),
             SettingsTab::Keybindings => self.settings_keybindings_section(section_index, cx),
             SettingsTab::Help => self.settings_help_section(section_index, cx),
@@ -793,9 +726,6 @@ impl WorkspaceApp {
                         this.refresh_cli_companion_status(cx);
                         #[cfg(not(target_os = "macos"))]
                         this.refresh_launch_at_login_status(cx);
-                    }
-                    if tab == SettingsTab::Portable {
-                        this.refresh_portable_settings_snapshot(true, cx);
                     }
                     cx.stop_propagation();
                     cx.notify();
@@ -1152,12 +1082,6 @@ impl WorkspaceApp {
         self.sync_terminal_command_sender_appearance(cx);
         self.sync_active_terminal_metadata_context(cx);
     }
-}
-
-fn settings_connection_importers_list_item(list_index: usize) -> bool {
-    list_index
-        .checked_sub(SETTINGS_SECTION_HEADER_ITEM_COUNT)
-        .is_some_and(|section_index| section_index == SETTINGS_CONNECTION_IMPORTERS_SECTION_INDEX)
 }
 
 const SETTINGS_TERMINAL_FOCUS_HANDOFF_SECTION_INDEX: usize = 1;

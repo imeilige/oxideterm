@@ -294,7 +294,7 @@ impl WorkspaceApp {
         let editor = existing_editor.unwrap_or_else(|| {
             let tokens = self.tokens;
             let editor_typography = self.surface_editor_typography();
-            let background_active = self.background_surface_active("sftp");
+            let background_active = false;
             let preview_path = self.sftp_view().read(cx).preview_path.clone();
             let name = preview_path
                 .as_deref()

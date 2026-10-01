@@ -10,7 +10,6 @@ use gpui::StatefulInteractiveElement;
 enum WelcomeToolAction {
     NewConnection,
     LocalTerminal,
-    ImportConnections,
     SessionManager,
     CloudSync,
 }
@@ -1330,13 +1329,6 @@ impl WorkspaceApp {
                 cx,
             ))
             .child(self.render_welcome_tool_row(
-                LucideIcon::Download,
-                "layout.empty.import_connections",
-                "layout.empty.import_connections_hint",
-                WelcomeToolAction::ImportConnections,
-                cx,
-            ))
-            .child(self.render_welcome_tool_row(
                 LucideIcon::LayoutList,
                 "layout.empty.open_session_manager",
                 "layout.empty.open_session_manager_hint",
@@ -1416,9 +1408,6 @@ impl WorkspaceApp {
                         }
                         WelcomeToolAction::LocalTerminal => {
                             let _ = this.create_local_terminal_tab(window, cx);
-                        }
-                        WelcomeToolAction::ImportConnections => {
-                            this.open_connection_importers_settings(window, cx)
                         }
                         WelcomeToolAction::SessionManager => {
                             this.open_session_manager_tab(window, cx)
@@ -1504,12 +1493,7 @@ impl WorkspaceApp {
 
     fn render_welcome_shortcut(&self, key: String, label_key: &str) -> AnyElement {
         let theme = self.tokens.ui;
-        // Window imagery needs the stronger semantic text color to remain legible.
-        let label_color = if self.window_background_preferences().is_some() {
-            theme.text
-        } else {
-            theme.text_muted
-        };
+        let label_color = theme.text_muted;
         div()
             .flex_none()
             .flex()

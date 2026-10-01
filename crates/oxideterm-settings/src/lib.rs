@@ -1,17 +1,11 @@
 // Copyright (C) 2026 AnalyseDeCircuit
 // SPDX-License-Identifier: GPL-3.0-only
 
-mod background_images;
 mod model;
 mod normalize;
 mod oxide_snapshot;
 mod store;
 
-pub use background_images::{
-    background_images_directory, clear_background_images, ensure_bundled_background_image,
-    import_background_images, is_managed_background_image, is_supported_background_image,
-    list_background_images, remove_background_image,
-};
 pub use model::*;
 pub use normalize::{SanitizedSettings, sanitize_settings_value};
 pub use oxide_snapshot::{

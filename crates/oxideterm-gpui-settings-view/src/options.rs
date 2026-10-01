@@ -1,17 +1,14 @@
-use std::path::Path;
-
 use oxideterm_gpui_ui::select::SelectAnchorId;
 use oxideterm_i18n::I18n;
 use oxideterm_settings::{
-    AiThinkingStyle, AnimationSpeed, BackgroundFit, ConflictAction,
-    CursorStyle as SettingsCursorStyle, FontFamily, IdeAgentMode, Language, PersistedSettings,
-    TerminalBackspaceSequence, TerminalDeleteSequence, TerminalEncoding,
-    UiDensity, UpdateChannel, UpdateProxyMode, UpdateProxyProtocol,
+    AiThinkingStyle, AnimationSpeed, ConflictAction, CursorStyle as SettingsCursorStyle,
+    FontFamily, IdeAgentMode, Language, PersistedSettings, TerminalBackspaceSequence,
+    TerminalDeleteSequence, TerminalEncoding, UiDensity,
 };
 pub use oxideterm_settings_model::theme_display_name;
 use oxideterm_theme::BUILT_IN_THEMES;
 
-use crate::{SettingsBackgroundTabIcon, SettingsSlider};
+use crate::SettingsSlider;
 
 pub fn set_terminal_cursor_blink(settings: &mut PersistedSettings, value: bool) {
     settings.terminal.cursor_blink = value;
@@ -163,99 +160,6 @@ pub fn animation_options() -> &'static [AnimationSpeed] {
         AnimationSpeed::Reduced,
         AnimationSpeed::Normal,
         AnimationSpeed::Fast,
-    ]
-}
-
-pub fn background_fit_options() -> &'static [BackgroundFit] {
-    &[
-        BackgroundFit::Cover,
-        BackgroundFit::Contain,
-        BackgroundFit::Fill,
-        BackgroundFit::Tile,
-    ]
-}
-
-pub fn is_supported_background_image(path: &Path) -> bool {
-    // Keep callers on the established settings-view API while validation lives
-    // beside the gallery storage implementation.
-    oxideterm_settings::is_supported_background_image(path)
-}
-
-pub fn background_tab_options() -> &'static [(&'static str, &'static str, SettingsBackgroundTabIcon)]
-{
-    // Mirrors native `tab_background_key` so every renderable tab kind can be
-    // enabled or disabled from Appearance settings.
-    &[
-        (
-            "terminal",
-            "settings_view.terminal.bg_tab_terminal",
-            SettingsBackgroundTabIcon::Terminal,
-        ),
-        (
-            "local_terminal",
-            "settings_view.terminal.bg_tab_local",
-            SettingsBackgroundTabIcon::Monitor,
-        ),
-        (
-            "file_manager",
-            "settings_view.terminal.bg_tab_files",
-            SettingsBackgroundTabIcon::Folder,
-        ),
-        (
-            "graphics",
-            "settings_view.terminal.bg_tab_graphics",
-            SettingsBackgroundTabIcon::Monitor,
-        ),
-        (
-            "runtime",
-            "settings_view.terminal.bg_tab_runtime",
-            SettingsBackgroundTabIcon::Gauge,
-        ),
-        (
-            "connection_monitor",
-            "settings_view.terminal.bg_tab_monitor",
-            SettingsBackgroundTabIcon::Activity,
-        ),
-        (
-            "topology",
-            "settings_view.terminal.bg_tab_topology",
-            SettingsBackgroundTabIcon::Network,
-        ),
-        (
-            "notification_center",
-            "settings_view.terminal.bg_tab_notifications",
-            SettingsBackgroundTabIcon::Bell,
-        ),
-        (
-            "sftp",
-            "settings_view.terminal.bg_tab_sftp",
-            SettingsBackgroundTabIcon::FolderInput,
-        ),
-        (
-            "forwards",
-            "settings_view.terminal.bg_tab_forwards",
-            SettingsBackgroundTabIcon::ArrowLeftRight,
-        ),
-        (
-            "session_manager",
-            "settings_view.terminal.bg_tab_sessions",
-            SettingsBackgroundTabIcon::ListTree,
-        ),
-        (
-            "cloud_sync",
-            "settings_view.terminal.bg_tab_cloud_sync",
-            SettingsBackgroundTabIcon::Cloud,
-        ),
-        (
-            "remote_desktop",
-            "settings_view.terminal.bg_tab_remote_desktop",
-            SettingsBackgroundTabIcon::Monitor,
-        ),
-        (
-            "settings",
-            "settings_view.terminal.bg_tab_settings",
-            SettingsBackgroundTabIcon::Settings,
-        ),
     ]
 }
 
@@ -484,10 +388,6 @@ pub fn set_in_band_transfer_max_total_mb(settings: &mut PersistedSettings, value
     settings.terminal.in_band_transfer.max_total_bytes = value * 1024 * 1024;
 }
 
-pub fn set_terminal_background_enabled(settings: &mut PersistedSettings, value: bool) {
-    settings.terminal.background_enabled = value;
-}
-
 pub fn settings_slider_anchor_id(slider: SettingsSlider) -> SelectAnchorId {
     match slider {
         SettingsSlider::TerminalFontSize => SelectAnchorId::SettingsTerminalFontSizeSlider,
@@ -501,12 +401,6 @@ pub fn settings_slider_anchor_id(slider: SettingsSlider) -> SelectAnchorId {
         }
         SettingsSlider::AppearanceWindowOpacity => {
             SelectAnchorId::SettingsAppearanceWindowOpacitySlider
-        }
-        SettingsSlider::AppearanceBackgroundOpacity => {
-            SelectAnchorId::SettingsAppearanceBackgroundOpacitySlider
-        }
-        SettingsSlider::AppearanceBackgroundBlur => {
-            SelectAnchorId::SettingsAppearanceBackgroundBlurSlider
         }
     }
 }
@@ -551,30 +445,6 @@ pub fn cycle_ai_thinking(settings: &mut PersistedSettings) {
     };
 }
 
-pub fn update_channel_label(channel: UpdateChannel, i18n: &I18n) -> String {
-    match channel {
-        UpdateChannel::Stable => i18n.t("settings_view.help.channel_stable"),
-        UpdateChannel::Beta => i18n.t("settings_view.help.channel_beta"),
-    }
-}
-
-pub fn update_proxy_mode_label(mode: UpdateProxyMode, i18n: &I18n) -> String {
-    match mode {
-        UpdateProxyMode::Direct => i18n.t("settings_view.help.update_proxy_mode_direct"),
-        UpdateProxyMode::Application => i18n.t("settings_view.help.update_proxy_mode_application"),
-        UpdateProxyMode::System => i18n.t("settings_view.help.update_proxy_mode_system"),
-        UpdateProxyMode::Custom => i18n.t("settings_view.help.update_proxy_mode_custom"),
-    }
-}
-
-pub fn update_proxy_protocol_label(protocol: UpdateProxyProtocol, i18n: &I18n) -> String {
-    match protocol {
-        UpdateProxyProtocol::Http => i18n.t("settings_view.help.update_proxy_protocol_http"),
-        UpdateProxyProtocol::Https => i18n.t("settings_view.help.update_proxy_protocol_https"),
-        UpdateProxyProtocol::Socks5 => i18n.t("settings_view.help.update_proxy_protocol_socks5"),
-    }
-}
-
 pub fn terminal_encoding_label(encoding: TerminalEncoding) -> String {
     match encoding {
         TerminalEncoding::Utf8 => "UTF-8",
@@ -609,14 +479,5 @@ pub fn cursor_style_label(style: SettingsCursorStyle, i18n: &I18n) -> String {
         SettingsCursorStyle::Block => i18n.t("settings_view.terminal.cursor_block"),
         SettingsCursorStyle::Underline => i18n.t("settings_view.terminal.cursor_underline"),
         SettingsCursorStyle::Bar => i18n.t("settings_view.terminal.cursor_bar"),
-    }
-}
-
-pub fn background_fit_label(fit: BackgroundFit, i18n: &I18n) -> String {
-    match fit {
-        BackgroundFit::Cover => i18n.t("settings_view.terminal.bg_fit_cover"),
-        BackgroundFit::Contain => i18n.t("settings_view.terminal.bg_fit_contain"),
-        BackgroundFit::Fill => i18n.t("settings_view.terminal.bg_fit_fill"),
-        BackgroundFit::Tile => i18n.t("settings_view.terminal.bg_fit_tile"),
     }
 }

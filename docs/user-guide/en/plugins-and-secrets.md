@@ -33,7 +33,7 @@ Secret rules:
 - Enter secrets through secret fields or credential storage flows.
 - Do not put secret values in plugin names, labels, tags, notes, or ordinary text fields.
 - Do not paste secrets into AI prompts, support bundles, issue reports, or logs.
-- Keep privilege credentials in the dedicated Settings surface; terminal hints or context actions should only submit through the app's secret-aware path.
+- Terminal privilege hints or context actions should only submit through the app's secret-aware path.
 - Status views should show hints or configured flags, not secret values.
 
 ## CLI Companion

@@ -1,4 +1,3 @@
-mod connection_import;
 mod connection_transport;
 mod draft;
 mod keychain;
@@ -9,12 +8,6 @@ mod ssh_config_sync;
 mod ssh_keys;
 mod ssh_paths;
 mod store;
-pub use connection_import::{
-    ConnectionImportApplyRequest, ConnectionImportApplyResult, ConnectionImportDuplicateStrategy,
-    ConnectionImportErrorInfo, ConnectionImportPreview, ConnectionImportSource,
-    ImportedConnectionAuthType, ImportedConnectionDraft, ImportedProxyHopDraft,
-    apply_connection_import, preview_connection_import,
-};
 pub use connection_transport::{
     ConnectionTransport, MOSH_DEFAULT_PORT_TEXT, RDP_DEFAULT_PORT_TEXT, SSH_DEFAULT_PORT_TEXT,
     TELNET_DEFAULT_PORT_TEXT, TransportUsernameTransition, VNC_DEFAULT_PORT_TEXT,
@@ -43,28 +36,27 @@ pub use store::{
     CLEARED_PROFILE_CREDENTIAL_KIND, CONFIG_VERSION, ConnectionCredentialSlot, ConnectionInfo,
     ConnectionOptions, ConnectionStore, ConnectionStoreCheckpoint, ConnectionStoreData,
     ConnectionTerminalBackspaceSequence, ConnectionTerminalDeleteSequence,
-    ConnectionTerminalEncoding, ConnectionTerminalOptions,
-    ConnectionX11ForwardingMode, ConnectionX11ForwardingOptions, CredentialOwner, CredentialSlot,
-    CredentialSyncSelection, CredentialTarget, DEFAULT_SSH_CONNECT_TIMEOUT_SECONDS,
-    DEFAULT_X11_UNTRUSTED_TIMEOUT_SECONDS, DeletedConnectionTombstone, FtpProfile,
-    FtpProfilesSyncSnapshot, FtpSecurity, GLOBAL_UPSTREAM_PROXY_PASSWORD_KEYCHAIN_ID,
-    LOCAL_SHELL_PRIVILEGE_CONNECTION_ID, LocalSyncMetadata, LocalTerminalProfile,
-    ManagedSshKeyInfo, ManagedSshKeyOrigin, ManagedSshKeyUsage, MoshIpFamily, MoshPredictionMode,
-    MoshProfile, MoshProfilesSyncSnapshot, MoshUdpPortSelection, PROFILE_CREDENTIAL_KIND,
-    PreparedProfileCredentials, PreparedSavedConnectionsSync, PrivilegeCredentialKind,
-    ProfileCredentialRestoreSummary, ProxyHopInfo, RemoteDesktopProfile,
-    RemoteDesktopProfilesSyncSnapshot, SaveConnectionRequest, SaveFtpProfileRequest,
-    SaveLocalTerminalProfileRequest, SaveMoshProfileRequest, SavePrivilegeCredentialRequest,
-    SaveRemoteDesktopProfileRequest, SaveSerialProfileRequest, SaveStandaloneSftpProfileRequest,
-    SaveTelnetProfileRequest, SavedAuth, SavedConnection, SavedConnectionRuntimeSecrets,
-    SavedConnectionSyncRecord, SavedConnectionsConflictStrategy, SavedConnectionsSyncCleanup,
-    SavedConnectionsSyncSnapshot, SavedMoshProfileRuntimeSecrets, SavedPrivilegeCredential,
-    SavedProxyCommand, SavedProxyHop, SavedStandaloneSftpEndpointRuntimeSecrets,
-    SavedStandaloneSftpProfileRuntimeSecrets, SavedUpstreamProxyAuth, SavedUpstreamProxyConfig,
-    SavedUpstreamProxyPolicy, SavedUpstreamProxyProtocol, SerialFlowControl, SerialLineEnding,
-    SerialParity, SerialProfile, SerialProfilesSyncSnapshot, SshAlgorithmPreferences,
-    SshChannelStrategy, StandaloneSftpEndpoint, StandaloneSftpProfile,
-    StandaloneSftpProfilesSyncSnapshot, StandaloneSftpTransferMode, TelnetProfile,
-    TelnetProfilesSyncSnapshot, default_telnet_upstream_proxy, is_profile_credential,
-    validate_group_name,
+    ConnectionTerminalEncoding, ConnectionTerminalOptions, ConnectionX11ForwardingMode,
+    ConnectionX11ForwardingOptions, CredentialOwner, CredentialSlot, CredentialSyncSelection,
+    CredentialTarget, DEFAULT_SSH_CONNECT_TIMEOUT_SECONDS, DEFAULT_X11_UNTRUSTED_TIMEOUT_SECONDS,
+    DeletedConnectionTombstone, FtpProfile, FtpProfilesSyncSnapshot, FtpSecurity,
+    GLOBAL_UPSTREAM_PROXY_PASSWORD_KEYCHAIN_ID, LOCAL_SHELL_PRIVILEGE_CONNECTION_ID,
+    LocalSyncMetadata, LocalTerminalProfile, ManagedSshKeyInfo, ManagedSshKeyOrigin,
+    ManagedSshKeyUsage, MoshIpFamily, MoshPredictionMode, MoshProfile, MoshProfilesSyncSnapshot,
+    MoshUdpPortSelection, PROFILE_CREDENTIAL_KIND, PreparedProfileCredentials,
+    PreparedSavedConnectionsSync, PrivilegeCredentialKind, ProfileCredentialRestoreSummary,
+    ProxyHopInfo, RemoteDesktopProfile, RemoteDesktopProfilesSyncSnapshot, SaveConnectionRequest,
+    SaveFtpProfileRequest, SaveLocalTerminalProfileRequest, SaveMoshProfileRequest,
+    SavePrivilegeCredentialRequest, SaveRemoteDesktopProfileRequest, SaveSerialProfileRequest,
+    SaveStandaloneSftpProfileRequest, SaveTelnetProfileRequest, SavedAuth, SavedConnection,
+    SavedConnectionRuntimeSecrets, SavedConnectionSyncRecord, SavedConnectionsConflictStrategy,
+    SavedConnectionsSyncCleanup, SavedConnectionsSyncSnapshot, SavedMoshProfileRuntimeSecrets,
+    SavedPrivilegeCredential, SavedProxyCommand, SavedProxyHop,
+    SavedStandaloneSftpEndpointRuntimeSecrets, SavedStandaloneSftpProfileRuntimeSecrets,
+    SavedUpstreamProxyAuth, SavedUpstreamProxyConfig, SavedUpstreamProxyPolicy,
+    SavedUpstreamProxyProtocol, SerialFlowControl, SerialLineEnding, SerialParity, SerialProfile,
+    SerialProfilesSyncSnapshot, SshAlgorithmPreferences, SshChannelStrategy,
+    StandaloneSftpEndpoint, StandaloneSftpProfile, StandaloneSftpProfilesSyncSnapshot,
+    StandaloneSftpTransferMode, TelnetProfile, TelnetProfilesSyncSnapshot,
+    default_telnet_upstream_proxy, is_profile_credential, validate_group_name,
 };

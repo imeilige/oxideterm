@@ -1,7 +1,42 @@
 use super::super::*;
 use oxideterm_atomic_file::durable_write_with_before_replace;
 
-pub(in crate::workspace) fn tab_background_key(kind: &TabKind) -> &'static str {
+pub(in crate::workspace) fn default_connections_path() -> PathBuf {
+    default_settings_path()
+        .parent()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("connections.json")
+}
+
+pub(in crate::workspace) fn default_saved_forwards_path() -> PathBuf {
+    default_settings_path()
+        .parent()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("forwards.json")
+}
+
+pub(in crate::workspace) fn default_session_tree_path() -> PathBuf {
+    default_settings_path()
+        .parent()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("session_tree.json")
+}
+
+pub(in crate::workspace) fn default_ai_conversations_path() -> PathBuf {
+    default_settings_path()
+        .parent()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("chat_history.redb")
+}
+
+/// Stable identifier for a tab surface, used as the AI app-surface resource
+/// kind. It must stay stable across releases because it is persisted by the
+/// assistant runtime.
+pub(in crate::workspace) fn tab_surface_kind(kind: &TabKind) -> &'static str {
     match kind {
         TabKind::Workspace => "terminal",
         TabKind::LocalTerminal => "local_terminal",
@@ -31,27 +66,6 @@ pub(in crate::workspace) fn current_window_size(window: &Window) -> (f32, f32) {
     // before its first layout; inner bounds are only a bootstrap fallback.
     let bounds = window.inner_window_bounds().get_bounds();
     (f32::from(bounds.size.width), f32::from(bounds.size.height))
-}
-
-pub(in crate::workspace) fn terminal_background_fit(fit: BackgroundFit) -> TerminalBackgroundFit {
-    match fit {
-        BackgroundFit::Cover => TerminalBackgroundFit::Cover,
-        BackgroundFit::Contain => TerminalBackgroundFit::Contain,
-        BackgroundFit::Fill => TerminalBackgroundFit::Fill,
-        BackgroundFit::Tile => TerminalBackgroundFit::Tile,
-    }
-}
-
-pub(in crate::workspace) fn background_scope_includes_content(
-    scope: BackgroundScope,
-    enabled_tabs: &[String],
-    background_key: &str,
-) -> bool {
-    scope == BackgroundScope::Content && enabled_tabs.iter().any(|tab| tab == background_key)
-}
-
-pub(in crate::workspace) fn background_scope_includes_window(scope: BackgroundScope) -> bool {
-    scope == BackgroundScope::Window
 }
 
 pub(in crate::workspace) fn root_locale_from_settings(language: Language) -> Locale {
@@ -152,13 +166,7 @@ pub(in crate::workspace) fn render_profile_from_env() -> Option<RenderProfile> {
 pub(in crate::workspace) fn workspace_background(
     tokens: &ThemeTokens,
     mode: NativeVibrancyMode,
-    has_window_background: bool,
 ) -> Rgba {
-    // A window-scoped image may have its own opacity, but it must blend with an
-    // opaque app color instead of sampling the macOS desktop through the window.
-    if has_window_background {
-        return rgb(tokens.ui.bg);
-    }
     match mode {
         NativeVibrancyMode::Off => rgb(tokens.ui.bg),
         NativeVibrancyMode::System | NativeVibrancyMode::Mica | NativeVibrancyMode::Acrylic => {
@@ -169,29 +177,6 @@ pub(in crate::workspace) fn workspace_background(
 
 pub(in crate::workspace) fn alpha_byte(alpha: f32) -> u32 {
     (alpha.clamp(0.0, 1.0) * 255.0).round() as u32
-}
-
-pub(in crate::workspace) fn sidebar_surface_background(
-    color: u32,
-    has_window_background: bool,
-    opacity: f32,
-) -> Rgba {
-    if has_window_background {
-        rgba((color << 8) | alpha_byte(opacity))
-    } else {
-        rgb(color)
-    }
-}
-
-pub(in crate::workspace) fn context_sidebar_inner_surface_background(
-    color: u32,
-    has_window_background: bool,
-) -> Rgba {
-    if has_window_background {
-        rgba(0x00000000)
-    } else {
-        rgb(color)
-    }
 }
 
 pub(in crate::workspace) fn settings_mono_font_family(

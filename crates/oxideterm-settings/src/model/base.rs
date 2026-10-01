@@ -69,14 +69,6 @@ pub fn is_prerelease_version(version: &str) -> bool {
     version_contains_prerelease_tag(version, &["alpha", "beta", "rc", "pre", "preview"])
 }
 
-pub fn default_update_channel_for_version(version: &str) -> UpdateChannel {
-    if is_prerelease_version(version) {
-        UpdateChannel::Beta
-    } else {
-        UpdateChannel::Stable
-    }
-}
-
 fn version_contains_prerelease_tag(version: &str, tags: &[&str]) -> bool {
     let Some((_, prerelease)) = version.split_once('-') else {
         return false;
@@ -88,20 +80,6 @@ fn version_contains_prerelease_tag(version: &str, tags: &[&str]) -> bool {
                 .strip_prefix(tag)
                 .is_some_and(|suffix| suffix.starts_with('.') || suffix.starts_with('-'))
     })
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum UpdateChannel {
-    Stable,
-    Beta,
-}
-
-impl Default for UpdateChannel {
-    fn default() -> Self {
-        // Stable builds follow Stable while all prerelease builds follow Beta.
-        default_update_channel_for_version(env!("CARGO_PKG_VERSION"))
-    }
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, Serialize)]
@@ -251,24 +229,6 @@ pub enum CursorStyle {
     Block,
     Underline,
     Bar,
-}
-
-#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum BackgroundFit {
-    #[default]
-    Cover,
-    Contain,
-    Fill,
-    Tile,
-}
-
-#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum BackgroundScope {
-    #[default]
-    Content,
-    Window,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]

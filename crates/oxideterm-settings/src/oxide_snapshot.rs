@@ -36,7 +36,7 @@ pub const ALL_OXIDE_SETTINGS_SECTIONS: &[&str] = &[
     "nativePreferences",
 ];
 
-const GENERAL_KEYS: &[&str] = &["language", "updateChannel"];
+const GENERAL_KEYS: &[&str] = &["language"];
 const TERMINAL_APPEARANCE_KEYS: &[&str] = &[
     "theme",
     "fontFamily",
@@ -47,13 +47,6 @@ const TERMINAL_APPEARANCE_KEYS: &[&str] = &[
     "paddingVertical",
     "cursorStyle",
     "cursorBlink",
-    "backgroundEnabled",
-    "backgroundImage",
-    "backgroundOpacity",
-    "backgroundBlur",
-    "backgroundFit",
-    "backgroundScope",
-    "backgroundEnabledTabs",
 ];
 const TERMINAL_BEHAVIOR_KEYS: &[&str] = &[
     "scrollback",

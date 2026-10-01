@@ -8,9 +8,7 @@ pub(super) struct DetachedTabWindow {
     focus_handle: FocusHandle,
     ready: bool,
     native_style: window_shell::WorkspaceWindowNativeStyle,
-    background: Entity<window_shell::WorkspaceWindowBackgroundEntity>,
     _session_observation: Subscription,
-    _background_observation: Subscription,
     _close_subscription: Subscription,
 }
 
@@ -22,17 +20,11 @@ impl DetachedTabWindow {
         window_registration: window_registry::WindowRegistration,
         entry_handoff_origin: Option<TabWindowHandoffOrigin>,
         entry_handoff_duration: Duration,
-        background_cache_byte_limit: usize,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
         let focus_handle = cx.focus_handle();
-        let background = window_shell::WorkspaceWindowBackgroundEntity::with_byte_limit(
-            background_cache_byte_limit,
-            cx,
-        );
         let session_observation = window_shell::observe_window_session(&session, cx);
-        let background_observation = window_shell::observe_window_background(&background, cx);
         let session_on_close = session.clone();
         window.on_window_should_close(cx, move |window, cx| {
             session_on_close.update(cx, |session, cx| {
@@ -81,9 +73,7 @@ impl DetachedTabWindow {
             focus_handle,
             ready: false,
             native_style: window_shell::WorkspaceWindowNativeStyle::unapplied(),
-            background,
             _session_observation: session_observation,
-            _background_observation: background_observation,
             _close_subscription: close_subscription,
         }
     }
@@ -104,13 +94,7 @@ impl Render for DetachedTabWindow {
             // remain behind the same next-frame gate as detached content.
             self.native_style.apply(&self.session, window, cx);
             self.session.update(cx, |session, cx| {
-                session.render_detached_tab_window(
-                    tab_id,
-                    entry_handoff_origin,
-                    &self.background,
-                    window,
-                    cx,
-                )
+                session.render_detached_tab_window(tab_id, entry_handoff_origin, window, cx)
             })
         } else {
             // GPUI draws a newly opened window synchronously. Wait one frame

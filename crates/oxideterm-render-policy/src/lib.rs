@@ -115,7 +115,6 @@ pub struct TerminalDrainPolicy {
 pub struct EffectiveRenderPolicy {
     pub profile: EffectiveRenderProfile,
     pub allow_vibrancy: bool,
-    pub allow_background_images: bool,
     pub allow_background_blur: bool,
     pub allow_animations: bool,
     pub terminal_graphics: TerminalGraphicsPolicy,
@@ -128,7 +127,6 @@ impl EffectiveRenderPolicy {
         Self {
             profile: EffectiveRenderProfile::Quality,
             allow_vibrancy: true,
-            allow_background_images: true,
             allow_background_blur: true,
             allow_animations: true,
             terminal_graphics: TerminalGraphicsPolicy {
@@ -151,7 +149,6 @@ impl EffectiveRenderPolicy {
         Self {
             profile: EffectiveRenderProfile::LowPower,
             allow_vibrancy: true,
-            allow_background_images: true,
             allow_background_blur: false,
             allow_animations: false,
             terminal_graphics: TerminalGraphicsPolicy {
@@ -174,7 +171,6 @@ impl EffectiveRenderPolicy {
         Self {
             profile: EffectiveRenderProfile::Compatibility,
             allow_vibrancy: false,
-            allow_background_images: false,
             allow_background_blur: false,
             allow_animations: false,
             terminal_graphics: TerminalGraphicsPolicy {
@@ -275,7 +271,6 @@ mod tests {
     fn compatibility_disables_expensive_visuals_but_keeps_placeholders() {
         let policy = EffectiveRenderPolicy::compatibility();
         assert!(!policy.allow_vibrancy);
-        assert!(!policy.allow_background_images);
         assert!(!policy.terminal_graphics.decode_images);
         assert!(policy.terminal_graphics.show_placeholders);
     }

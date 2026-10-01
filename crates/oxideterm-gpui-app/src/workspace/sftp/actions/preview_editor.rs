@@ -119,7 +119,7 @@ impl WorkspaceApp {
             sftp_editor_language_id(language.as_deref(), preview_path.as_deref(), name, &data);
         let tokens = self.tokens;
         let editor_typography = self.surface_editor_typography();
-        let background_active = self.background_surface_active("sftp");
+        let background_active = false;
         let context_menu_labels = EditorContextMenuLabels {
             copy: self.i18n.t("menu.copy"),
             cut: self.i18n.t("fileManager.cut"),

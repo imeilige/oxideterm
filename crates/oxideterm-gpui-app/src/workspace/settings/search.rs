@@ -90,24 +90,6 @@ fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
                 "settings_view.general.launch_at_login",
             ],
         ),
-        settings_search_entry(
-            SettingsTab::Portable,
-            0,
-            "settings_view.general.portable_runtime",
-            &[
-                "settings_view.general.portable_runtime_hint",
-                "settings_view.general.portable_biometric",
-            ],
-        ),
-        settings_search_entry(
-            SettingsTab::Portable,
-            0,
-            "settings_view.general.portable_migration",
-            &[
-                "settings_view.general.portable_migration_installed_hint",
-                "settings_view.general.portable_migration_portable_hint",
-            ],
-        ),
         terminal_search_entry(
             TerminalSettingsPage::Display,
             1,
@@ -358,22 +340,9 @@ fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
         ),
         settings_search_entry(
             SettingsTab::Appearance,
-            4,
+            3,
             "settings_view.appearance.app_icon",
             &["settings_view.appearance.app_icon_variant"],
-        ),
-        settings_search_entry(
-            SettingsTab::Appearance,
-            3,
-            "settings_view.terminal.bg_title",
-            &[
-                "settings_view.terminal.bg_enabled",
-                "settings_view.terminal.bg_scope",
-                "settings_view.terminal.bg_opacity",
-                "settings_view.terminal.bg_fit",
-                "settings_view.terminal.bg_blur",
-                "settings_view.terminal.bg_tabs",
-            ],
         ),
         settings_search_entry(
             SettingsTab::Connections,
@@ -421,23 +390,6 @@ fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
             ],
         ),
         settings_search_entry(
-            SettingsTab::Connections,
-            5,
-            "settings_view.connections.importers.title",
-            &[
-                "settings_view.connections.importers.source",
-                "settings_view.connections.importers.paths",
-                "settings_view.connections.importers.target_group",
-                "settings_view.connections.importers.duplicate",
-            ],
-        ),
-        settings_search_entry(
-            SettingsTab::Privilege,
-            0,
-            "settings_view.privilege_credentials.title",
-            &["settings_view.privilege_credentials.description"],
-        ),
-        settings_search_entry(
             SettingsTab::Sftp,
             0,
             "settings_view.sftp.opening",
@@ -478,17 +430,6 @@ fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
         settings_search_entry(
             SettingsTab::Help,
             0,
-            "settings_view.help.version_info",
-            &[
-                "settings_view.help.update_channel_hint",
-                "settings_view.help.check_update",
-                "settings_view.help.release_notes",
-                "settings_view.help.channel_stable",
-            ],
-        ),
-        settings_search_entry(
-            SettingsTab::Help,
-            1,
             "settings_view.help.diagnostics",
             &[
                 "settings_view.help.debug_logs",
@@ -497,30 +438,9 @@ fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
                 "settings_view.help.open_logs",
             ],
         ),
-        settings_search_entry(SettingsTab::Help, 2, "settings_view.help.tech_stack", &[]),
         settings_search_entry(
             SettingsTab::Help,
-            3,
-            "settings_view.help.resources",
-            &[
-                "settings_view.help.documentation",
-                "settings_view.help.github",
-                "settings_view.help.issues",
-            ],
-        ),
-        settings_search_entry(
-            SettingsTab::Help,
-            4,
-            "settings_view.help.safety_title",
-            &[
-                "settings_view.help.safety_privacy",
-                "settings_view.help.safety_secrets",
-                "settings_view.help.safety_ai",
-            ],
-        ),
-        settings_search_entry(
-            SettingsTab::Help,
-            5,
+            1,
             "settings_view.help.disclaimer",
             &[
                 "settings_view.help.copyright",
@@ -762,9 +682,6 @@ impl WorkspaceApp {
             self.refresh_cli_companion_status(cx);
             #[cfg(not(target_os = "macos"))]
             self.refresh_launch_at_login_status(cx);
-        }
-        if tab == SettingsTab::Portable {
-            self.refresh_portable_settings_snapshot(true, cx);
         }
         self.sync_settings_section_list_state(cx);
         self.settings_section_list_state

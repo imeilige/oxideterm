@@ -31,7 +31,7 @@ After the first local terminal and first SSH connection work, check the app surf
 - Sessions: saved connections and active SSH nodes.
 - Connection monitor and Host Tools: connection health, stale nodes, reconnect state, host resources, and action results.
 - File manager or SFTP: remote directory browsing and transfers.
-- Terminal helpers: context menu actions, command bar actions, background image settings, and X/Y/ZMODEM transfer prompts.
+- Terminal helpers: context menu actions, command bar actions, and X/Y/ZMODEM transfer prompts.
 - Graphics/VNC: saved RDP/VNC profiles or node-launched visual sessions when the target supports them.
 - IDE workspace: remote project folders and editor tabs.
 - AI sidebar: current workspace context and tool approvals.
@@ -80,7 +80,7 @@ Profile data is stored under `profiles/<name>` inside the selected config direct
 
 ## Safe Write Pattern
 
-For everyday app use, make ordinary configuration changes from Settings, the connection manager, the privilege credentials page, the plugin manager, or the cloud sync surface. For scripted CLI writes, inspect the plan first, then repeat with `--yes` only when the change is expected:
+For everyday app use, make ordinary configuration changes from Settings, the connection manager, the plugin manager, or the cloud sync surface. For scripted CLI writes, inspect the plan first, then repeat with `--yes` only when the change is expected:
 
 ```sh
 oxideterm settings set terminal.fontSize 14 --dry-run --json

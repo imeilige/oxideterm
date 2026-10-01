@@ -57,7 +57,6 @@ pub enum SelectAnchorId {
     AuditTime,
     AuditSearchField,
     SettingsLanguage,
-    SettingsUpdateChannel,
     SettingsAppearanceTheme,
     SettingsAppearanceDensity,
     SettingsAppearanceUiFontSizeSlider,
@@ -93,7 +92,6 @@ pub enum SelectAnchorId {
     SettingsIdeAgentMode,
     SettingsLocalShell,
     SettingsLocalShellSemanticScheme(usize),
-    SettingsLocalPrivilegeKind,
     SettingsConnectionIdleTimeout,
     SettingsReconnectMaxAttempts,
     SettingsReconnectBaseDelay,
@@ -155,8 +153,6 @@ pub enum SelectAnchorId {
     NewConnectionTerminalDeleteSequence,
     NewConnectionTerminalSemanticScheme,
     NewConnectionTerminalHighlightRuleSet,
-    SettingsConnectionImportSource,
-    SettingsConnectionImportDuplicateStrategy,
     CloudSyncBackend,
     CloudSyncAuthMode,
     CloudSyncConflictStrategy,
@@ -185,7 +181,6 @@ impl SelectAnchorId {
         matches!(
             self,
             Self::SettingsLanguage
-                | Self::SettingsUpdateChannel
                 | Self::SettingsUpdateProxyMode
                 | Self::SettingsUpdateProxyProtocol
                 | Self::SettingsAppearanceTheme
@@ -213,7 +208,6 @@ impl SelectAnchorId {
                 | Self::SettingsIdeAgentMode
                 | Self::SettingsLocalShell
                 | Self::SettingsLocalShellSemanticScheme(_)
-                | Self::SettingsLocalPrivilegeKind
                 | Self::SettingsConnectionIdleTimeout
                 | Self::SettingsReconnectMaxAttempts
                 | Self::SettingsReconnectBaseDelay
@@ -239,8 +233,6 @@ impl SelectAnchorId {
                 | Self::SettingsHighlightPreset
                 | Self::SettingsHighlightRenderMode(_)
                 | Self::SettingsHighlightMatchScope(_)
-                | Self::SettingsConnectionImportSource
-                | Self::SettingsConnectionImportDuplicateStrategy
         )
     }
 

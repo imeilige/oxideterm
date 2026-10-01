@@ -118,30 +118,6 @@ impl WorkspaceApp {
                 }
                 Some(popup)
             }
-            (SettingsTab::Help, SettingsSelect::UpdateChannel) => {
-                let mut popup = select_overlay_popup(&self.tokens, width);
-                for channel in [UpdateChannel::Stable, UpdateChannel::Beta] {
-                    let label = update_channel_label(channel, &self.i18n);
-                    popup = popup.child(select_option_action(
-                        select_option(
-                            &self.tokens,
-                            label,
-                            channel == settings.general.update_channel,
-                        ),
-                        false,
-                        false,
-                        cx.listener(move |this, _event, _window, cx| {
-                            this.close_settings_select();
-                            this.edit_settings(
-                                |settings| settings.general.update_channel = channel,
-                                cx,
-                            );
-                            cx.stop_propagation();
-                        }),
-                    ));
-                }
-                Some(popup)
-            }
             (SettingsTab::Appearance, SettingsSelect::AppearanceTheme) => {
                 let mut popup = select_panel_overlay_popup_with_max_height(
                     &self.tokens,
@@ -337,29 +313,6 @@ impl WorkspaceApp {
                             this.close_settings_select();
                             this.edit_settings(
                                 |settings| settings.appearance.frosted_glass = mode,
-                                cx,
-                            );
-                            cx.stop_propagation();
-                        }),
-                    ));
-                }
-                Some(popup)
-            }
-            (SettingsTab::Appearance, SettingsSelect::AppearanceBackgroundFit) => {
-                let mut popup = select_overlay_popup(&self.tokens, width);
-                for &fit in background_fit_options() {
-                    popup = popup.child(select_option_action(
-                        select_option(
-                            &self.tokens,
-                            background_fit_label(fit, &self.i18n),
-                            fit == settings.terminal.background_fit,
-                        ),
-                        false,
-                        false,
-                        cx.listener(move |this, _event, _window, cx| {
-                            this.close_settings_select();
-                            this.edit_settings(
-                                |settings| settings.terminal.background_fit = fit,
                                 cx,
                             );
                             cx.stop_propagation();
@@ -1126,33 +1079,6 @@ impl WorkspaceApp {
                 }
                 Some(popup)
             }
-            (SettingsTab::Privilege, SettingsSelect::LocalPrivilegeKind) => {
-                let mut popup = select_overlay_popup(&self.tokens, width);
-                let current_kind = self.settings_workspace.read(cx).privilege_kind();
-                for kind in [
-                    PrivilegeCredentialKind::SudoPassword,
-                    PrivilegeCredentialKind::SuPassword,
-                    PrivilegeCredentialKind::CustomPrompt,
-                ] {
-                    popup = popup.child(select_option_action(
-                        select_option(
-                            &self.tokens,
-                            self.settings_privilege_kind_label(kind),
-                            current_kind == kind,
-                        ),
-                        false,
-                        false,
-                        cx.listener(move |this, _event, _window, cx| {
-                            this.close_settings_select();
-                            this.settings_workspace.update(cx, |settings, cx| {
-                                settings.set_privilege_kind(kind, cx);
-                            });
-                            cx.stop_propagation();
-                        }),
-                    ));
-                }
-                Some(popup)
-            }
             (SettingsTab::Connections, SettingsSelect::ConnectionIdleTimeout) => {
                 let mut popup = select_overlay_popup(&self.tokens, width);
                 for (seconds, label) in connection_idle_timeout_options(&self.i18n) {
@@ -1170,56 +1096,6 @@ impl WorkspaceApp {
                                 |settings| settings.connection_pool.idle_timeout_secs = seconds,
                                 cx,
                             );
-                            cx.stop_propagation();
-                        }),
-                    ));
-                }
-                Some(popup)
-            }
-            (SettingsTab::Connections, SettingsSelect::ConnectionImportSource) => {
-                let selected_source = self.settings_workspace.read(cx).connection_import_source();
-                let mut popup = select_overlay_popup(&self.tokens, width);
-                for source in connection_import_source_options().iter().copied() {
-                    popup = popup.child(select_option_action(
-                        select_option(
-                            &self.tokens,
-                            connection_import_source_label(source, &self.i18n),
-                            source == selected_source,
-                        ),
-                        false,
-                        false,
-                        cx.listener(move |this, _event, _window, cx| {
-                            this.close_settings_select();
-                            this.set_connection_import_source(source, cx);
-                            cx.stop_propagation();
-                        }),
-                    ));
-                }
-                Some(popup)
-            }
-            (SettingsTab::Connections, SettingsSelect::ConnectionImportDuplicateStrategy) => {
-                let selected_strategy = self
-                    .settings_workspace
-                    .read(cx)
-                    .connection_import_duplicate_strategy();
-                let mut popup = select_overlay_popup(&self.tokens, width);
-                for strategy in [
-                    ConnectionImportDuplicateStrategy::Skip,
-                    ConnectionImportDuplicateStrategy::Rename,
-                ] {
-                    popup = popup.child(select_option_action(
-                        select_option(
-                            &self.tokens,
-                            connection_import_duplicate_strategy_label(strategy, &self.i18n),
-                            strategy == selected_strategy,
-                        ),
-                        false,
-                        false,
-                        cx.listener(move |this, _event, _window, cx| {
-                            this.close_settings_select();
-                            this.settings_workspace.update(cx, |settings, cx| {
-                                settings.set_connection_import_duplicate_strategy(strategy, cx);
-                            });
                             cx.stop_propagation();
                         }),
                     ));

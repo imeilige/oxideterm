@@ -807,7 +807,6 @@ impl WorkspaceApp {
         options.block_gap = 8.0;
         // AI markdown lives directly above the window image in the companion
         // sidebar, so its code surfaces must use the same translucent contract.
-        options.background_surface_active = self.window_background_preferences().is_some();
         let content = ai_visible_suggestion_content(&message.content);
         let cached =
             self.cached_ai_markdown_document(&content, &options, !message.is_streaming, cx);

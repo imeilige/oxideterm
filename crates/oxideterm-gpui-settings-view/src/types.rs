@@ -8,8 +8,8 @@
 
 use oxideterm_gpui_ui::select::SelectAnchorId;
 pub use oxideterm_settings_model::{
-    SettingsBackgroundTabIcon, SettingsInput, SettingsKeybindingScopeFilter, SettingsSelect,
-    SettingsSlider, SettingsTab, SettingsTabIcon, TerminalSettingsPage,
+    SettingsInput, SettingsKeybindingScopeFilter, SettingsSelect, SettingsSlider, SettingsTab,
+    SettingsTabIcon, TerminalSettingsPage,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -21,12 +21,10 @@ pub enum ActiveSurface {
 pub fn settings_tab_from_ai_section(section: &str) -> Option<SettingsTab> {
     match section {
         "general" => Some(SettingsTab::General),
-        "portable" => Some(SettingsTab::Portable),
         "terminal" => Some(SettingsTab::Terminal),
         "appearance" => Some(SettingsTab::Appearance),
         "local" | "local_terminal" => Some(SettingsTab::Terminal),
         "connections" | "connection_manager" => Some(SettingsTab::Connections),
-        "privilege" | "privilege_credentials" | "sudo" | "su" => Some(SettingsTab::Privilege),
         "ssh" | "ssh_keys" => Some(SettingsTab::Connections),
         "reconnect" => Some(SettingsTab::Connections),
         "sftp" => Some(SettingsTab::Sftp),
@@ -51,13 +49,11 @@ impl SettingsSelectAnchorExt for SettingsSelect {
     fn anchor_id(self) -> SelectAnchorId {
         match self {
             Self::Language => SelectAnchorId::SettingsLanguage,
-            Self::UpdateChannel => SelectAnchorId::SettingsUpdateChannel,
             Self::AppearanceTheme => SelectAnchorId::SettingsAppearanceTheme,
             Self::AppearanceDensity => SelectAnchorId::SettingsAppearanceDensity,
             Self::AppearanceAnimation => SelectAnchorId::SettingsAppearanceAnimation,
             Self::AppearanceRenderProfile => SelectAnchorId::SettingsAppearanceRenderProfile,
             Self::AppearanceFrostedGlass => SelectAnchorId::SettingsAppearanceFrostedGlass,
-            Self::AppearanceBackgroundFit => SelectAnchorId::SettingsAppearanceBackgroundFit,
             Self::CustomThemeDuplicate => SelectAnchorId::SettingsCustomThemeDuplicate,
             Self::IdeFontFamily => SelectAnchorId::SettingsIdeFontFamily,
             Self::IdeCjkFontFamily => SelectAnchorId::SettingsIdeCjkFontFamily,
@@ -81,7 +77,6 @@ impl SettingsSelectAnchorExt for SettingsSelect {
             Self::LocalShellSemanticScheme(index) => {
                 SelectAnchorId::SettingsLocalShellSemanticScheme(index)
             }
-            Self::LocalPrivilegeKind => SelectAnchorId::SettingsLocalPrivilegeKind,
             Self::ConnectionIdleTimeout => SelectAnchorId::SettingsConnectionIdleTimeout,
             Self::ReconnectMaxAttempts => SelectAnchorId::SettingsReconnectMaxAttempts,
             Self::ReconnectBaseDelay => SelectAnchorId::SettingsReconnectBaseDelay,
@@ -108,10 +103,6 @@ impl SettingsSelectAnchorExt for SettingsSelect {
             Self::HighlightPreset => SelectAnchorId::SettingsHighlightPreset,
             Self::HighlightRenderMode(index) => SelectAnchorId::SettingsHighlightRenderMode(index),
             Self::HighlightMatchScope(index) => SelectAnchorId::SettingsHighlightMatchScope(index),
-            Self::ConnectionImportSource => SelectAnchorId::SettingsConnectionImportSource,
-            Self::ConnectionImportDuplicateStrategy => {
-                SelectAnchorId::SettingsConnectionImportDuplicateStrategy
-            }
         }
     }
 }

@@ -24,16 +24,11 @@ const TAB_HANDOFF_VIEWPORT_MARGIN: f32 = 8.0;
 const TAB_HANDOFF_POINTER_OFFSET_Y: f32 = 14.0;
 const TAB_HANDOFF_CORNER_RADIUS: f32 = 16.0;
 
-fn detached_tab_window_root(
-    background_color: gpui::Rgba,
-    background: Option<AnyElement>,
-    content: AnyElement,
-) -> gpui::Div {
+fn detached_tab_window_root(background_color: gpui::Rgba, content: AnyElement) -> gpui::Div {
     div()
         .size_full()
         .relative()
         .bg(background_color)
-        .when_some(background, |root, background| root.child(background))
         .child(content)
 }
 
@@ -556,7 +551,6 @@ impl WorkspaceApp {
         let entry_handoff_origin = entry_handoff_origin.filter(|_| self.tokens.motion.enabled);
         // GPUI constructs and draws the detached window synchronously while
         // this Workspace update is active, so bootstrap it from scalar values.
-        let background_cache_byte_limit = self.render_policy.image_cache_bytes;
         let open_result = cx.open_window(
             oxideterm_gpui_platform::workspace_window_options(bounds),
             move |detached_window, cx| {
@@ -568,7 +562,6 @@ impl WorkspaceApp {
                         window_registration,
                         entry_handoff_origin,
                         entry_handoff_duration,
-                        background_cache_byte_limit,
                         detached_window,
                         cx,
                     )
@@ -1526,7 +1519,6 @@ impl WorkspaceApp {
         &mut self,
         tab_id: TabId,
         entry_handoff_origin: Option<TabWindowHandoffOrigin>,
-        window_background: &Entity<window_shell::WorkspaceWindowBackgroundEntity>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
@@ -1550,39 +1542,19 @@ impl WorkspaceApp {
 
         let content =
             self.render_detached_tab_content(tab_id, &tab_kind, root_pane.as_ref(), window, cx);
-        let content = self.wrap_content_background(
-            window_background,
-            content,
-            Some(tab_background_key(&tab_kind)),
-            window,
-            cx,
-        );
-        let has_background_image = self.background_surface_active(tab_background_key(&tab_kind));
-        let window_background_layer =
-            self.render_workspace_window_background(window_background, window, cx);
-        let has_window_background = window_background_layer.is_some();
 
         let window_content = div()
             .size_full()
             .relative()
             .flex()
             .flex_col()
-            // Tab surfaces own their tint above a window-scoped image, just as in the main window.
-            .when(!has_window_background, |root| {
-                root.bg(oxideterm_gpui_ui::color_for_background(
-                    self.tokens.ui.bg,
-                    has_background_image,
-                    0xd9,
-                ))
-            })
-            // Returning a detached tab is a workspace action and remains available in fullscreen.
-            .child(self.render_detached_tab_title_bar(
-                tab_id,
-                title.clone(),
-                has_background_image,
-                window,
-                cx,
+            .bg(oxideterm_gpui_ui::color_for_background(
+                self.tokens.ui.bg,
+                false,
+                0xd9,
             ))
+            // Returning a detached tab is a workspace action and remains available in fullscreen.
+            .child(self.render_detached_tab_title_bar(tab_id, title.clone(), window, cx))
             .child(div().flex_1().min_h(px(0.0)).child(content))
             .when_some(
                 self.render_detached_tab_return_drag_preview(tab_id, window, cx),
@@ -1623,25 +1595,21 @@ impl WorkspaceApp {
         let settings_select_overlay = self.render_settings_select_overlay(window, cx);
 
         // Keep the native window base opaque while its workspace content fades in.
-        detached_tab_window_root(
-            rgb(self.tokens.ui.bg),
-            window_background_layer,
-            window_content,
-        )
-        .track_focus(&self.focus_handle)
-        .when_some(entry_handoff, |root, handoff| root.child(handoff))
-        // Detached tabs use their own native window root as the modal portal.
-        .children(tab_window_modals)
-        .when(self.mermaid_zoom.is_some(), |root| {
-            root.child(self.render_mermaid_zoom_modal(window, cx))
-        })
-        .when_some(settings_select_overlay, |root, overlay| root.child(overlay))
-        .child(WorkspaceImeElement::new(
-            cx.entity(),
-            self.focus_handle.clone(),
-            window.window_handle().window_id(),
-        ))
-        .into_any_element()
+        detached_tab_window_root(rgb(self.tokens.ui.bg), window_content)
+            .track_focus(&self.focus_handle)
+            .when_some(entry_handoff, |root, handoff| root.child(handoff))
+            // Detached tabs use their own native window root as the modal portal.
+            .children(tab_window_modals)
+            .when(self.mermaid_zoom.is_some(), |root| {
+                root.child(self.render_mermaid_zoom_modal(window, cx))
+            })
+            .when_some(settings_select_overlay, |root, overlay| root.child(overlay))
+            .child(WorkspaceImeElement::new(
+                cx.entity(),
+                self.focus_handle.clone(),
+                window.window_handle().window_id(),
+            ))
+            .into_any_element()
     }
 
     fn render_detached_tab_content(
@@ -1686,7 +1654,6 @@ impl WorkspaceApp {
         &self,
         tab_id: TabId,
         title: String,
-        has_background_image: bool,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
@@ -1703,9 +1670,7 @@ impl WorkspaceApp {
             .border_b_1()
             .border_color(rgb(theme.border))
             .bg(oxideterm_gpui_ui::color_for_background(
-                theme.bg,
-                has_background_image,
-                0xd9,
+                theme.bg, false, 0xd9,
             ))
             // Linux controls must begin at the configured edge; keep the
             // existing traffic-light/title inset on the other desktop shells.
@@ -1891,63 +1856,6 @@ impl WorkspaceApp {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    struct BackgroundWindow {
-        background: Entity<Option<&'static str>>,
-        _observation: Subscription,
-    }
-
-    impl Render for BackgroundWindow {
-        fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-            let background = self.background.read(cx).map(|name| {
-                div()
-                    .absolute()
-                    .top_0()
-                    .left_0()
-                    .size_full()
-                    .debug_selector(move || name.into())
-                    .into_any_element()
-            });
-            detached_tab_window_root(
-                rgb(0x101010),
-                background,
-                div()
-                    .size_full()
-                    .debug_selector(|| "tab-content".into())
-                    .into_any_element(),
-            )
-        }
-    }
-
-    #[gpui::test]
-    fn detached_window_background_changes_and_clears_across_windows(cx: &mut gpui::TestAppContext) {
-        let background = cx.new(|_| Some("first-background"));
-        let mut windows = Vec::new();
-        for _ in 0..2 {
-            let source = background.clone();
-            let window = cx.add_window(move |_, cx| BackgroundWindow {
-                _observation: window_shell::observe_window_session(&source, cx),
-                background: source,
-            });
-            windows.push(gpui::VisualTestContext::from_window(window.into(), cx));
-        }
-        for selected in [Some("first-background"), Some("second-background"), None] {
-            background.update(cx, |background, cx| {
-                *background = selected;
-                cx.notify();
-            });
-            cx.run_until_parked();
-            for window in &mut windows {
-                let content = window.debug_bounds("tab-content").unwrap();
-                for name in ["first-background", "second-background"] {
-                    assert_eq!(
-                        window.debug_bounds(name),
-                        (selected == Some(name)).then_some(content)
-                    );
-                }
-            }
-        }
-    }
 
     #[test]
     fn return_insertion_index_follows_the_pointer_between_tab_midpoints() {

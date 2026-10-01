@@ -210,13 +210,6 @@ impl WorkspaceApp {
             .child(div().h(px(1.0)).bg(rgb(self.tokens.ui.border)))
             .child(self.onboarding_animation_picker(cx))
             .child(self.onboarding_radius_picker(cx))
-            .child(self.onboarding_info_card(
-                Some((LucideIcon::Image, self.tokens.ui.accent)),
-                "onboarding.background_image_title",
-                Some("onboarding.background_image_hint"),
-                true,
-                cx,
-            ))
             .child(self.onboarding_tip(
                 "onboarding.tip_settings",
                 &[("shortcut", platform_cmd(", "))],
@@ -604,7 +597,6 @@ impl WorkspaceApp {
             (LucideIcon::FileArchive, "portable_oxide", None, false),
             (LucideIcon::MessageSquare, "quick_commands", None, false),
             (LucideIcon::BookOpen, "knowledge_base", None, false),
-            (LucideIcon::Download, "external_import", None, false),
             (LucideIcon::Puzzle, "plugin_system", None, false),
             (LucideIcon::ArrowUpDown, "multiplexing", None, false),
             (LucideIcon::Shield, "security", None, false),
@@ -910,14 +902,7 @@ impl WorkspaceApp {
                         |this, window, cx| this.onboarding_open_new_connection(window, cx),
                         cx,
                     ))
-                    .child(self.onboarding_import_card(cx))
-                    .child(self.onboarding_action_card(
-                        LucideIcon::AppWindow,
-                        "onboarding.import_apps",
-                        "onboarding.import_apps_desc",
-                        |this, window, cx| this.onboarding_open_connection_importers(window, cx),
-                        cx,
-                    )),
+                    .child(self.onboarding_import_card(cx)),
             )
             .child(div().h(px(1.0)).bg(rgb(self.tokens.ui.border)))
             .child(self.onboarding_shortcut_grid(mod_key, is_mac))

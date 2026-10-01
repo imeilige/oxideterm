@@ -24,10 +24,6 @@ impl WorkspaceApp {
             cx.observe_button_layout_changed(window, |_workspace, _window, cx| cx.notify());
         let mut settings_store = SettingsStore::load_default()?;
         settings_store.settings_mut().sidebar_ui.zen_mode = false;
-        if let Err(error) = ensure_bundled_workspace_backgrounds(settings_store.path()) {
-            // A background-gallery failure must not prevent the workspace from opening.
-            eprintln!("failed to install built-in workspace backgrounds: {error}");
-        }
         let version_migration = VersionMigrationState::from_settings_path(settings_store.path())?;
         let connection_store = ConnectionStore::load(default_connections_path())?;
         let audit = audit_runtime::AuditRuntime::start(
@@ -394,25 +390,6 @@ impl WorkspaceApp {
                 workspace.enqueue_cloud_sync_window_effect(event.clone(), cx);
             },
         );
-        let mut background_images = match list_background_images(settings_store.path()) {
-            Ok(paths) => paths
-                .into_iter()
-                .map(|path| path.to_string_lossy().to_string())
-                .collect::<Vec<_>>(),
-            Err(error) => {
-                eprintln!("failed to load background image gallery: {error}");
-                Vec::new()
-            }
-        };
-        if let Some(active_path) = settings.terminal.background_image.as_ref()
-            && !background_images.contains(active_path)
-        {
-            // A pre-gallery GPUI setting may still point directly at a user file.
-            background_images.insert(0, active_path.clone());
-        }
-        settings_workspace.update(cx, |settings, _cx| {
-            settings.initialize_background_gallery(background_images);
-        });
         let ai_key_store = oxideterm_ai::AiProviderKeyStore::new();
         let ai_entity = cx.new(|cx| {
             let mut entity =
@@ -683,9 +660,6 @@ impl WorkspaceApp {
             workspace_input,
             _workspace_input_observation: workspace_input_observation,
             input_caret,
-            native_update_notification_open: false,
-            native_update_notification_presence: oxideterm_gpui_ui::motion::ExitPresence::visible(),
-            native_update_release_notes_scroll: MarkdownVirtualListScrollHandle::new(),
             settings_legal_notice_scroll: MarkdownVirtualListScrollHandle::new(),
             _window_intents: window_intents,
             _window_intent_subscription: window_intent_subscription,
@@ -804,7 +778,6 @@ impl WorkspaceApp {
         workspace.sync_active_terminal_recording_elapsed_tick(cx);
         workspace.sync_active_privilege_prompt_inline_hint(cx);
         workspace.refresh_terminal_trigger_runtime(cx);
-        workspace.schedule_automatic_native_update_check(cx);
         cx.on_release(|workspace, cx| {
             workspace.flush_main_window_state(cx);
             workspace.shutdown_terminal_trigger_runtime();
@@ -839,8 +812,7 @@ impl WorkspaceApp {
                 "failed to load bundled CJK terminal fallback; falling back to system fonts: {error}"
             );
         }
-        let mut preferences =
-            self.terminal_preferences_for_background_key(tab_background_key(kind), cx);
+        let mut preferences = self.terminal_preferences(cx);
         if *kind == TabKind::LocalTerminal {
             preferences.command_history = self.local_terminal_command_history.clone();
         }
@@ -852,26 +824,21 @@ impl WorkspaceApp {
         pane_id: PaneId,
         cx: &App,
     ) -> TerminalUiPreferences {
-        let (key, session_id, kind) = self
+        let (session_id, kind) = self
             .tabs(cx)
             .iter()
             .find_map(|tab| {
                 let root = tab.root_pane.as_ref()?;
                 root.contains_pane(pane_id).then(|| {
                     (
-                        tab_background_key(
-                            &self
-                                .terminal_tab_kind_for_pane(pane_id, cx)
-                                .unwrap_or_else(|| tab.kind.clone()),
-                        ),
                         root.session_id_for_pane(pane_id),
                         self.terminal_tab_kind_for_pane(pane_id, cx)
                             .unwrap_or_else(|| tab.kind.clone()),
                     )
                 })
             })
-            .unwrap_or(("local_terminal", None, TabKind::LocalTerminal));
-        let mut preferences = self.terminal_preferences_for_background_key(key, cx);
+            .unwrap_or((None, TabKind::LocalTerminal));
+        let mut preferences = self.terminal_preferences(cx);
         preferences.command_history = match kind {
             TabKind::LocalTerminal => self.local_terminal_command_history.clone(),
             TabKind::SshTerminal => session_id
@@ -896,7 +863,7 @@ impl WorkspaceApp {
         else {
             return TerminalUiPreferenceOverrides::default();
         };
-        let mut overrides = terminal_preference_overrides(
+        let overrides = terminal_preference_overrides(
             connection.options.terminal.clone(),
             &self.settings_store.settings().terminal,
         );
@@ -948,7 +915,7 @@ impl WorkspaceApp {
             return self
                 .terminal_preference_overrides_for_saved_connection(Some(saved_connection_id));
         }
-        let mut overrides = terminal_preference_overrides(
+        let overrides = terminal_preference_overrides(
             node.terminal_options.clone(),
             &self.settings_store.settings().terminal,
         );
@@ -993,11 +960,7 @@ impl WorkspaceApp {
         }
     }
 
-    pub(in crate::workspace) fn terminal_preferences_for_background_key(
-        &self,
-        background_key: &str,
-        cx: &App,
-    ) -> TerminalUiPreferences {
+    pub(in crate::workspace) fn terminal_preferences(&self, cx: &App) -> TerminalUiPreferences {
         let settings = self.settings_store.settings();
         let terminal = &settings.terminal;
         let in_band_transfer = &terminal.in_band_transfer;
@@ -1072,8 +1035,7 @@ impl WorkspaceApp {
             terminal_encoding: session_terminal_encoding(terminal.terminal_encoding),
             show_performance_overlay: terminal.show_fps_overlay,
             render_policy: self.render_policy,
-            background: self.terminal_background_preferences(background_key),
-            transparent_background: self.window_background_preferences().is_some(),
+            transparent_background: false,
             paste_labels: TerminalPasteLabels {
                 edit: self.i18n.t("terminal.paste.edit"),
                 edit_title: self.i18n.t("terminal.paste.edit_title"),
@@ -1286,88 +1248,21 @@ impl WorkspaceApp {
         }
     }
 
-    pub(in crate::workspace) fn terminal_background_preferences(
-        &self,
-        background_key: &str,
-    ) -> Option<TerminalBackgroundPreferences> {
-        let terminal = &self.settings_store.settings().terminal;
-        if !background_scope_includes_content(
-            terminal.background_scope,
-            &terminal.background_enabled_tabs,
-            background_key,
-        ) {
-            return None;
-        }
-        self.background_image_preferences()
-    }
-
-    pub(in crate::workspace) fn window_background_preferences(
-        &self,
-    ) -> Option<TerminalBackgroundPreferences> {
-        if !background_scope_includes_window(
-            self.settings_store.settings().terminal.background_scope,
-        ) {
-            return None;
-        }
-        self.background_image_preferences()
-    }
-
-    pub(in crate::workspace) fn background_surface_active(&self, background_key: &str) -> bool {
-        self.window_background_preferences().is_some()
-            || self
-                .terminal_background_preferences(background_key)
-                .is_some()
-    }
-
     pub(in crate::workspace) fn workspace_chrome_divider(&self) -> Rgba {
         // Long workspace seams need less contrast than control outlines.
         rgba((self.tokens.ui.border << 8) | 0x66)
     }
 
     pub(in crate::workspace) fn workspace_chrome_background(&self, color: u32) -> Rgba {
-        if self.window_background_preferences().is_some() {
-            rgba((color << 8) | alpha_byte(self.tokens.metrics.panel_vibrancy_alpha))
-        } else {
-            rgb(color)
-        }
+        rgb(color)
     }
 
     pub(in crate::workspace) fn workspace_sidebar_background(&self, color: u32) -> Rgba {
-        sidebar_surface_background(
-            color,
-            self.window_background_preferences().is_some(),
-            self.tokens.metrics.sidebar_vibrancy_alpha,
-        )
+        rgb(color)
     }
 
     pub(in crate::workspace) fn context_sidebar_content_background(&self, color: u32) -> Rgba {
-        // The context sidebar frame owns the sole full-height tint. Nested AI
-        // and Host Tools roots stay transparent so opacity cannot stack.
-        context_sidebar_inner_surface_background(
-            color,
-            self.window_background_preferences().is_some(),
-        )
-    }
-
-    fn background_image_preferences(&self) -> Option<TerminalBackgroundPreferences> {
-        if !self.render_policy.allow_background_images {
-            return None;
-        }
-        let terminal = &self.settings_store.settings().terminal;
-        if !terminal.background_enabled {
-            return None;
-        }
-        let path = PathBuf::from(terminal.background_image.as_deref()?);
-        // Keep render-time background checks off the filesystem hot path.
-        // GPUI image fallback and the blurred-image loader already handle
-        // missing files; doing path.exists() here made settings pages with many
-        // translucent cards stat the same image repeatedly while scrolling.
-        Some(TerminalBackgroundPreferences {
-            path,
-            opacity: terminal.background_opacity.clamp(0.0, 1.0) as f32,
-            blur: terminal.background_blur.clamp(0, 20) as f32,
-            fit: terminal_background_fit(terminal.background_fit),
-        })
+        rgb(color)
     }
 }
 

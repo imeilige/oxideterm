@@ -30,32 +30,6 @@ pub(in crate::workspace) fn open_path_external(path: &std::path::Path) -> std::i
     }
 }
 
-pub(in crate::workspace) fn open_external_url(url: &str) -> std::io::Result<()> {
-    #[cfg(target_os = "macos")]
-    {
-        std::process::Command::new("open")
-            .arg(url)
-            .spawn()?
-            .wait()?;
-        return Ok(());
-    }
-    #[cfg(target_os = "windows")]
-    {
-        let mut command = std::process::Command::new("cmd");
-        configure_settings_external_bridge(&mut command);
-        command.args(["/C", "start", "", url]).spawn()?.wait()?;
-        return Ok(());
-    }
-    #[cfg(all(unix, not(target_os = "macos")))]
-    {
-        std::process::Command::new("xdg-open")
-            .arg(url)
-            .spawn()?
-            .wait()?;
-        Ok(())
-    }
-}
-
 #[cfg(target_os = "windows")]
 pub(in crate::workspace) fn configure_settings_external_bridge(
     command: &mut std::process::Command,

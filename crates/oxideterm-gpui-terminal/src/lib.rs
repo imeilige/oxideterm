@@ -1,5 +1,4 @@
 mod app;
-mod background_cache;
 mod command_facts;
 mod image_budget;
 mod modem_worker;
@@ -17,9 +16,6 @@ pub use app::{
     TerminalSearchStatus, TerminalSerialAction, TerminalSerialStatus, TerminalShortcut,
     TerminalTelnetAction, TerminalWorkingDirectorySource,
 };
-pub use background_cache::{
-    BackgroundImageRenderCache, BackgroundImageTargetSize, background_display_target,
-};
 pub use command_facts::{
     SharedTerminalCommandHistory, TerminalAiCommandRecord, TerminalAutosuggestCommandRecord,
     TerminalAutosuggestInputState, TerminalCommandFact, TerminalCommandFactStatus,
@@ -32,12 +28,11 @@ pub use privilege_prompt::{
     detect_custom_privilege_prompt, detect_privilege_prompt,
 };
 pub use terminal_ui::{
-    TerminalAutosuggestLabels, TerminalBackgroundFit, TerminalBackgroundPreferences,
-    TerminalCommandSelectionLabels, TerminalHighlightMatchScope, TerminalHighlightRenderMode,
-    TerminalHighlightRule, TerminalHighlightRuleSetOverride, TerminalKittyFileTransmissionLabels,
-    TerminalModemLabels, TerminalNotice, TerminalNoticeVariant, TerminalPasteLabels,
-    TerminalSerialControlLabels, TerminalTmuxLabels, TerminalTrzszLabels,
-    TerminalUiPreferenceOverrides, TerminalUiPreferences, TerminalUiTheme,
+    TerminalAutosuggestLabels, TerminalCommandSelectionLabels, TerminalHighlightMatchScope,
+    TerminalHighlightRenderMode, TerminalHighlightRule, TerminalHighlightRuleSetOverride,
+    TerminalKittyFileTransmissionLabels, TerminalModemLabels, TerminalNotice,
+    TerminalNoticeVariant, TerminalPasteLabels, TerminalSerialControlLabels, TerminalTmuxLabels,
+    TerminalTrzszLabels, TerminalUiPreferenceOverrides, TerminalUiPreferences, TerminalUiTheme,
     resolved_terminal_semantic_scheme, terminal_semantic_color, terminal_semantic_line_band,
     terminal_semantic_variant_color,
 };

@@ -179,7 +179,6 @@ flowchart LR
         AiProviders["AI Providers"]
         McpServers["MCP Servers"]
         SyncBackend["Cloud Sync Backend"]
-        UpdateServer["Update Channel"]
     end
 
     App --> Config
@@ -195,7 +194,6 @@ flowchart LR
     App --> AiProviders
     App --> McpServers
     App --> SyncBackend
-    App --> UpdateServer
 ```
 
 ### User-Facing Summary
@@ -259,7 +257,6 @@ Examples:
 - Open a graphics/VNC session.
 - Confirm a terminal file-transfer prompt.
 - Change a setting.
-- Manage privilege credentials.
 - Run a cloud-sync action.
 - Execute an approved AI tool.
 - Generate a support bundle.
@@ -604,8 +601,7 @@ The terminal renderer combines several layers:
 - The emulator text grid and scrollback.
 - Cursor, selection, command marks, and inline hints.
 - Terminal image protocols such as Kitty/Sixel/iTerm2.
-- App-level background images, opacity, and blur.
-- Native whole-window opacity, applied separately from background-image opacity.
+- Native whole-window opacity.
 - Context-menu and command-bar overlays.
 
 Only emulator text belongs to the terminal buffer. Background images and app overlays are rendering state. Terminal image placements are protocol state tied to the current screen buffer, so alternate-screen transitions clear image placements to avoid drawing TUI previews after apps such as yazi exit.
@@ -859,9 +855,8 @@ Settings are durable application state. The desktop Settings surface is the prim
 - Appearance and theme.
 - Terminal behavior.
 - Local terminal behavior.
-- Terminal graphics, background images, and transfer helpers.
+- Terminal graphics and transfer helpers.
 - SSH behavior.
-- Privilege credentials.
 - SFTP behavior.
 - IDE behavior.
 - AI providers and model settings.
@@ -870,7 +865,7 @@ Settings are durable application state. The desktop Settings surface is the prim
 - Cloud sync.
 - Portable runtime.
 - Keybindings.
-- Help and update channel.
+- Help.
 
 ### Persistence Rule
 
@@ -1149,7 +1144,7 @@ flowchart TB
 | `workspace/runtime_entity.rs` | Own long-lived node subscriptions, reconnect workers, runtime shutdown, and terminal-consumer bookkeeping | Closing a terminal consumer does not accidentally close a shared node or transport |
 | `workspace/ide.rs` and IDE crates | Open folders, route file operations, and manage editor state | Remote editing is presented as a workspace, not as raw SFTP operations |
 | `workspace/forwards/*` | Render forwarding forms, rules, state, and actions | Port forwarding is visible and recoverable from the desktop app |
-| `workspace/settings/*` | Render settings pages for terminal, appearance, AI, SFTP, IDE, privilege credentials, portable runtime, updates, and keybindings | Configuration is app-first and persists through the shared settings model |
+| `workspace/settings/*` | Render settings pages for terminal, appearance, AI, SFTP, IDE, connections, and keybindings | Configuration is app-first and persists through the shared settings model |
 | `workspace/cloud_sync/*` | Render sync status, confirmations, and backup actions | Cloud sync and backup operations are explicit and reversible where possible |
 | `workspace/plugin_entity.rs`, `plugin_manager.rs`, `plugin_lifecycle/*`, `plugin_ui.rs` | Coordinate plugin discovery, lifecycle, host API snapshots, settings, secrets, and UI host calls | Plugins can extend app surfaces without owning core runtime state |
 | `workspace/sidebar/ai/*` | Render AI conversations, model selection, streaming, context, Agent Skills, tool events, and transcript state | OxideSens appears as an integrated workspace assistant with explicit tool boundaries |
@@ -1157,7 +1152,7 @@ flowchart TB
 | `workspace/terminal_context_actions.rs` | Build terminal context-menu actions for selection, search, transfers, and command routing | Terminal actions share app menu style while still dispatching through explicit session APIs |
 | `workspace/quick_commands*` and `terminal_command_bar/*` | Store quick commands, command-line completion providers, and sender controls | Repeated terminal actions become reusable desktop controls |
 | `workspace/terminal_command_sender.rs` and `terminal_command_bar/sender.rs` | `TerminalCommandSenderEntity` owns scheduled, repeatable, multi-target terminal input, target snapshots, cancellation, and progress | Jobs do not depend on root-view polling or create SSH connections; the Entity remains coordinated by `WorkspaceApp` and uses existing terminal targets |
-| `workspace/local_terminal_background.rs` and `workspace/root/background.rs` | Resolve app and terminal background image rendering | Background images are visual settings, not terminal buffer content |
+| `workspace/local_terminal_background.rs` | Track detached local terminal sessions that keep running behind the main window | Detached shells are their own sessions, not background image layers |
 | `workspace/notification_center.rs` | Collect and render actionable app notifications | Background failures and recovery actions are visible without blocking terminal input |
 | `workspace/onboarding/*` | Render first-run setup and setup state | Users can configure the main app without starting from CLI documentation |
 
@@ -1229,7 +1224,7 @@ flowchart TB
 | Settings | `oxideterm-settings`, `oxideterm-settings-model`, `oxideterm-gpui-settings-view` | Settings are loaded and saved through shared models, then rendered by GPUI pages |
 | Saved connections | `oxideterm-connections`, session manager modules | Connection records are durable; active nodes are runtime objects |
 | Forwarding | `oxideterm-forwarding`, app forwarding modules | Rules are configuration; listeners are runtime state |
-| Privilege credentials | Settings privilege page, terminal privilege prompt, secret-aware storage | Scope and prompt matchers are configuration; secret values stay outside ordinary settings |
+| Privilege credentials | Terminal privilege prompt, secret-aware storage | Scope and prompt matchers are configuration; secret values stay outside ordinary settings |
 | Terminal modem transfers | `oxideterm-modem-transfer`, `oxideterm-gpui-terminal` modem worker | Protocol state is terminal-runtime work; file selection and progress are UI concerns |
 | Graphics sessions | `oxideterm-wsl-graphics`, `oxideterm-remote-desktop`, `oxideterm-gpui-remote-desktop`, `oxideterm-rdp-helper`, `oxideterm-vnc-helper`, app graphics/remote-desktop modules | WSL lifecycle, remote protocol helpers, viewer framebuffer, and terminal buffers have separate owners |
 | Plugins | `oxideterm-plugin-*`, plugin manager and lifecycle modules | Manifests, settings, host API calls, and plugin secrets have separate boundaries |
@@ -1868,12 +1863,11 @@ Staleness means "the app cannot prove this state is current." It does not automa
 | Graphics and remote desktop sessions | `oxideterm-wsl-graphics`, `oxideterm-remote-desktop`, `oxideterm-gpui-remote-desktop`, `oxideterm-rdp-helper`, `oxideterm-vnc-helper`, app graphics/remote-desktop surfaces |
 | IDE and editor | `oxideterm-gpui-ide`, `oxideterm-gpui-editor`, `oxideterm-ide-core`, `oxideterm-ide-fs`, `oxideterm-editor-*` |
 | Knowledge workspace and Markdown | `oxideterm-ai` RAG domain, `oxideterm-gpui-markdown`, `oxideterm-gpui-editor`, `workspace/knowledge.rs` |
-| Settings and privilege credentials | `oxideterm-settings`, `oxideterm-settings-model`, `oxideterm-gpui-settings-view`, secret-aware app boundary |
+| Settings and credential storage | `oxideterm-settings`, `oxideterm-settings-model`, `oxideterm-gpui-settings-view`, secret-aware app boundary |
 | AI, RAG, MCP, reasoning, and tool policy | `oxideterm-ai`, `oxideterm-ai-tasks`, `oxideterm-skills`, app AI sidebar |
 | ACP agent sessions and host tools | `oxideterm-acp-adapter`, `oxideterm-acp-host-tools`, `workspace/acp_workspace.rs` |
 | Plugins | `oxideterm-plugin-manifest`, `oxideterm-plugin-registry`, `oxideterm-plugin-host-api`, `oxideterm-plugin-wasm-runtime`, app plugin entities |
 | Cloud sync and portable runtime | `oxideterm-cloud-sync`, `oxideterm-gpui-cloud-sync`, `oxideterm-portable-runtime` |
-| Notifications and update | `oxideterm-notification-center`, `oxideterm-update` |
 | CLI companion | `oxideterm-cli` |
 
 ---

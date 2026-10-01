@@ -41,7 +41,6 @@ members = [
   "crates/oxideterm-preview",
   "crates/oxideterm-portable-runtime",
   "crates/oxideterm-secret-store",
-  "crates/oxideterm-update",
   "crates/oxideterm-i18n",
   "crates/oxideterm-local-files",
   "crates/oxideterm-modem-transfer",
@@ -193,7 +192,6 @@ media = { path = "crates/gpui-ce/gpui_media", version = "0.2.2", package = "gpui
 memchr = "2.7"
 memmap2 = "0.9"
 metal = "0.33"
-minisign-verify = "0.2"
 notify-rust = "4"
 objc = "0.2"
 objc2 = "0.6"

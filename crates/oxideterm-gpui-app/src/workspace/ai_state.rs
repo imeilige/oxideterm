@@ -10,7 +10,6 @@ pub(in crate::workspace) mod agents;
 pub(in crate::workspace) mod history;
 pub(in crate::workspace) use history::HistoryStatus;
 pub(in crate::workspace) mod knowledge;
-pub(in crate::workspace) use knowledge::KNOWLEDGE_DOCUMENT_PAGE_SIZE;
 
 pub(in crate::workspace) struct AiPendingUserQuestion {
     pub conversation_id: String,

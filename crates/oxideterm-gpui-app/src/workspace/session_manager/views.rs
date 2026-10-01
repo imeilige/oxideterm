@@ -1317,17 +1317,6 @@ impl WorkspaceApp {
             }),
             cx,
         ))
-        .child(self.render_tree_mode_action_button(
-            LucideIcon::Download,
-            self.i18n.t("settings_view.connections.importers.title"),
-            has_background,
-            cx.listener(|this, _event, window, cx| {
-                this.close_session_row_menus(cx);
-                this.open_connection_importers_settings(window, cx);
-                cx.stop_propagation();
-            }),
-            cx,
-        ))
     }
 
     pub(super) fn render_tree_mode_action_button(

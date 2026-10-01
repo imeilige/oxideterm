@@ -142,6 +142,3 @@ If a surface opens the wrong context, switch back to the Sessions view, select t
 
 For context-sensitive helpers such as privilege prompts or modem transfers, make the intended terminal pane active first. The helper should act on the active pane/session rather than on a prompt string, tab title, or saved host label.
 
-## Updates
-
-Use Settings → Help & About to check the active version and update channel. Stable and beta builds use separate update channels, so choose the channel that matches the build you installed.

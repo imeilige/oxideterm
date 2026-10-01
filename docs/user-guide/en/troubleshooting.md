@@ -12,7 +12,7 @@ Check the relevant surface before editing files or running repair commands:
 - Terminal tab: confirm the shell accepts input, whether a command is still running, and whether a terminal helper prompt is active.
 - Graphics/VNC: confirm the saved profile/provider or owning node is live and the viewer is connected.
 - SFTP or File Manager: confirm the target node is live before retrying directory reads or transfers.
-- Settings: check recent changes to terminal background images, privilege credentials, SSH, AI, cloud sync, plugin, or update settings.
+- Settings: check recent changes to SSH, AI, cloud sync, or plugin settings.
 - Notifications: review recent warnings and errors.
 
 If a connection or surface is stale, try reconnecting from the app before changing configuration.
@@ -28,8 +28,6 @@ For SFTP or forwarding issues, check the owning SSH node in Connection Monitor. 
 For Host Tools issues, refresh the tool page first. If the sampler or action still fails, reconnect the owning node and retry the smallest action. Avoid using Host Tools for hidden cleanup or recursive disk scans.
 
 For graphics/VNC issues, check the saved profile/provider or owning node, reconnect the viewer, then restart the helper or graphics session if its backing process stopped. Viewer state is separate from terminal output and saved connection data.
-
-For terminal background issues, reopen Settings and confirm the background image is enabled for the current tab type. Native currently treats the background as a selected image slot; adding a new image replaces the current selection.
 
 For stale blocks after a full-screen TUI exits, first try `clear` or reopen the terminal pane. If the issue repeats with a command such as `yazi`, treat it as terminal graphics/image-placement state and include the command name in the bug report.
 
