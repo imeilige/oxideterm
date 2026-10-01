@@ -136,12 +136,10 @@ rustPlatform.buildRustPackage {
     resource_root="$out/bin/resources"
     target_triple="${target}"
 
-    install -d "$resource_root/agents"
     install -d "$resource_root/icons"
     install -d "$resource_root/cli-bin/$target_triple"
     install -d "$resource_root/helpers/$target_triple"
 
-    cp -R crates/oxideterm-gpui-app/resources/agents/. "$resource_root/agents/"
     cp -R crates/oxideterm-gpui-app/resources/icons/. "$resource_root/icons/"
 
     printf 'nix\n' > "$out/bin/PACKAGE_KIND"

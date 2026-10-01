@@ -311,47 +311,6 @@ impl AiWindowEffect {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub(in crate::workspace) enum PluginWindowEffect {
-    ManagerDeliveryReady,
-    RuntimeRequestsReady,
-    RuntimeSubscriptionSampleDue,
-    RuntimeIntentsReady,
-    OxideImportIntentsReady,
-}
-
-impl From<&plugin_entity::PluginWorkspaceEvent> for PluginWindowEffect {
-    fn from(event: &plugin_entity::PluginWorkspaceEvent) -> Self {
-        match event {
-            plugin_entity::PluginWorkspaceEvent::ManagerDeliveryReady => Self::ManagerDeliveryReady,
-            plugin_entity::PluginWorkspaceEvent::RuntimeRequestsReady => Self::RuntimeRequestsReady,
-            plugin_entity::PluginWorkspaceEvent::RuntimeSubscriptionSampleDue => {
-                Self::RuntimeSubscriptionSampleDue
-            }
-            plugin_entity::PluginWorkspaceEvent::RuntimeIntentsReady => Self::RuntimeIntentsReady,
-            plugin_entity::PluginWorkspaceEvent::OxideImportIntentsReady => {
-                Self::OxideImportIntentsReady
-            }
-        }
-    }
-}
-
-impl PluginWindowEffect {
-    fn into_event(self) -> plugin_entity::PluginWorkspaceEvent {
-        match self {
-            Self::ManagerDeliveryReady => plugin_entity::PluginWorkspaceEvent::ManagerDeliveryReady,
-            Self::RuntimeRequestsReady => plugin_entity::PluginWorkspaceEvent::RuntimeRequestsReady,
-            Self::RuntimeSubscriptionSampleDue => {
-                plugin_entity::PluginWorkspaceEvent::RuntimeSubscriptionSampleDue
-            }
-            Self::RuntimeIntentsReady => plugin_entity::PluginWorkspaceEvent::RuntimeIntentsReady,
-            Self::OxideImportIntentsReady => {
-                plugin_entity::PluginWorkspaceEvent::OxideImportIntentsReady
-            }
-        }
-    }
-}
-
 /// A typed root adapter effect retained until a native window can apply it.
 pub(in crate::workspace) enum WorkspaceWindowEffect {
     WindowIntent(window_intent::WindowIntentAction),
@@ -359,7 +318,6 @@ pub(in crate::workspace) enum WorkspaceWindowEffect {
     ConnectionFlow,
     CloudSync(cloud_sync::CloudSyncWorkspaceEvent),
     Ai(AiWindowEffect),
-    Plugin(PluginWindowEffect),
     PublicMcpNode(public_mcp::PublicMcpNodeWindowEffect),
     PublicMcpTerminal(public_mcp::terminals::PublicMcpTerminalWindowEffect),
     PublicMcpDesktop(public_mcp::desktops::PublicMcpDesktopWindowEffect),
@@ -373,7 +331,6 @@ pub(in crate::workspace) enum WorkspaceWindowEffectKey {
     ConnectionFlow,
     CloudSyncDeliveries,
     Ai(AiWindowEffectKey),
-    Plugin(PluginWindowEffect),
     TabCloseProcessCheck,
     Graphics,
 }
@@ -428,7 +385,6 @@ impl WorkspaceWindowEffect {
                 AiWindowEffect::SettingsConfirmChanged => AiWindowEffectKey::SettingsConfirm,
                 AiWindowEffect::TerminalInlineDeliveryReady => AiWindowEffectKey::TerminalInline,
             })),
-            Self::Plugin(effect) => Some(WorkspaceWindowEffectKey::Plugin(*effect)),
             Self::PublicMcpNode(_) => None,
             Self::PublicMcpTerminal(_) => None,
             Self::PublicMcpDesktop(_) => None,
@@ -559,14 +515,6 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) {
         self.enqueue_window_effect(WorkspaceWindowEffect::Ai(event.into()), cx);
-    }
-
-    pub(in crate::workspace) fn enqueue_plugin_window_effect(
-        &mut self,
-        event: &plugin_entity::PluginWorkspaceEvent,
-        cx: &mut Context<Self>,
-    ) {
-        self.enqueue_window_effect(WorkspaceWindowEffect::Plugin(event.into()), cx);
     }
 
     pub(in crate::workspace) fn enqueue_public_mcp_terminal_window_effect(
@@ -716,9 +664,6 @@ impl WorkspaceApp {
             WorkspaceWindowEffect::Ai(event) => {
                 self.handle_ai_workspace_event(&event.into_event(), window, cx);
             }
-            WorkspaceWindowEffect::Plugin(event) => {
-                self.handle_plugin_workspace_event(&event.into_event(), window_handle, cx);
-            }
             WorkspaceWindowEffect::PublicMcpNode(event) => {
                 self.apply_public_mcp_node_window_effect(event, window, cx);
             }
@@ -790,14 +735,6 @@ mod tests {
             Some(WorkspaceWindowEffectKey::Ai(AiWindowEffectKey::ChatStream)),
             WindowTargetHint::MainOrAny,
         );
-        registry.enqueue(
-            WorkspaceWindowEffect::Plugin(PluginWindowEffect::RuntimeRequestsReady),
-            Some(WorkspaceWindowEffectKey::Plugin(
-                PluginWindowEffect::RuntimeRequestsReady,
-            )),
-            WindowTargetHint::MainOrAny,
-        );
-
         assert!(registry.release(main, main_handle.window_id()));
         assert_eq!(registry.take_event(), None);
         assert!(registry.release(first_detached, first_detached_handle.window_id()));
@@ -820,15 +757,6 @@ mod tests {
             ai_delivery.effect,
             WorkspaceWindowEffect::Ai(AiWindowEffect::ChatStreamDeliveryReady)
         ));
-        let plugin_delivery = registry
-            .next_delivery()
-            .expect("the surviving detached window should receive plugin delivery");
-        assert_eq!(plugin_delivery.registration, second_detached);
-        assert!(matches!(
-            plugin_delivery.effect,
-            WorkspaceWindowEffect::Plugin(PluginWindowEffect::RuntimeRequestsReady)
-        ));
-
         assert!(registry.release(second_detached, second_detached_handle.window_id()));
         assert_eq!(
             registry.take_event(),

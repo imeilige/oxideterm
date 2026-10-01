@@ -8,9 +8,9 @@ use zeroize::Zeroizing;
 use crate::{
     auth::ToolGroup,
     handles::{
-        AddonRef, ArtifactRef, AuditRef, CommandRef, ConnectionRef, DesktopRef, FileSessionRef,
-        ForwardRef, NodeRef, OperationRef, QuickCommandRef, RecordingRef, SyncPlanRef, TerminalRef,
-        TransferRef, UndoRef, WorkspaceRef,
+        ArtifactRef, AuditRef, CommandRef, ConnectionRef, DesktopRef, FileSessionRef, ForwardRef,
+        NodeRef, OperationRef, QuickCommandRef, RecordingRef, SyncPlanRef, TerminalRef, TransferRef,
+        UndoRef,
     },
 };
 
@@ -1352,34 +1352,6 @@ impl fmt::Debug for PreparedQuickCommandRunArgs {
     }
 }
 
-#[derive(Debug, Clone, Default, Deserialize, JsonSchema)]
-pub struct AddonsListArgs {
-    #[serde(default)]
-    pub include_disabled: Option<bool>,
-}
-
-#[derive(Debug, Clone, Deserialize, JsonSchema)]
-pub struct AddonsInstallArgs {
-    pub artifact_ref: ArtifactRef,
-    pub expected_identity: String,
-    pub checksum: String,
-    #[serde(default)]
-    pub replace_existing: bool,
-}
-
-#[derive(Debug, Clone, Deserialize, JsonSchema)]
-pub struct AddonsSetEnabledArgs {
-    pub addon_ref: AddonRef,
-    pub enabled: bool,
-}
-
-#[derive(Debug, Clone, Deserialize, JsonSchema)]
-pub struct AddonsRemoveArgs {
-    pub addon_ref: AddonRef,
-    #[serde(default)]
-    pub retain_settings: Option<bool>,
-}
-
 #[derive(Debug, Clone, Copy, Deserialize, JsonSchema, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ForwardKind {
@@ -1571,73 +1543,6 @@ pub struct TransferHandleArgs {
     pub transfer_ref: TransferRef,
 }
 
-/// Mounts an IDE workspace beneath an existing authorized SFTP root.
-#[derive(Debug, Clone, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct WorkspaceMountArgs {
-    pub file_session_ref: FileSessionRef,
-    #[serde(default)]
-    pub root: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct WorkspaceTreeArgs {
-    pub workspace_ref: WorkspaceRef,
-    #[serde(default)]
-    pub path: Option<String>,
-    #[serde(default)]
-    pub cursor: u32,
-    #[serde(default)]
-    pub limit: Option<u32>,
-}
-
-#[derive(Debug, Clone, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct WorkspaceReadArgs {
-    pub workspace_ref: WorkspaceRef,
-    pub path: String,
-}
-
-#[derive(Clone)]
-pub struct WorkspaceTextEdit {
-    pub start_byte: u32,
-    pub end_byte: u32,
-    pub replacement: Zeroizing<String>,
-}
-
-#[derive(Clone)]
-pub struct WorkspaceFileEdits {
-    pub path: String,
-    pub expected_revision: String,
-    pub edits: Vec<WorkspaceTextEdit>,
-}
-
-#[derive(Clone)]
-pub struct WorkspaceApplyEditsArgs {
-    pub workspace_ref: WorkspaceRef,
-    pub files: Vec<WorkspaceFileEdits>,
-}
-
-#[derive(Debug, Clone, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct WorkspaceSearchArgs {
-    pub workspace_ref: WorkspaceRef,
-    pub pattern: String,
-    #[serde(default)]
-    pub root: Option<String>,
-    #[serde(default)]
-    pub case_sensitive: bool,
-    #[serde(default)]
-    pub maximum_results: Option<u32>,
-}
-
-#[derive(Debug, Clone, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct WorkspaceCloseArgs {
-    pub workspace_ref: WorkspaceRef,
-}
-
 fn default_output_limit() -> u32 {
     64 * 1024
 }
@@ -1721,10 +1626,6 @@ pub enum PublicToolCall {
     QuickCommandsRun(QuickCommandsRunArgs),
     /// Internal frozen payload created only after workspace-side expansion.
     PreparedQuickCommandRun(PreparedQuickCommandRunArgs),
-    AddonsList(AddonsListArgs),
-    AddonsInstall(AddonsInstallArgs),
-    AddonsSetEnabled(AddonsSetEnabledArgs),
-    AddonsRemove(AddonsRemoveArgs),
     ForwardsList(ForwardsListArgs),
     ForwardsOpen(ForwardsOpenArgs),
     ForwardsChange(ForwardsChangeArgs),
@@ -1745,12 +1646,6 @@ pub enum PublicToolCall {
     TransferStart(StartTransferArgs),
     TransferStatus(TransferHandleArgs),
     TransferCancel(TransferHandleArgs),
-    WorkspaceMount(WorkspaceMountArgs),
-    WorkspaceTree(WorkspaceTreeArgs),
-    WorkspaceRead(WorkspaceReadArgs),
-    WorkspaceApplyEdits(WorkspaceApplyEditsArgs),
-    WorkspaceSearch(WorkspaceSearchArgs),
-    WorkspaceClose(WorkspaceCloseArgs),
 }
 
 impl PublicToolCall {
@@ -1814,10 +1709,6 @@ impl PublicToolCall {
             Self::QuickCommandsRemove(_) => "quickcommands_remove",
             Self::QuickCommandsRun(_) => "quickcommands_run",
             Self::PreparedQuickCommandRun(_) => "quickcommands_run",
-            Self::AddonsList(_) => "addons_list",
-            Self::AddonsInstall(_) => "addons_install",
-            Self::AddonsSetEnabled(_) => "addons_set_enabled",
-            Self::AddonsRemove(_) => "addons_remove",
             Self::ForwardsList(_) => "forwards_list",
             Self::ForwardsOpen(_) => "forwards_open",
             Self::ForwardsChange(_) => "forwards_change",
@@ -1838,12 +1729,6 @@ impl PublicToolCall {
             Self::TransferStart(_) => "transfers_start",
             Self::TransferStatus(_) => "transfers_status",
             Self::TransferCancel(_) => "transfers_cancel",
-            Self::WorkspaceMount(_) => "workspaces_mount",
-            Self::WorkspaceTree(_) => "workspaces_tree",
-            Self::WorkspaceRead(_) => "workspaces_read",
-            Self::WorkspaceApplyEdits(_) => "workspaces_apply_edits",
-            Self::WorkspaceSearch(_) => "workspaces_search",
-            Self::WorkspaceClose(_) => "workspaces_close",
         }
     }
 
@@ -1900,10 +1785,6 @@ impl PublicToolCall {
             Self::QuickCommandsRun(_) | Self::PreparedQuickCommandRun(_) => {
                 ToolGroup::QuickCommandExecute
             }
-            Self::AddonsList(_) => ToolGroup::AddonRead,
-            Self::AddonsInstall(_) | Self::AddonsSetEnabled(_) | Self::AddonsRemove(_) => {
-                ToolGroup::AddonManage
-            }
             Self::ForwardsList(_) | Self::ForwardsMetrics(_) | Self::ForwardsDiscoverPorts(_) => {
                 ToolGroup::ForwardRead
             }
@@ -1922,12 +1803,6 @@ impl PublicToolCall {
             Self::TransferStart(_) | Self::TransferStatus(_) | Self::TransferCancel(_) => {
                 ToolGroup::ArtifactTransfer
             }
-            Self::WorkspaceMount(_)
-            | Self::WorkspaceTree(_)
-            | Self::WorkspaceRead(_)
-            | Self::WorkspaceSearch(_)
-            | Self::WorkspaceClose(_) => ToolGroup::WorkspaceRead,
-            Self::WorkspaceApplyEdits(_) => ToolGroup::WorkspaceEdit,
         }
     }
 
@@ -1935,7 +1810,6 @@ impl PublicToolCall {
         match self {
             Self::RecordingsExport(_)
             | Self::DesktopFrame(_)
-            | Self::AddonsInstall(_)
             | Self::FilesRead(_)
             | Self::FilesCompare(_)
             | Self::FilesWrite(_) => &[ToolGroup::ArtifactTransfer],
@@ -1951,8 +1825,6 @@ impl PublicToolCall {
             }
             Self::TransferStart(StartTransferArgs::Upload { .. }) => &[ToolGroup::FileWrite],
             Self::TransferStart(StartTransferArgs::Download { .. }) => &[ToolGroup::FileRead],
-            Self::WorkspaceMount(_) => &[ToolGroup::FileRead],
-            Self::WorkspaceApplyEdits(_) => &[ToolGroup::FileWrite],
             Self::Revert(_) => &[ToolGroup::CloudSync],
             _ => &[],
         }
@@ -1985,9 +1857,6 @@ impl PublicToolCall {
                 | Self::QuickCommandsSave(_)
                 | Self::QuickCommandsRemove(_)
                 | Self::QuickCommandsRun(_)
-                | Self::AddonsInstall(_)
-                | Self::AddonsSetEnabled(_)
-                | Self::AddonsRemove(_)
                 | Self::ForwardsOpen(_)
                 | Self::ForwardsChange(_)
                 | Self::ForwardsStop(_)
@@ -1997,7 +1866,6 @@ impl PublicToolCall {
                 | Self::FilesMove(_)
                 | Self::FilesRemove(_)
                 | Self::TransferStart(StartTransferArgs::Upload { .. })
-                | Self::WorkspaceApplyEdits(_)
         )
     }
 
@@ -2147,25 +2015,6 @@ impl PublicToolCall {
             Self::PreparedQuickCommandRun(args) => {
                 format!("{} on {}", args.quickcommand_ref, args.node_ref)
             }
-            Self::AddonsList(_) => "addon catalog".to_owned(),
-            Self::AddonsInstall(args) => format!(
-                "{} sha256:{} replace_existing={}",
-                args.expected_identity,
-                args.checksum
-                    .strip_prefix("sha256:")
-                    .unwrap_or(&args.checksum),
-                args.replace_existing
-            ),
-            Self::AddonsSetEnabled(args) => format!(
-                "{} {}",
-                args.addon_ref,
-                if args.enabled { "enable" } else { "disable" }
-            ),
-            Self::AddonsRemove(args) => format!(
-                "{} remove retain_settings={}",
-                args.addon_ref,
-                args.retain_settings.unwrap_or(true)
-            ),
             Self::ForwardsList(args) => args
                 .node_ref
                 .as_ref()
@@ -2214,38 +2063,6 @@ impl PublicToolCall {
                 "{} {} recursive={}",
                 args.file_session_ref, args.path, args.recursive
             ),
-            Self::WorkspaceMount(args) => format!(
-                "{} root={}",
-                args.file_session_ref,
-                args.root.as_deref().unwrap_or(".")
-            ),
-            Self::WorkspaceTree(args) => format!(
-                "{} {}",
-                args.workspace_ref,
-                args.path.as_deref().unwrap_or(".")
-            ),
-            Self::WorkspaceRead(args) => format!("{} {}", args.workspace_ref, args.path),
-            Self::WorkspaceApplyEdits(args) => format!(
-                "{} {}",
-                args.workspace_ref,
-                args.files
-                    .iter()
-                    .map(|file| format!(
-                        "{} ({} edits, {} replacement bytes)",
-                        file.path,
-                        file.edits.len(),
-                        file.edits
-                            .iter()
-                            .map(|edit| edit.replacement.len())
-                            .sum::<usize>()
-                    ))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            ),
-            Self::WorkspaceSearch(args) => {
-                format!("{} search {} bytes", args.workspace_ref, args.pattern.len())
-            }
-            Self::WorkspaceClose(args) => args.workspace_ref.to_string(),
             Self::TransferStart(args) => match args {
                 StartTransferArgs::Upload {
                     file_session_ref,

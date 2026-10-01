@@ -563,7 +563,6 @@ impl WorkspaceApp {
                     self.resolve_connection_notifications_for_node(&node_id);
                 }
                 if matches!(state, NodeReadiness::Error | NodeReadiness::Disconnected) {
-                    self.mark_ide_interrupted_for_node(&node_id, cx);
                     let message = if matches!(state, NodeReadiness::Disconnected) {
                         "Connection closed".to_string()
                     } else {
@@ -653,7 +652,6 @@ impl WorkspaceApp {
                 if matches!(previous, Some(NodeReadiness::Ready))
                     && matches!(state, NodeReadiness::Error | NodeReadiness::Disconnected)
                 {
-                    self.mark_ide_interrupted_for_node(&node_id, cx);
                     let affected_children = self.cascade_connection_status_to_runtime_children(
                         &node_id,
                         None,
@@ -895,7 +893,6 @@ impl WorkspaceApp {
             self.ai_runtime_context.update(cx, |runtime, _cx| {
                 runtime.revoke_node_connection(affected_node_id)
             });
-            self.mark_ide_interrupted_for_node(affected_node_id, cx);
             if let Some(node) = self.ssh_nodes.get_mut(affected_node_id) {
                 node.readiness = state.clone();
             }
@@ -1057,25 +1054,14 @@ impl WorkspaceApp {
         self.workspace_runtime.update(cx, |runtime, _cx| {
             runtime.remember_ide_restore_transfer_count(node_id.clone(), restored_transfers);
         });
-        match self.restore_ide_for_reconnect(node_id, cx) {
-            super::ide::IdeReconnectRestoreStatus::Restored => {
-                self.complete_pending_ide_reconnect_restore(
-                    node_id,
-                    PhaseResult::Ok,
-                    "restored IDE project and open files".to_string(),
-                    cx,
-                );
-            }
-            super::ide::IdeReconnectRestoreStatus::Pending => {}
-            super::ide::IdeReconnectRestoreStatus::Skipped => {
-                self.complete_pending_ide_reconnect_restore(
-                    node_id,
-                    PhaseResult::Skipped,
-                    "no IDE snapshot for node".to_string(),
-                    cx,
-                );
-            }
-        }
+        // The IDE surface is gone, so this phase has nothing to restore. Report it
+        // as skipped so the runtime phase machine still advances to verification.
+        self.complete_pending_ide_reconnect_restore(
+            node_id,
+            PhaseResult::Skipped,
+            "no IDE snapshot for node".to_string(),
+            cx,
+        );
     }
 
     pub(in crate::workspace) fn complete_pending_ide_reconnect_restore(
@@ -1208,7 +1194,6 @@ impl WorkspaceApp {
             .iter()
             .flat_map(|entry| entry.rules.iter().map(|rule| rule.id.clone()))
             .collect::<Vec<_>>();
-        let ide_snapshot = self.ide_snapshot_for_nodes(&affected_nodes, cx);
         let snapshot = ReconnectSnapshot {
             node_id: node_id.0.clone(),
             old_terminal_session_ids,
@@ -1217,7 +1202,6 @@ impl WorkspaceApp {
             active_port_forward_ids,
             old_connections_by_node: old_connections_by_node.clone(),
             old_connection_ids: old_connection_ids.clone(),
-            ide_snapshot,
             snapshot_at: Some(SystemTime::now()),
             ..ReconnectSnapshot::default()
         };

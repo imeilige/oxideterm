@@ -53,7 +53,6 @@
       "docker_management": "Docker-Verwaltung",
       "session_manager": "Sitzungsmanager",
       "open_session_manager": "Sitzungsmanager öffnen",
-      "plugins": "Plugins",
       "activity": "Aktivität",
       "event_log": "Audit",
       "notifications": "Benachrichtigungen und Audit",
@@ -86,11 +85,33 @@
       "unsupported": "Die GPU-/NPU-Überwachung wird auf diesem Betriebssystem nicht unterstützt.",
       "no_devices": "Keine unterstützten GPU-/NPU-Geräte gefunden.",
       "error": "GPU-/NPU-Abfrage fehlgeschlagen: {{error}}",
-      "actions": { "refresh": "GPU-/NPU-Daten aktualisieren" },
-      "summary": { "utilization": "Durchschnittliche Auslastung", "memory": "Gerätespeicher", "temperature": "Höchsttemperatur", "power": "Gesamtleistung" },
-      "columns": { "device": "Gerät", "utilization": "Auslastung", "memory": "Speicher" },
-      "details": { "uuid": "UUID", "driver": "Treiber", "performance_state": "Leistungszustand", "health": "Zustand", "temperature": "Temperatur", "power": "Leistung", "fan": "Lüfter" },
-      "processes": { "title": "Rechenprozesse", "empty": "Keine Rechenprozesse verwenden dieses Gerät." }
+      "actions": {
+        "refresh": "GPU-/NPU-Daten aktualisieren"
+      },
+      "summary": {
+        "utilization": "Durchschnittliche Auslastung",
+        "memory": "Gerätespeicher",
+        "temperature": "Höchsttemperatur",
+        "power": "Gesamtleistung"
+      },
+      "columns": {
+        "device": "Gerät",
+        "utilization": "Auslastung",
+        "memory": "Speicher"
+      },
+      "details": {
+        "uuid": "UUID",
+        "driver": "Treiber",
+        "performance_state": "Leistungszustand",
+        "health": "Zustand",
+        "temperature": "Temperatur",
+        "power": "Leistung",
+        "fan": "Lüfter"
+      },
+      "processes": {
+        "title": "Rechenprozesse",
+        "empty": "Keine Rechenprozesse verwenden dieses Gerät."
+      }
     },
     "host_processes": {
       "search_placeholder": "Prozesse suchen...",

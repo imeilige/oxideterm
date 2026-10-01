@@ -5,7 +5,7 @@ use gpui::{
     point, relative,
 };
 use oxideterm_settings::{
-    AppIconVariant, FrostedGlassMode, HighlightRule, HighlightRuleSet, IdeAgentMode, Language,
+    AppIconVariant, FrostedGlassMode, HighlightRule, HighlightRuleSet, Language,
     MAX_HIGHLIGHT_RULE_SETS, MAX_HIGHLIGHT_RULES, PersistedSettings,
     RECOMMENDED_FOCUS_HANDOFF_COMMANDS, RemoteShellIntegrationMode, SettingsApplicationProxyMode,
     SettingsUpstreamProxyAuth, SettingsUpstreamProxyConfig, SettingsUpstreamProxyProtocol,
@@ -30,8 +30,7 @@ use oxideterm_settings_model::{
     custom_theme_display_name, delete_custom_semantic_rule, delete_custom_semantic_scheme,
     delete_custom_theme_from_settings, edit_custom_semantic_scheme, editor_terminal_theme,
     editor_ui_colors, export_custom_semantic_scheme, import_custom_semantic_scheme_named,
-    is_custom_theme_id, parse_color_hex, persisted_settings_input_value,
-    plugin_setting_draft_to_value, plugin_setting_input_value, reconnect_attempt_label,
+    is_custom_theme_id, parse_color_hex, persisted_settings_input_value, reconnect_attempt_label,
     reconnect_base_delay_options, reconnect_delay_label, reconnect_max_attempt_options,
     reconnect_max_delay_options, save_theme_editor_snapshot_to_settings,
     set_ai_tool_policy_group_approval, set_ai_user_context_window, settings_multiline_line_ranges,
@@ -214,7 +213,6 @@ pub(in crate::workspace) use entity::{
 mod general_terminal_pages;
 pub(in crate::workspace) use general_terminal_pages::SETTINGS_TERMINAL_CUSTOM_FONT_INPUT_WIDTH;
 mod highlight;
-mod ide_page;
 mod local_terminal;
 use local_terminal::application_semantic_scheme_label;
 pub(in crate::workspace) use local_terminal::expand_local_terminal_cwd;
@@ -279,14 +277,12 @@ fn settings_background_tab_lucide(icon: SettingsBackgroundTabIcon) -> LucideIcon
         SettingsBackgroundTabIcon::ArrowLeftRight => LucideIcon::ArrowLeftRight,
         SettingsBackgroundTabIcon::Bell => LucideIcon::Bell,
         SettingsBackgroundTabIcon::Cloud => LucideIcon::Cloud,
-        SettingsBackgroundTabIcon::Code2 => LucideIcon::Code2,
         SettingsBackgroundTabIcon::Folder => LucideIcon::Folder,
         SettingsBackgroundTabIcon::FolderInput => LucideIcon::FolderInput,
         SettingsBackgroundTabIcon::Gauge => LucideIcon::Gauge,
         SettingsBackgroundTabIcon::ListTree => LucideIcon::ListTree,
         SettingsBackgroundTabIcon::Monitor => LucideIcon::Monitor,
         SettingsBackgroundTabIcon::Network => LucideIcon::Network,
-        SettingsBackgroundTabIcon::Puzzle => LucideIcon::Puzzle,
         SettingsBackgroundTabIcon::Rocket => LucideIcon::Rocket,
         SettingsBackgroundTabIcon::Settings => LucideIcon::Settings,
         SettingsBackgroundTabIcon::Terminal => LucideIcon::Terminal,

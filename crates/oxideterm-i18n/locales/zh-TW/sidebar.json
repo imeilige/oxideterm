@@ -53,7 +53,6 @@
       "docker_management": "Docker 管理",
       "session_manager": "工作階段管理器",
       "open_session_manager": "開啟工作階段管理器",
-      "plugins": "外掛",
       "activity": "活動",
       "event_log": "稽核",
       "notifications": "通知與稽核",
@@ -86,11 +85,33 @@
       "unsupported": "此作業系統暫不支援 GPU / NPU 監控。",
       "no_devices": "未發現受支援的 GPU / NPU 裝置。",
       "error": "GPU / NPU 查詢失敗：{{error}}",
-      "actions": { "refresh": "重新整理 GPU / NPU 資料" },
-      "summary": { "utilization": "平均使用率", "memory": "裝置記憶體", "temperature": "最高溫度", "power": "總功耗" },
-      "columns": { "device": "裝置", "utilization": "使用率", "memory": "顯示記憶體" },
-      "details": { "uuid": "UUID", "driver": "驅動程式", "performance_state": "效能狀態", "health": "健康狀態", "temperature": "溫度", "power": "功耗", "fan": "風扇" },
-      "processes": { "title": "運算程序", "empty": "目前沒有運算程序使用此裝置。" }
+      "actions": {
+        "refresh": "重新整理 GPU / NPU 資料"
+      },
+      "summary": {
+        "utilization": "平均使用率",
+        "memory": "裝置記憶體",
+        "temperature": "最高溫度",
+        "power": "總功耗"
+      },
+      "columns": {
+        "device": "裝置",
+        "utilization": "使用率",
+        "memory": "顯示記憶體"
+      },
+      "details": {
+        "uuid": "UUID",
+        "driver": "驅動程式",
+        "performance_state": "效能狀態",
+        "health": "健康狀態",
+        "temperature": "溫度",
+        "power": "功耗",
+        "fan": "風扇"
+      },
+      "processes": {
+        "title": "運算程序",
+        "empty": "目前沒有運算程序使用此裝置。"
+      }
     },
     "host_processes": {
       "search_placeholder": "搜尋程序...",

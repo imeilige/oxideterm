@@ -57,10 +57,6 @@ impl AiLiveResourceOperation {
             Self::IdeWrite => oxideterm_ai::RuntimeCapability::IdeWrite,
         }
     }
-
-    pub(in crate::workspace) const fn requires_ide_owner(self) -> bool {
-        matches!(self, Self::IdeRead | Self::IdeWrite)
-    }
 }
 
 pub(in crate::workspace) fn ai_live_resource_operation(

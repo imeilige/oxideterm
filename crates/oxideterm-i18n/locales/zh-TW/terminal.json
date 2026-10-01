@@ -356,8 +356,7 @@
       "switch_to_directory": "切換到此目錄",
       "copy_path": "複製路徑",
       "open_file_manager": "在檔案管理器中開啟",
-      "open_sftp": "在 SFTP 中開啟",
-      "open_ide": "在 IDE 中開啟"
+      "open_sftp": "在 SFTP 中開啟"
     },
     "project": {
       "search_tasks": "搜尋專案任務...",

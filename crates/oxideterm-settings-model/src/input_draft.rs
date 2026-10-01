@@ -24,8 +24,7 @@ use oxideterm_settings::{
 use oxideterm_terminal_semantic::SEMANTIC_CLASSES;
 
 use crate::{
-    SettingsInput, ai_update_provider, edit_custom_semantic_scheme,
-    parse_focus_handoff_command_list, set_ai_user_context_window,
+    SettingsInput, ai_update_provider, edit_custom_semantic_scheme, set_ai_user_context_window,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -880,6 +879,25 @@ pub fn settings_multiline_line_selection(
     }
 }
 
+/// Normalizes a user-entered focus handoff command list into canonical
+/// `ctrl+key` tokens, dropping blanks, duplicates, and unsupported characters.
+pub fn parse_focus_handoff_command_list(input: &str) -> Vec<String> {
+    let mut commands = Vec::new();
+    for token in input.split(|ch: char| ch.is_whitespace() || ch == ',') {
+        let token = token.trim().to_lowercase();
+        if token.is_empty()
+            || !token
+                .chars()
+                .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '+' | '-'))
+            || commands.iter().any(|existing| existing == &token)
+        {
+            continue;
+        }
+        commands.push(token);
+    }
+    commands
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1318,5 +1336,13 @@ mod tests {
         let (_selection, caret_offset) = settings_multiline_line_selection(Some(&caret), &(4..8));
 
         assert_eq!(caret_offset, Some(1));
+    }
+
+    #[test]
+    fn focus_handoff_commands_are_normalized_deduped_and_validated() {
+        assert_eq!(
+            parse_focus_handoff_command_list("Ctrl+C ctrl+c, paste bad\\slash"),
+            vec!["ctrl+c".to_string(), "paste".to_string()]
+        );
     }
 }

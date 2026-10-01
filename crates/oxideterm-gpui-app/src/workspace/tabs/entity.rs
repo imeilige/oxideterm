@@ -486,7 +486,6 @@ impl WorkspaceTabHostEntity {
                     | TabKind::MoshTerminal
                     | TabKind::Workspace
                     | TabKind::Sftp
-                    | TabKind::Ide
                     | TabKind::Forwards
             )
         };
@@ -1789,14 +1788,14 @@ mod tests {
     ) {
         let detached = cx.add_window(|_, _| TabHostTestRoot);
         let mut host = WorkspaceTabHostEntity::new();
-        let ids = [TabKind::Sftp, TabKind::Ide, TabKind::Forwards].map(|kind| {
+        let ids = [TabKind::Sftp, TabKind::Forwards].map(|kind| {
             let id = host.alloc_tab_id();
             let mut tab = test_tab(id, None);
             tab.kind = kind;
             host.insert_tab(tab);
             id
         });
-        let [sftp, ide, forwards] = ids;
+        let [sftp, forwards] = ids;
         let mut ai = crate::workspace::ai_runtime_context::AiRuntimeContextEntity::new();
         let tools = ai.begin_tool_session(1);
         let handles = ids.map(|id| {
@@ -1804,7 +1803,7 @@ mod tests {
             ai.issue_app_surface_handle(&tools, id).unwrap()
         });
         let (first, _) = host
-            .combine_pages(sftp, ide, SplitDirection::Horizontal)
+            .combine_pages(sftp, forwards, SplitDirection::Horizontal)
             .unwrap();
         let (combined, removed) = host
             .combine_pages(forwards, first.id, SplitDirection::Vertical)
@@ -1829,10 +1828,10 @@ mod tests {
             assert!(host.surface_is_visible(id));
         }
         assert_eq!(host.tab_by_id(sftp).unwrap().kind, TabKind::Sftp);
-        assert_eq!(host.tab_by_id(ide).unwrap().kind, TabKind::Ide);
-        host.select_main_tab(Some(ide));
+        assert_eq!(host.tab_by_id(forwards).unwrap().kind, TabKind::Forwards);
+        host.select_main_tab(Some(forwards));
         assert_eq!(host.active_tab_id(), Some(combined.id));
-        assert_eq!(host.focused_page_id(combined.id), ide);
+        assert_eq!(host.focused_page_id(combined.id), forwards);
         let mount = host.begin_detach(combined.id).unwrap();
         assert!(host.commit_detach(combined.id, mount, detached.into()));
         host.select_main_tab(None);
@@ -1854,9 +1853,9 @@ mod tests {
         assert_eq!(host.container_tab_id(sftp), sftp);
         assert!(!host.is_outside_main_window(sftp));
         let removed = host
-            .remove_tab_at(host.tab_index_by_id(ide).unwrap())
+            .remove_tab_at(host.tab_index_by_id(forwards).unwrap())
             .unwrap();
-        assert_eq!(removed.tab.id, ide);
+        assert_eq!(removed.tab.id, forwards);
         let mut remaining = Vec::new();
         host.tab_by_id(combined.id)
             .unwrap()
@@ -2736,7 +2735,7 @@ mod tests {
             TabKind::LocalTerminal,
             TabKind::Settings,
             TabKind::Runtime,
-            TabKind::PluginManager,
+            TabKind::Sftp,
         ] {
             let tab_host = cx.new(|_| WorkspaceTabHostEntity::new());
             let tab_id = tab_host.update(cx, |tabs, _| {

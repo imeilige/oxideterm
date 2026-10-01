@@ -356,8 +356,7 @@
       "switch_to_directory": "このディレクトリに切り替え",
       "copy_path": "パスをコピー",
       "open_file_manager": "ファイルマネージャーで開く",
-      "open_sftp": "SFTP で開く",
-      "open_ide": "IDE で開く"
+      "open_sftp": "SFTP で開く"
     },
     "project": {
       "search_tasks": "プロジェクトタスクを検索...",

@@ -2072,25 +2072,6 @@ impl WorkspaceApp {
                 ));
                 let listener = cx.listener({
                     let node_id = node_id.clone();
-                    move |this, _event, _window, cx| {
-                        // Mirrors Tauri's node-first IDE route: opening IDE creates
-                        // an IDE owner surface and remote folder chooser for the
-                        // node, not a terminal pane or implicit "/" project.
-                        this.open_ide_folder_picker_tab(node_id.clone(), cx);
-                        cx.stop_propagation();
-                    }
-                });
-                children.push(self.render_session_action_item(
-                    node_depth + 1,
-                    false,
-                    LucideIcon::Code2,
-                    "IDE".to_string(),
-                    SessionActionVariant::Primary,
-                    listener,
-                    cx,
-                ));
-                let listener = cx.listener({
-                    let node_id = node_id.clone();
                     move |this, _event, window, cx| {
                         this.open_forwards_tab(node_id.clone(), window, cx);
                         cx.stop_propagation();

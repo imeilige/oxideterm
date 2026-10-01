@@ -73,7 +73,6 @@ pub enum SettingsKeybindingScopeFilter {
     Files,
     Preview,
     RemoteDesktop,
-    Plugins,
     AiPanel,
 }
 
@@ -352,7 +351,6 @@ impl SettingsKeybindingScopeFilter {
             Self::Files,
             Self::Preview,
             Self::RemoteDesktop,
-            Self::Plugins,
             Self::AiPanel,
         ]
     }
@@ -369,7 +367,6 @@ impl SettingsKeybindingScopeFilter {
             Self::Files => "settings_view.keybindings.scope_files",
             Self::Preview => "settings_view.keybindings.scope_preview",
             Self::RemoteDesktop => "settings_view.keybindings.scope_remote_desktop",
-            Self::Plugins => "settings_view.keybindings.scope_plugins",
             Self::AiPanel => "settings_view.keybindings.scope_ai_panel",
         }
     }
@@ -725,14 +722,12 @@ pub enum SettingsBackgroundTabIcon {
     ArrowLeftRight,
     Bell,
     Cloud,
-    Code2,
     Folder,
     FolderInput,
     Gauge,
     ListTree,
     Monitor,
     Network,
-    Puzzle,
     Rocket,
     Settings,
     Terminal,

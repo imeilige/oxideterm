@@ -109,12 +109,12 @@ class PortableArchiveTests(unittest.TestCase):
                 path, "x86_64-pc-windows-msvc", "2.0.0"
             )
 
-    def test_linux_portable_archive_rejects_missing_agent_notice(self) -> None:
+    def test_linux_portable_archive_rejects_missing_native_notice(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "root"
             root.mkdir()
             for name in self.required_entries("OxideTerm", "oxideterm-native"):
-                if name.endswith("AGENT_THIRD_PARTY_NOTICES.md"):
+                if name.endswith("THIRD_PARTY_NOTICES.md"):
                     continue
                 path = root / name
                 if name.endswith("/"):
@@ -126,7 +126,7 @@ class PortableArchiveTests(unittest.TestCase):
             with tarfile.open(archive_path, "w:gz") as archive:
                 archive.add(root / "OxideTerm", arcname="OxideTerm")
 
-            with self.assertRaisesRegex(RuntimeError, "AGENT_THIRD_PARTY_NOTICES"):
+            with self.assertRaisesRegex(RuntimeError, "THIRD_PARTY_NOTICES"):
                 verify_native_package.verify_portable_archive(
                     archive_path, "x86_64-unknown-linux-gnu", "2.0.0"
                 )

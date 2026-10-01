@@ -271,15 +271,6 @@ impl WorkspaceApp {
                     }
                 }
             }
-            Some(TabKind::Ide) => {
-                self.active_surface = ActiveSurface::Terminal;
-                if let Some(active_tab_id) = self.active_content_tab_id(cx)
-                    && let Some(node_id) = self.ide_workspace.read(cx).node_for_tab(active_tab_id)
-                {
-                    self.active_ssh_node_id = Some(node_id.clone());
-                    self.expanded_ssh_nodes.insert(node_id.clone());
-                }
-            }
             Some(TabKind::SessionManager) => {
                 self.active_surface = ActiveSurface::Terminal;
                 self.active_sidebar_section = SidebarSection::Connections;
@@ -294,9 +285,6 @@ impl WorkspaceApp {
                 self.active_surface = ActiveSurface::Terminal;
             }
             Some(TabKind::NotificationCenter) => {
-                self.active_surface = ActiveSurface::Terminal;
-            }
-            Some(TabKind::PluginManager) => {
                 self.active_surface = ActiveSurface::Terminal;
             }
             Some(TabKind::CloudSync) => {
@@ -1058,13 +1046,6 @@ impl WorkspaceApp {
         {
             self.main_window_tabs.context_menu = None;
         }
-        if let TabKind::Plugin { plugin_id, tab_id } = &tab.kind {
-            self.plugin_entity.update(cx, |plugins, _cx| {
-                plugins
-                    .ui_state_mut()
-                    .remove_surface(plugin_id, "tab", tab_id);
-            });
-        }
         if tab.kind == TabKind::Graphics {
             self.graphics.update(cx, |graphics, cx| {
                 // Closing the graphics page stops only its WSL graphics session.
@@ -1100,11 +1081,6 @@ impl WorkspaceApp {
                 self.ftp_sessions.remove(&endpoint_id);
             }
         }
-        self.ide_workspace.update(cx, |workspace, cx| {
-            // The IDE owner records a real project close and releases only this
-            // surface's node consumer; shared node users remain registered.
-            workspace.close_surface(tab.id, ide::IdeSurfaceCloseReason::UserProjectClose, cx);
-        });
         self.knowledge_workspace
             .update(cx, |workspace, _cx| workspace.close_tab(tab.id));
         self.forwarding
@@ -1270,9 +1246,6 @@ impl WorkspaceApp {
 
     fn tab_belongs_to_node(&self, tab: &Tab, node_id: &NodeId, cx: &App) -> bool {
         if self.sftp_tab_nodes.get(&tab.id) == Some(node_id) {
-            return true;
-        }
-        if self.ide_workspace.read(cx).node_for_tab(tab.id) == Some(node_id) {
             return true;
         }
         if self.forwarding.read(cx).tab_matches_node(tab.id, node_id) {

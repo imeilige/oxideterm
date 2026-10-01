@@ -106,7 +106,6 @@ fn tab_return_visible_insertion_index(pointer_x: f32, tab_widths: &[f32]) -> usi
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum DetachedTabSurfaceRoute {
     Settings,
-    Ide(TabId),
     Sftp(TabId),
     Forwards(TabId),
     Knowledge(TabId),
@@ -118,7 +117,6 @@ fn detached_tab_surface_route(tab_id: TabId, kind: &TabKind) -> DetachedTabSurfa
     // of consulting the main window's active-tab slot.
     match kind {
         TabKind::Settings => DetachedTabSurfaceRoute::Settings,
-        TabKind::Ide => DetachedTabSurfaceRoute::Ide(tab_id),
         TabKind::Sftp => DetachedTabSurfaceRoute::Sftp(tab_id),
         TabKind::Forwards => DetachedTabSurfaceRoute::Forwards(tab_id),
         TabKind::Knowledge => DetachedTabSurfaceRoute::Knowledge(tab_id),
@@ -616,7 +614,6 @@ impl WorkspaceApp {
                     cx.notify();
                     return;
                 }
-                self.sync_ide_surface_mount(tab_id, cx);
                 self.sync_host_tools_lifecycle(false, cx);
                 self.bind_remote_desktop_window(tab_id, detached_window_handle, cx);
                 self.resume_remote_desktop_frame_delivery(tab_id, cx);
@@ -1667,9 +1664,6 @@ impl WorkspaceApp {
     ) -> AnyElement {
         match detached_tab_surface_route(tab_id, kind) {
             DetachedTabSurfaceRoute::Settings => return self.render_settings_surface(cx),
-            DetachedTabSurfaceRoute::Ide(tab_id) => {
-                return self.render_ide_surface_for_tab(tab_id, cx);
-            }
             DetachedTabSurfaceRoute::Sftp(tab_id) => {
                 return self.render_sftp_surface_for_tab(tab_id, window, cx);
             }
@@ -1700,10 +1694,6 @@ impl WorkspaceApp {
             (TabKind::Topology, _) => self.render_topology_surface(cx),
             (TabKind::NotificationCenter, _) => self.render_notification_center_surface(cx),
             (TabKind::SessionManager, _) => self.render_session_manager_surface(window, cx),
-            (TabKind::PluginManager, _) => self.render_plugin_manager_surface(cx),
-            (TabKind::Plugin { plugin_id, tab_id }, _) => {
-                self.render_native_plugin_tab_surface(plugin_id, tab_id, cx)
-            }
             (TabKind::CloudSync, _) => self.render_cloud_sync_surface(cx),
             (TabKind::RemoteDesktop, _) => self.render_remote_desktop_surface(tab_id, window, cx),
             (_, Some(root_pane)) => {
@@ -1997,10 +1987,6 @@ mod tests {
         assert_eq!(
             detached_tab_surface_route(tab_id, &TabKind::Settings),
             DetachedTabSurfaceRoute::Settings
-        );
-        assert_eq!(
-            detached_tab_surface_route(tab_id, &TabKind::Ide),
-            DetachedTabSurfaceRoute::Ide(tab_id)
         );
         assert_eq!(
             detached_tab_surface_route(tab_id, &TabKind::Sftp),

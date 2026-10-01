@@ -19,7 +19,6 @@ mod graphics;
 mod graphics_vnc;
 mod history_quit;
 pub(crate) use history_quit::request_app_quit;
-mod ide;
 mod ime;
 mod knowledge;
 mod local_sessions;
@@ -31,10 +30,6 @@ mod onboarding;
 mod overlay;
 mod pane_tree;
 mod path_completion;
-mod plugin_entity;
-mod plugin_lifecycle;
-mod plugin_manager;
-mod plugin_ui;
 mod public_mcp;
 mod quick_commands;
 mod remote_desktop;
@@ -177,16 +172,15 @@ use oxideterm_gpui_terminal::{
     TerminalBackgroundFit, TerminalBackgroundPreferences, TerminalBroadcastInputKind,
     TerminalCommandSelectionLabels, TerminalContextAction, TerminalHighlightMatchScope,
     TerminalHighlightRenderMode, TerminalHighlightRule as UiHighlightRule,
-    TerminalHighlightRuleSetOverride, TerminalInputBroadcaster, TerminalInputInterceptor,
-    TerminalInputInterceptorResult, TerminalKittyFileTransmissionLabels, TerminalModemLabels,
-    TerminalNotice, TerminalNoticeVariant, TerminalOutputProcessor, TerminalPane,
-    TerminalPaneEvent, TerminalPasteLabels, TerminalRecordingState, TerminalRecordingStatus,
-    TerminalSearchStatus, TerminalSerialControlLabels, TerminalSessionLogContext,
-    TerminalSessionLogLabels, TerminalSessionLogOptions, TerminalSessionLogState,
-    TerminalSessionLogStatus, TerminalTmuxLabels, TerminalTrzszLabels,
-    TerminalUiPreferenceOverrides, TerminalUiPreferences, TerminalUiTheme,
-    TerminalWorkingDirectorySource, detect_custom_privilege_prompt, prune_terminal_session_logs,
-    resolved_terminal_semantic_scheme, terminal_semantic_line_band,
+    TerminalHighlightRuleSetOverride, TerminalInputBroadcaster,
+    TerminalKittyFileTransmissionLabels, TerminalModemLabels, TerminalNotice,
+    TerminalNoticeVariant, TerminalPane, TerminalPaneEvent, TerminalPasteLabels,
+    TerminalRecordingState, TerminalRecordingStatus, TerminalSearchStatus,
+    TerminalSerialControlLabels, TerminalSessionLogContext, TerminalSessionLogLabels,
+    TerminalSessionLogOptions, TerminalSessionLogState, TerminalSessionLogStatus,
+    TerminalTmuxLabels, TerminalTrzszLabels, TerminalUiPreferenceOverrides, TerminalUiPreferences,
+    TerminalUiTheme, TerminalWorkingDirectorySource, detect_custom_privilege_prompt,
+    prune_terminal_session_logs, resolved_terminal_semantic_scheme, terminal_semantic_line_band,
     terminal_semantic_variant_color,
 };
 use oxideterm_gpui_ui::scroll::ScrollableElement;
@@ -200,7 +194,6 @@ use oxideterm_gpui_ui::{
     tooltip::tooltip_surface,
 };
 use oxideterm_i18n::{I18n, Locale};
-use oxideterm_ide_fs::NodeAgentIdeFileSystem;
 use oxideterm_notification_center::{
     ActivityView as WorkspaceActivityView, EventCategory as WorkspaceEventCategory,
     EventSeverity as WorkspaceEventSeverity, NotificationCenterState,
@@ -212,8 +205,6 @@ use oxideterm_notification_center::{
     NotificationStatus as WorkspaceNotificationStatus,
     NotificationStatusFilter as WorkspaceNotificationStatusFilter,
 };
-use oxideterm_plugin_host_api::runtime as plugin_runtime;
-use oxideterm_plugin_registry as plugin_host;
 use oxideterm_render_policy::{
     DetectedGraphics, EffectiveRenderPolicy, RenderProfile, compute_render_policy,
 };
@@ -806,8 +797,6 @@ pub(crate) struct WorkspaceApp {
     ai_text_editor: Option<Entity<oxideterm_gpui_editor::TextEditorView>>,
     detached_local_terminal_list_state: ListState,
     detached_local_terminal_list_cache: RefCell<VirtualListSignatureCache>,
-    plugin_entity: Entity<plugin_entity::PluginWorkspaceEntity>,
-    _plugin_entity_subscription: Subscription,
     split_drag: Option<SplitDrag>,
     disclosure_motions: disclosure_motion::DisclosureMotions,
     sidebar_resizing: bool,
@@ -931,8 +920,6 @@ pub(crate) struct WorkspaceApp {
     embedded_sftp_node_id: Option<NodeId>,
     embedded_sftp_pinned: bool,
     sftp_presentation_request: Option<sftp::SftpPresentationRequest>,
-    ide_workspace: Entity<ide::IdeWorkspaceEntity>,
-    _ide_workspace_subscription: Subscription,
     knowledge_workspace: Entity<knowledge::KnowledgeWorkspaceEntity>,
     sftp_view: Entity<sftp::SftpWorkspaceEntity>,
     sftp_pages: HashMap<TabId, sftp::views::SftpPage>,

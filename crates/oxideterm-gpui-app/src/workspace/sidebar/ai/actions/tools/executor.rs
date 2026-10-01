@@ -503,10 +503,8 @@ impl AiOrchestratorRuntimeSnapshot {
     pub(in crate::workspace) async fn read_live_resource(
         &self,
         services: &AiLiveToolServices,
-        node_id: NodeId,
         sftp_owner: Option<crate::workspace::ai_runtime_context::AiSftpRuntimeOwner>,
         args: &serde_json::Value,
-        ide_file_system: Option<oxideterm_ide_fs::NodeAgentIdeFileSystem>,
         post_user_approval: bool,
     ) -> AiActionResultLite {
         let resource = args
@@ -525,50 +523,6 @@ impl AiOrchestratorRuntimeSnapshot {
                 "read",
             );
         };
-
-        if resource == "ide" {
-            let Some(ide_file_system) = ide_file_system else {
-                return self.fail(
-                    "IDE capability is unavailable.",
-                    "runtime_capability_unavailable",
-                    "Rediscover the current IDE workspace before reading a file.",
-                    "read",
-                );
-            };
-            if let Ok(result) = ide_file_system
-                .node_agent_read_file(node_id.0.clone(), path)
-                .await
-            {
-                let data = serde_json::json!({
-                    "path": path,
-                    "content": result.content,
-                    "hash": result.hash,
-                    "contentHash": result.hash,
-                    "size": result.size,
-                    "mtime": result.mtime,
-                    "encoding": result.encoding,
-                    "source": "ide-surface-agent",
-                });
-                return self.ok(
-                    format!("Read IDE file {path}."),
-                    truncate_for_model(
-                        data.get("content")
-                            .and_then(serde_json::Value::as_str)
-                            .unwrap_or_default()
-                            .to_string(),
-                        12_000,
-                    ),
-                    data,
-                    "read",
-                );
-            }
-            return self.fail(
-                "IDE file read failed.",
-                "resource_disconnected",
-                "The current IDE file owner is unavailable. Rediscover it before retrying.",
-                "read",
-            );
-        }
 
         let Some(sftp_owner) = sftp_owner else {
             return self.fail(
@@ -671,16 +625,10 @@ impl AiOrchestratorRuntimeSnapshot {
     pub(in crate::workspace) async fn write_live_resource(
         &self,
         services: &AiLiveToolServices,
-        node_id: NodeId,
         sftp_owner: Option<crate::workspace::ai_runtime_context::AiSftpRuntimeOwner>,
         args: &serde_json::Value,
-        ide_file_system: Option<oxideterm_ide_fs::NodeAgentIdeFileSystem>,
         post_user_approval: bool,
     ) -> AiActionResultLite {
-        let resource = args
-            .get("resource")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or_default();
         let Some(path) = args
             .get("path")
             .and_then(serde_json::Value::as_str)
@@ -719,44 +667,6 @@ impl AiOrchestratorRuntimeSnapshot {
             .get("expected_hash")
             .and_then(serde_json::Value::as_str)
             .filter(|value| !value.trim().is_empty());
-
-        if resource == "ide" {
-            let Some(ide_file_system) = ide_file_system else {
-                return self.fail(
-                    "IDE capability is unavailable.",
-                    "runtime_capability_unavailable",
-                    "Rediscover the current IDE workspace before writing a file.",
-                    "write",
-                );
-            };
-            if let Ok(result) = ide_file_system
-                .node_agent_write_file(node_id.0.clone(), path, content, expected_hash)
-                .await
-            {
-                let data = serde_json::json!({
-                    "path": path,
-                    "size": result.size,
-                    "mtime": result.mtime,
-                    "hash": result.hash,
-                    "contentHash": result.hash,
-                    "atomicWrite": result.atomic,
-                    "source": "ide-surface-agent",
-                });
-                return self.ok(
-                    format!("Wrote IDE file {path}."),
-                    serde_json::to_string_pretty(&data)
-                        .unwrap_or_else(|_| format!("{path} written.")),
-                    data,
-                    "write",
-                );
-            }
-            return self.fail(
-                "IDE file write failed.",
-                "resource_disconnected",
-                "The current IDE file owner is unavailable. Rediscover it before retrying.",
-                "write",
-            );
-        }
 
         let Some(sftp_owner) = sftp_owner else {
             return self.fail(

@@ -586,7 +586,6 @@ impl WorkspaceApp {
                 });
                 return;
             }
-            self.release_ide_runtime_for_saved_connection(id, cx);
             let status = self.i18n.t("sessionManager.toast.connection_deleted");
             self.session_manager.update(cx, |session_manager, cx| {
                 session_manager
@@ -1339,7 +1338,6 @@ impl WorkspaceApp {
                             });
                             return;
                         }
-                        self.release_ide_runtime_for_saved_connection(&id, cx);
                         deleted += 1;
                     }
                 }

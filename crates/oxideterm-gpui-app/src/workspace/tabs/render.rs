@@ -15,11 +15,7 @@ enum WelcomeToolAction {
     CloudSync,
 }
 
-fn tab_kind_icon(
-    workspace: &WorkspaceApp,
-    kind: &TabKind,
-    cx: &Context<WorkspaceApp>,
-) -> LucideIcon {
+fn tab_kind_icon(kind: &TabKind) -> LucideIcon {
     match kind {
         TabKind::Workspace => LucideIcon::AppWindow,
         TabKind::LocalTerminal => LucideIcon::Square,
@@ -31,18 +27,8 @@ fn tab_kind_icon(
         TabKind::Topology => LucideIcon::Network,
         TabKind::NotificationCenter => LucideIcon::Bell,
         TabKind::Sftp => LucideIcon::FolderInput,
-        TabKind::Ide => LucideIcon::Code2,
         TabKind::Forwards => LucideIcon::ArrowLeftRight,
         TabKind::SessionManager => LucideIcon::LayoutList,
-        TabKind::PluginManager => LucideIcon::Puzzle,
-        TabKind::Plugin { plugin_id, tab_id } => workspace
-            .plugin_entity
-            .read(cx)
-            .registry()
-            .contributions()
-            .tab_contribution(plugin_id, tab_id)
-            .map(|contribution| LucideIcon::from_plugin_name(&contribution.definition.icon))
-            .unwrap_or(LucideIcon::Puzzle),
         TabKind::CloudSync => LucideIcon::Cloud,
         TabKind::Knowledge => LucideIcon::BookOpen,
         TabKind::Settings => LucideIcon::Settings,
@@ -140,7 +126,7 @@ impl WorkspaceApp {
                         .read(cx)
                         .reconnect_active_progress(node_id)
                 });
-                let icon = tab_kind_icon(self, &tab.kind, cx);
+                let icon = tab_kind_icon(&tab.kind);
                 let tab_text = self.tab_display_title(tab);
                 (
                     tab_index,
@@ -167,8 +153,7 @@ impl WorkspaceApp {
                 .iter()
                 .find(|exiting| exiting.visual_index == visual_index)
             {
-                scroll_viewport =
-                    scroll_viewport.child(self.render_exiting_tab_visual(exiting, cx));
+                scroll_viewport = scroll_viewport.child(self.render_exiting_tab_visual(exiting));
                 continue;
             }
             if !placeholder_rendered
@@ -410,7 +395,7 @@ impl WorkspaceApp {
         tab_kind: &TabKind,
         tab_title: &str,
         tab_width: f32,
-        cx: &Context<Self>,
+        _cx: &Context<Self>,
     ) -> AnyElement {
         let theme = self.tokens.ui;
         let accent = theme.accent;
@@ -427,7 +412,7 @@ impl WorkspaceApp {
             .bg(rgba((accent << 8) | 0x18))
             .text_color(rgba((theme.text << 8) | 0xcc))
             .child(Self::render_lucide_icon(
-                tab_kind_icon(self, tab_kind, cx),
+                tab_kind_icon(tab_kind),
                 self.tokens.metrics.tab_icon_size,
                 rgba((accent << 8) | 0xcc),
             ))
@@ -599,11 +584,7 @@ impl WorkspaceApp {
         }
     }
 
-    fn render_exiting_tab_visual(
-        &self,
-        exiting: &ExitingTabVisual,
-        cx: &Context<Self>,
-    ) -> AnyElement {
+    fn render_exiting_tab_visual(&self, exiting: &ExitingTabVisual) -> AnyElement {
         let theme = self.tokens.ui;
         let tab = div()
             .h_full()
@@ -638,7 +619,7 @@ impl WorkspaceApp {
                 )
             })
             .child(Self::render_lucide_icon(
-                tab_kind_icon(self, &exiting.kind, cx),
+                tab_kind_icon(&exiting.kind),
                 self.tokens.metrics.tab_icon_size,
                 rgb(if exiting.was_active {
                     theme.text
@@ -831,12 +812,6 @@ impl WorkspaceApp {
                 .forwarding
                 .read(cx)
                 .node_for_tab(tab.id)
-                .filter(|node_id| self.has_active_reconnect_job(node_id, cx)),
-            TabKind::Ide => self
-                .ide_workspace
-                .read(cx)
-                .node_for_tab(tab.id)
-                .cloned()
                 .filter(|node_id| self.has_active_reconnect_job(node_id, cx)),
             _ => None,
         }

@@ -40,14 +40,10 @@ pub enum ToolGroup {
     QuickCommandContentRead,
     QuickCommandManage,
     QuickCommandExecute,
-    AddonRead,
-    AddonManage,
     ForwardRead,
     ForwardManage,
     FileRead,
     FileWrite,
-    WorkspaceRead,
-    WorkspaceEdit,
     CloudSync,
 }
 
@@ -79,14 +75,10 @@ impl ToolGroup {
             Self::QuickCommandContentRead => "quick_command_content_read",
             Self::QuickCommandManage => "quick_command_manage",
             Self::QuickCommandExecute => "quick_command_execute",
-            Self::AddonRead => "addon_read",
-            Self::AddonManage => "addon_manage",
             Self::ForwardRead => "forward_read",
             Self::ForwardManage => "forward_manage",
             Self::FileRead => "file_read",
             Self::FileWrite => "file_write",
-            Self::WorkspaceRead => "workspace_read",
-            Self::WorkspaceEdit => "workspace_edit",
             Self::CloudSync => "cloud_sync",
         }
     }
@@ -117,14 +109,10 @@ impl ToolGroup {
             Self::QuickCommandContentRead,
             Self::QuickCommandManage,
             Self::QuickCommandExecute,
-            Self::AddonRead,
-            Self::AddonManage,
             Self::ForwardRead,
             Self::ForwardManage,
             Self::FileRead,
             Self::FileWrite,
-            Self::WorkspaceRead,
-            Self::WorkspaceEdit,
             Self::CloudSync,
         ]
     }

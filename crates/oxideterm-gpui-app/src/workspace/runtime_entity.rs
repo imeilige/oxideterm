@@ -5,8 +5,7 @@ use super::new_connection::SshConnectionWorkerResult;
 use super::*;
 use oxideterm_settings::RemoteShellIntegrationMode;
 use oxideterm_ssh::{
-    ManagedKeyResolver, ReconnectForwardRestorePlan, ReconnectIdeSnapshot, ReconnectJob,
-    ReconnectTiming,
+    ManagedKeyResolver, ReconnectForwardRestorePlan, ReconnectJob, ReconnectTiming,
 };
 
 const ACTIVE_PROBE_START_DELAY: Duration = Duration::from_millis(530);
@@ -764,13 +763,6 @@ impl WorkspaceRuntimeEntity {
         node_id: &NodeId,
     ) -> Option<ReconnectProgress> {
         self.reconnect_orchestrator.active_progress(&node_id.0)
-    }
-
-    pub(in crate::workspace) fn reconnect_ide_snapshot(
-        &self,
-        node_id: &NodeId,
-    ) -> Option<(ReconnectIdeSnapshot, Option<SystemTime>)> {
-        self.reconnect_orchestrator.ide_snapshot(&node_id.0)
     }
 
     pub(in crate::workspace) fn complete_reconnect_transfer_resume(

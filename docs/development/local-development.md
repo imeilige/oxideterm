@@ -23,11 +23,10 @@ OXIDETERM_RENDER_PROFILE=compatibility cargo run
 
 The compatibility profile is a diagnostic tool, not a renderer fix. Record whether a bug changes under it, then investigate the renderer or platform boundary with that evidence.
 
-Build the CLI or optional Linux agent only when the change needs them:
+Build the CLI only when the change needs it:
 
 ```sh
 ./scripts/build/build-cli.sh
-./scripts/build/build-agent.sh
 ```
 
 ## Platform Notes

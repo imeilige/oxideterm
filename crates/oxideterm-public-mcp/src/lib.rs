@@ -51,9 +51,9 @@ pub use calls::{
     TransferHandleArgs, WriteDesktopClipboardArgs,
 };
 pub use handles::{
-    AddonRef, ApprovalRef, ArtifactRef, AuditRef, ClientRef, CommandRef, ConnectionRef, DesktopRef,
+    ApprovalRef, ArtifactRef, AuditRef, ClientRef, CommandRef, ConnectionRef, DesktopRef,
     FileSessionRef, ForwardRef, HandleParseError, NodeRef, OperationRef, QuickCommandRef,
-    RecordingRef, SyncPlanRef, TerminalRef, TransferRef, UndoRef, WorkspaceRef,
+    RecordingRef, SyncPlanRef, TerminalRef, TransferRef, UndoRef,
 };
 pub use runtime::{PublicMcpHttpServer, start_http_server};
 pub use service::{PublicMcpService, PublicMcpState};

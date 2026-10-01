@@ -167,10 +167,6 @@ fn public_mcp_tool_group_label_key(tool_group: oxideterm_public_mcp::ToolGroup) 
         oxideterm_public_mcp::ToolGroup::QuickCommandExecute => {
             "settings_view.network.mcp_group_quick_command_execute"
         }
-        oxideterm_public_mcp::ToolGroup::AddonRead => "settings_view.network.mcp_group_addon_read",
-        oxideterm_public_mcp::ToolGroup::AddonManage => {
-            "settings_view.network.mcp_group_addon_manage"
-        }
         oxideterm_public_mcp::ToolGroup::ForwardRead => {
             "settings_view.network.mcp_group_forward_read"
         }
@@ -179,12 +175,6 @@ fn public_mcp_tool_group_label_key(tool_group: oxideterm_public_mcp::ToolGroup) 
         }
         oxideterm_public_mcp::ToolGroup::FileRead => "settings_view.network.mcp_group_file_read",
         oxideterm_public_mcp::ToolGroup::FileWrite => "settings_view.network.mcp_group_file_write",
-        oxideterm_public_mcp::ToolGroup::WorkspaceRead => {
-            "settings_view.network.mcp_group_workspace_read"
-        }
-        oxideterm_public_mcp::ToolGroup::WorkspaceEdit => {
-            "settings_view.network.mcp_group_workspace_edit"
-        }
         oxideterm_public_mcp::ToolGroup::CloudSync => "settings_view.network.mcp_group_cloud_sync",
     }
 }
@@ -601,7 +591,7 @@ impl WorkspaceApp {
                     .t("settings_view.network.approval_client")
                     .replace("{{client}}", &client_label);
                 let target_label =
-                    self.public_mcp_target_label(&approval.client_ref, &approval.target, cx);
+                    self.public_mcp_target_label(&approval.client_ref, &approval.target);
                 let mut approval_details = div()
                     .min_w(px(0.0))
                     .flex_1()

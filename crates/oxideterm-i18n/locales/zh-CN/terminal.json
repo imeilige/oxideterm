@@ -418,8 +418,7 @@
       "switch_to_directory": "切换到此目录",
       "copy_path": "复制路径",
       "open_file_manager": "在文件管理器中打开",
-      "open_sftp": "在 SFTP 中打开",
-      "open_ide": "在 IDE 中打开"
+      "open_sftp": "在 SFTP 中打开"
     },
     "project": {
       "search_tasks": "搜索项目任务...",

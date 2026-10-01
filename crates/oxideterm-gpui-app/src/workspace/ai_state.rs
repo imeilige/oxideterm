@@ -374,7 +374,6 @@ pub(in crate::workspace) struct AiWorkspaceEntity {
     // but these collections remain physically owned by this Entity.
     pub(in crate::workspace) tool_execution_records: VecDeque<AiToolExecutionRecord>,
     pub(in crate::workspace) tool_result_facts: VecDeque<AiToolResultFact>,
-    agent_fs: NodeAgentIdeFileSystem,
     mcp_registry: oxideterm_ai::McpRegistry,
     compaction_tx: AiCompactionDeliverySender,
     compaction_rx: std::sync::mpsc::Receiver<AiCompactionDelivery>,
@@ -1024,25 +1023,9 @@ impl AiWorkspaceEntity {
         self.model_ui.selector_status_signature = signature;
     }
 
-    #[cfg(test)]
     pub(in crate::workspace) fn new(
         task_runtime: Arc<tokio::runtime::Runtime>,
         key_store: oxideterm_ai::AiProviderKeyStore,
-        cx: &mut Context<Self>,
-    ) -> Self {
-        // Entity unit tests do not connect nodes, but still exercise the real
-        // disabled filesystem and registry ownership paths.
-        let agent_fs = NodeAgentIdeFileSystem::new(
-            NodeRouter::new(oxideterm_ssh::SshConnectionRegistry::default()),
-            oxideterm_ide_fs::NodeAgentMode::Disabled,
-        );
-        Self::new_with_agent_fs(task_runtime, key_store, agent_fs, cx)
-    }
-
-    pub(in crate::workspace) fn new_with_agent_fs(
-        task_runtime: Arc<tokio::runtime::Runtime>,
-        key_store: oxideterm_ai::AiProviderKeyStore,
-        agent_fs: NodeAgentIdeFileSystem,
         cx: &mut Context<Self>,
     ) -> Self {
         let (model_refresh_tx, model_refresh_rx) =
@@ -1155,7 +1138,6 @@ impl AiWorkspaceEntity {
             pending_tool_candidate_counts: HashMap::new(),
             tool_execution_records: VecDeque::new(),
             tool_result_facts: VecDeque::new(),
-            agent_fs,
             mcp_registry,
             compaction_tx,
             compaction_rx,
@@ -3986,17 +3968,6 @@ impl AiWorkspaceEntity {
     fn reject_all_tool_interactions(&mut self) {
         self.reject_all_tool_approvals();
         self.reject_all_tool_candidate_selections();
-    }
-
-    pub(in crate::workspace) fn agent_fs(&self) -> &NodeAgentIdeFileSystem {
-        &self.agent_fs
-    }
-
-    pub(in crate::workspace) fn set_agent_fs_mode(
-        &mut self,
-        mode: oxideterm_ide_fs::NodeAgentMode,
-    ) {
-        self.agent_fs.set_mode(mode);
     }
 
     pub(in crate::workspace) fn mcp_registry(&self) -> &oxideterm_ai::McpRegistry {

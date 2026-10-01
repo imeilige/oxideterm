@@ -266,11 +266,6 @@ pub fn background_tab_options() -> &'static [(&'static str, &'static str, Settin
             SettingsBackgroundTabIcon::FolderInput,
         ),
         (
-            "ide",
-            "settings_view.terminal.bg_tab_ide",
-            SettingsBackgroundTabIcon::Code2,
-        ),
-        (
             "forwards",
             "settings_view.terminal.bg_tab_forwards",
             SettingsBackgroundTabIcon::ArrowLeftRight,
@@ -279,16 +274,6 @@ pub fn background_tab_options() -> &'static [(&'static str, &'static str, Settin
             "session_manager",
             "settings_view.terminal.bg_tab_sessions",
             SettingsBackgroundTabIcon::ListTree,
-        ),
-        (
-            "plugin_manager",
-            "settings_view.terminal.bg_tab_plugins",
-            SettingsBackgroundTabIcon::Puzzle,
-        ),
-        (
-            "plugin",
-            "settings_view.terminal.bg_tab_plugin",
-            SettingsBackgroundTabIcon::Puzzle,
         ),
         (
             "cloud_sync",

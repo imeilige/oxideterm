@@ -7,10 +7,6 @@ edition.workspace = true
 license.workspace = true
 version.workspace = true
 
-[features]
-default = ["plugin-wasm-runtime"]
-plugin-wasm-runtime = ["oxideterm-plugin-host-api/wasm-runtime"]
-
 [[bin]]
 name = "oxideterm-native"
 path = "src/main.rs"
@@ -40,7 +36,6 @@ oxideterm-editor-core = { path = "../oxideterm-editor-core" }
 oxideterm-forwarding = { path = "../oxideterm-forwarding" }
 oxideterm-gpui-cloud-sync = { path = "../oxideterm-gpui-cloud-sync" }
 oxideterm-gpui-editor = { path = "../oxideterm-gpui-editor" }
-oxideterm-gpui-ide = { path = "../oxideterm-gpui-ide" }
 oxideterm-gpui-markdown = { path = "../oxideterm-gpui-markdown" }
 oxideterm-gpui-platform = { path = "../oxideterm-gpui-platform" }
 oxideterm-gpui-remote-desktop = { path = "../oxideterm-gpui-remote-desktop" }
@@ -50,16 +45,11 @@ oxideterm-gpui-ui = { path = "../oxideterm-gpui-ui" }
 oxideterm-editor-syntax = { path = "../oxideterm-editor-syntax" }
 oxideterm-environment = { path = "../oxideterm-environment" }
 oxideterm-i18n = { path = "../oxideterm-i18n" }
-oxideterm-ide-core = { path = "../oxideterm-ide-core" }
-oxideterm-ide-fs = { path = "../oxideterm-ide-fs" }
 oxideterm-local-files = { path = "../oxideterm-local-files" }
 oxideterm-mosh = { path = "../oxideterm-mosh" }
 oxideterm-audit = { path = "../oxideterm-audit" }
 oxideterm-notification-center = { path = "../oxideterm-notification-center" }
 oxideterm-network-proxy = { path = "../oxideterm-network-proxy" }
-oxideterm-plugin-host-api = { path = "../oxideterm-plugin-host-api" }
-oxideterm-plugin-protocol = { path = "../oxideterm-plugin-protocol" }
-oxideterm-plugin-registry = { path = "../oxideterm-plugin-registry" }
 oxideterm-portable-runtime = { path = "../oxideterm-portable-runtime" }
 oxideterm-preview = { path = "../oxideterm-preview" }
 oxideterm-public-mcp = { path = "../oxideterm-public-mcp" }
@@ -142,4 +132,4 @@ icon = [
 osx_minimum_system_version = "13.0"
 osx_info_plist_exts = ["resources/info/*"]
 osx_entitlements = "resources/OxideTerm.entitlements"
-resources = ["resources/agents", "resources/cli-bin", "resources/icons"]
+resources = ["resources/cli-bin", "resources/icons"]

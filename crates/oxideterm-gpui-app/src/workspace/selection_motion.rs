@@ -4,7 +4,6 @@ pub(in crate::workspace) const TERMINAL_SETTINGS_SWITCHER_ID: &str =
     "terminal-settings-page-switcher";
 pub(in crate::workspace) const AI_SETTINGS_SWITCHER_ID: &str = "ai-settings-page-switcher";
 pub(in crate::workspace) const CLOUD_SYNC_SWITCHER_ID: &str = "cloud-sync-tab-bar";
-pub(in crate::workspace) const PLUGIN_MANAGER_SWITCHER_ID: &str = "plugin-manager-tab-bar";
 pub(in crate::workspace) const CONNECTION_RUNTIME_SWITCHER_ID: &str = "connection-runtime-tab-bar";
 pub(in crate::workspace) const HOST_TOOLS_SWITCHER_ID: &str = "host-tools-tab-bar";
 pub(in crate::workspace) const NOTIFICATION_CENTER_SWITCHER_ID: &str =
@@ -267,13 +266,13 @@ mod tests {
         state.clear(CLOUD_SYNC_SWITCHER_ID);
 
         for target_index in 0..1_000 {
-            state.begin_with_vertical_offset(PLUGIN_MANAGER_SWITCHER_ID, target_index, None);
+            state.begin_with_vertical_offset(HOST_TOOLS_SWITCHER_ID, target_index, None);
         }
 
         assert_eq!(state.active_transitions.len(), 1);
-        assert!(state.is_active_for(PLUGIN_MANAGER_SWITCHER_ID, 999));
+        assert!(state.is_active_for(HOST_TOOLS_SWITCHER_ID, 999));
         assert_eq!(
-            state.transition_for(PLUGIN_MANAGER_SWITCHER_ID, 999),
+            state.transition_for(HOST_TOOLS_SWITCHER_ID, 999),
             Some((state.next_generation, None))
         );
     }

@@ -53,27 +53,9 @@ impl WorkspaceApp {
             &settings,
             &connection_store,
         );
-        // Native plugin discovery intentionally stops at manifest parsing.
-        // Legacy Tauri ESM plugins remain visible in Plugin Manager, but
-        // the native path never evaluates JS or creates a WebView runtime.
-        let plugin_registry = plugin_host::NativePluginRegistry::discover(settings_store.path());
         // Capture one stable root for this window. Shell `cd` must not silently
         // replace the available workflow catalog.
         let skill_workspace_root = std::env::current_dir().ok();
-        let plugin_roots = plugin_registry
-            .plugins()
-            .iter()
-            .filter(|plugin| {
-                matches!(
-                    plugin.state,
-                    plugin_host::NativePluginState::ReadyManifestOnly
-                        | plugin_host::NativePluginState::ReadyWasm
-                        | plugin_host::NativePluginState::ReadyProcess
-                        | plugin_host::NativePluginState::Active
-                )
-            })
-            .map(|plugin| plugin.install_dir.clone())
-            .collect();
         let disabled_paths = settings
             .ai
             .skills
@@ -85,7 +67,9 @@ impl WorkspaceApp {
             oxideterm_skills::SkillRegistry::discover(&oxideterm_skills::SkillDiscoveryOptions {
                 workspace_root: skill_workspace_root.clone(),
                 settings_path: Some(settings_store.path().to_path_buf()),
-                plugin_roots,
+                // Plugin-provided skill roots left with the plugin system, so
+                // discovery is limited to the workspace and user skill roots.
+                plugin_roots: Vec::new(),
                 disabled_paths,
             });
         let skill_registry = std::sync::Arc::new(parking_lot::RwLock::new(skill_registry));
@@ -410,10 +394,6 @@ impl WorkspaceApp {
             // a transfer actually needs persisted progress.
             Arc::new(LazyProgressStore::new(path))
         };
-        let ai_agent_fs = NodeAgentIdeFileSystem::new(
-            node_router.clone(),
-            crate::workspace::ide::node_agent_mode_from_settings(&settings),
-        );
         let cloud_sync_store = oxideterm_cloud_sync::state::CloudSyncStateStore::load(
             oxideterm_cloud_sync::state::default_cloud_sync_state_path(settings_store.path()),
         )?;
@@ -451,12 +431,8 @@ impl WorkspaceApp {
         let app_lock = app_lock::AppLockState::load(oxideterm_app_lock::AppLockStore::new());
         let ai_key_store = oxideterm_ai::AiProviderKeyStore::new();
         let ai_entity = cx.new(|cx| {
-            let mut entity = ai_state::AiWorkspaceEntity::new_with_agent_fs(
-                forwarding_runtime.clone(),
-                ai_key_store,
-                ai_agent_fs,
-                cx,
-            );
+            let mut entity =
+                ai_state::AiWorkspaceEntity::new(forwarding_runtime.clone(), ai_key_store, cx);
             entity.configure_chat_surface(
                 initial_context_sidebar_width,
                 Some(current_window_size(window)),
@@ -490,16 +466,6 @@ impl WorkspaceApp {
             ai_runtime_context::AiRuntimeContextEntity::attach_release_shutdown(cx);
             ai_runtime_context::AiRuntimeContextEntity::new()
         });
-        let plugin_task_runtime = forwarding_runtime.clone();
-        let plugin_entity = cx.new(move |cx| {
-            plugin_entity::PluginWorkspaceEntity::new(plugin_task_runtime, plugin_registry, cx)
-        });
-        let plugin_entity_subscription = cx.subscribe(
-            &plugin_entity,
-            |workspace, _plugin_entity, event: &plugin_entity::PluginWorkspaceEvent, cx| {
-                workspace.enqueue_plugin_window_effect(event, cx);
-            },
-        );
         let tab_host = cx.new(|_| tabs::WorkspaceTabHostEntity::new());
         let tab_host_subscription = cx.subscribe(
             &tab_host,
@@ -529,17 +495,6 @@ impl WorkspaceApp {
         });
         let terminal_command_sender_observation =
             cx.observe(&terminal_command_sender, |_, _, cx| cx.notify());
-        let ide_workspace = cx.new({
-            let fs = ai_entity.read(cx).agent_fs().clone();
-            let backend_runtime = forwarding_runtime.clone();
-            move |_| ide::IdeWorkspaceEntity::new(fs, backend_runtime)
-        });
-        let ide_workspace_subscription = cx.subscribe(
-            &ide_workspace,
-            |workspace, _ide_workspace, event: &ide::IdeWorkspaceEvent, cx| {
-                workspace.handle_ide_workspace_event(event, cx);
-            },
-        );
         // The Knowledge workspace is tab-owned so its navigator and editor survive activity-bar
         // navigation without occupying the global context sidebar.
         let knowledge_workspace = cx.new(|_| knowledge::KnowledgeWorkspaceEntity::default());
@@ -613,8 +568,6 @@ impl WorkspaceApp {
             )
             .measure_all(),
             detached_local_terminal_list_cache: RefCell::new(VirtualListSignatureCache::default()),
-            plugin_entity,
-            _plugin_entity_subscription: plugin_entity_subscription,
             split_drag: None,
             disclosure_motions: disclosure_motion::DisclosureMotions::default(),
             sidebar_resizing: false,
@@ -801,8 +754,6 @@ impl WorkspaceApp {
             embedded_sftp_node_id: None,
             embedded_sftp_pinned: false,
             sftp_presentation_request: None,
-            ide_workspace,
-            _ide_workspace_subscription: ide_workspace_subscription,
             knowledge_workspace,
             sftp_view,
             sftp_pages: HashMap::new(),

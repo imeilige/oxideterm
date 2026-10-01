@@ -394,18 +394,6 @@ impl WorkspaceApp {
                     },
                     cx,
                 ));
-                trailing.push(self.render_terminal_cwd_context_action(
-                    LucideIcon::FileCode,
-                    self.i18n.t("terminal.cwd.open_ide"),
-                    {
-                        let node_id = NodeId::new(node_id);
-                        move |this, _event, _window, cx| {
-                            this.open_terminal_cwd_path_in_ide(node_id.clone(), path.clone(), cx);
-                            cx.stop_propagation();
-                        }
-                    },
-                    cx,
-                ));
             }
             None => {}
         }

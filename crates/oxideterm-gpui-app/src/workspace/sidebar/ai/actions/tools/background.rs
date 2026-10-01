@@ -188,15 +188,6 @@ impl WorkspaceApp {
                 "Forwarding rules listed.",
                 "read",
             ),
-            "list_plugins" => {
-                let data = self.execute_ai_list_plugins(cx);
-                snapshot.ok(
-                    "Installed plugins listed.",
-                    serde_json::to_string_pretty(&data).unwrap_or_default(),
-                    data,
-                    "read",
-                )
-            }
             _ => return Err("background_task_tool_not_allowed".to_string()),
         };
         if !result.ok {

@@ -356,8 +356,7 @@
       "switch_to_directory": "이 디렉터리로 전환",
       "copy_path": "경로 복사",
       "open_file_manager": "파일 관리자에서 열기",
-      "open_sftp": "SFTP에서 열기",
-      "open_ide": "IDE에서 열기"
+      "open_sftp": "SFTP에서 열기"
     },
     "project": {
       "search_tasks": "프로젝트 작업 검색...",

@@ -25,7 +25,6 @@ pub(in crate::workspace) fn settings_keybinding_scope_matches(
         SettingsKeybindingScopeFilter::RemoteDesktop => {
             scope == crate::keybindings::ActionScope::RemoteDesktop
         }
-        SettingsKeybindingScopeFilter::Plugins => scope == crate::keybindings::ActionScope::Plugin,
         SettingsKeybindingScopeFilter::AiPanel => scope == crate::keybindings::ActionScope::AiPanel,
         SettingsKeybindingScopeFilter::All => true,
         SettingsKeybindingScopeFilter::Editor => scope == crate::keybindings::ActionScope::Editor,
@@ -64,33 +63,15 @@ impl KeybindingToolbarAction {
 impl WorkspaceApp {
     pub(in crate::workspace) fn keybinding_definitions(
         &self,
-        cx: &App,
     ) -> Vec<crate::keybindings::ActionDefinition> {
-        let mut definitions = crate::keybindings::ACTION_DEFINITIONS.to_vec();
-        for entry in &self
-            .plugin_entity
-            .read(cx)
-            .registry()
-            .contributions()
-            .runtime_keybindings
-        {
-            if let Some(definition) = crate::keybindings::plugin_action_definition(entry)
-                && !definitions
-                    .iter()
-                    .any(|existing| existing.id == definition.id)
-            {
-                definitions.push(definition);
-            }
-        }
-        definitions
+        crate::keybindings::ACTION_DEFINITIONS.to_vec()
     }
 
     pub(in crate::workspace) fn keybinding_definition(
         &self,
         id: &str,
-        cx: &App,
     ) -> Option<crate::keybindings::ActionDefinition> {
-        self.keybinding_definitions(cx)
+        self.keybinding_definitions()
             .into_iter()
             .find(|definition| definition.id == id)
     }
@@ -162,7 +143,7 @@ impl WorkspaceApp {
             .trim()
             .to_lowercase();
         let scope_filter = self.settings_workspace.read(cx).keybinding_scope_filter();
-        let catalog = self.keybinding_definitions(cx);
+        let catalog = self.keybinding_definitions();
         let mut visible_index = 0;
         for scope in [
             crate::keybindings::ActionScope::Global,
@@ -174,7 +155,6 @@ impl WorkspaceApp {
             crate::keybindings::ActionScope::FileManager,
             crate::keybindings::ActionScope::Preview,
             crate::keybindings::ActionScope::RemoteDesktop,
-            crate::keybindings::ActionScope::Plugin,
             crate::keybindings::ActionScope::AiPanel,
         ] {
             let definitions = catalog
@@ -685,7 +665,7 @@ impl WorkspaceApp {
                                     SelectableTextRole::PlainDocument,
                                     "settings-keybindings-conflict",
                                     conflicts.join("|"),
-                                    self.keybinding_conflict_text(conflicts, side, cx),
+                                    self.keybinding_conflict_text(conflicts, side),
                                     theme.warning,
                                     cx,
                                 )),
@@ -866,11 +846,10 @@ impl WorkspaceApp {
         &self,
         conflicts: &[String],
         side: crate::keybindings::KeybindingSide,
-        cx: &App,
     ) -> String {
         let Some(conflict) = conflicts
             .iter()
-            .filter_map(|id| self.keybinding_definition(id, cx))
+            .filter_map(|id| self.keybinding_definition(id))
             .next()
         else {
             return String::new();

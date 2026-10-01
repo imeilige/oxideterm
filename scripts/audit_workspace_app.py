@@ -37,11 +37,6 @@ HIGH_LOAD_AREAS = {
         WORKSPACE_DIRECTORY / "sidebar/ai",
         WORKSPACE_DIRECTORY / "settings/ai",
     ),
-    "plugins": (
-        WORKSPACE_DIRECTORY / "plugin_lifecycle",
-        WORKSPACE_DIRECTORY / "plugin_manager.rs",
-        WORKSPACE_DIRECTORY / "plugin_ui.rs",
-    ),
     "forwarding": (WORKSPACE_DIRECTORY / "forwards",),
 }
 

@@ -528,19 +528,16 @@ impl WorkspaceApp {
 
         let parsed_input = parse_ai_user_input(&content);
         let detected_intent = detect_ai_intent(&parsed_input);
-        let sidebar_context = self.resolve_ai_sidebar_context_block(cx);
         let selected_context = self.resolve_ai_selected_terminal_context(cx);
         let reference_context = self.resolve_ai_reference_context(&parsed_input.references, cx);
         let context_sources = [
             selected_context.as_ref().map(|_| "terminal"),
-            sidebar_context.as_ref().map(|_| "sidebar"),
             reference_context.as_ref().map(|_| "reference"),
         ]
         .into_iter()
         .flatten()
         .collect::<Vec<_>>();
-        let context =
-            ai_chat_message_context([selected_context, sidebar_context, reference_context]);
+        let context = ai_chat_message_context([selected_context, reference_context]);
         let slash_command = parsed_input
             .slash_command
             .as_deref()

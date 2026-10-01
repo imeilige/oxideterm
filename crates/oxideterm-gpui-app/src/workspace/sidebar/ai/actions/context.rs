@@ -31,26 +31,6 @@ impl WorkspaceApp {
         self.ai_single_pane_terminal_context(cx)
     }
 
-    pub(in crate::workspace) fn resolve_ai_sidebar_context_block(
-        &self,
-        cx: &mut Context<Self>,
-    ) -> Option<String> {
-        let mut blocks = Vec::new();
-        // Terminal output is controlled by the per-message Context chip and
-        // assembled separately. Keep auxiliary sources independent so enabling
-        // terminal context cannot replace the IDE code snapshot.
-        if let Some(ide) = self.ai_active_ide_context(cx)
-            && let (Some(active_file), Some(snippet)) = (ide.active_file, ide.code_snippet)
-        {
-            let language = ide.active_language.unwrap_or_else(|| "text".to_string());
-            blocks.push(format!(
-                "=== Code: {active_file} ({language}, lines {}+) ===\n{snippet}",
-                ide.snippet_start_line
-            ));
-        }
-        (!blocks.is_empty()).then(|| blocks.join("\n\n"))
-    }
-
     pub(in crate::workspace) fn resolve_ai_sidebar_system_prompt_segment(
         &self,
         cx: &mut Context<Self>,
@@ -101,30 +81,6 @@ impl WorkspaceApp {
             "- Tabs, pane ids, and terminal session ids are memory-only and do not survive an app restart/reload."
                 .to_string(),
         );
-
-        if let Some(ide) = self.ai_active_ide_context(cx) {
-            parts.push(String::new());
-            parts.push("## IDE Context".to_string());
-            parts.push(format!(
-                "- Project: {} ({})",
-                ide.project_name, ide.project_root
-            ));
-            if let Some(branch) = ide.git_branch {
-                parts.push(format!("- Git: {branch}"));
-            }
-            if let Some(active_file) = ide.active_file {
-                let language = ide.active_language.unwrap_or_else(|| "unknown".to_string());
-                let dirty = if ide.is_dirty { " [unsaved]" } else { "" };
-                parts.push(format!("- Editing: {active_file} ({language}){dirty}"));
-            }
-            if ide.open_tab_count > 1 {
-                parts.push(format!(
-                    "- Open tabs ({}): {}",
-                    ide.open_tab_count,
-                    ide.open_tab_paths.join(", ")
-                ));
-            }
-        }
 
         if let Some((_, remote_path, selected_files)) = self.ai_active_sftp_context(cx) {
             parts.push(String::new());
@@ -432,21 +388,6 @@ impl WorkspaceApp {
         Some((session_id, node_id))
     }
 
-    pub(in crate::workspace) fn ai_active_ide_context(
-        &self,
-        cx: &mut Context<Self>,
-    ) -> Option<oxideterm_gpui_ide::IdeAiContextSnapshot> {
-        if !self.settings_store.settings().ai.context_sources.ide {
-            return None;
-        }
-        let active_ide_tab = self
-            .active_content_tab(cx)
-            .and_then(|tab| (tab.kind == TabKind::Ide).then_some(tab.id));
-        self.ide_workspace
-            .read(cx)
-            .ai_context_snapshot(active_ide_tab, cx)
-    }
-
     pub(in crate::workspace) fn ai_active_sftp_context(
         &self,
         cx: &App,
@@ -488,10 +429,6 @@ impl WorkspaceApp {
             })
             .and_then(|tab| tab.root_pane.as_ref())
             .is_some_and(|root| root.pane_count() > 1)
-    }
-
-    pub(in crate::workspace) fn ai_has_ide_context(&self, cx: &mut Context<Self>) -> bool {
-        self.ai_active_ide_context(cx).is_some()
     }
 
     pub(in crate::workspace) fn ai_has_sftp_context(&self, cx: &App) -> bool {
@@ -600,7 +537,6 @@ pub(in crate::workspace) fn ai_tab_kind_label(kind: &TabKind) -> &'static str {
         TabKind::SshTerminal => "terminal",
         TabKind::MoshTerminal => "mosh_terminal",
         TabKind::Sftp => "sftp",
-        TabKind::Ide => "ide",
         TabKind::Forwards => "forwards",
         TabKind::Settings => "settings",
         TabKind::FileManager => "file_manager",
@@ -610,8 +546,6 @@ pub(in crate::workspace) fn ai_tab_kind_label(kind: &TabKind) -> &'static str {
         TabKind::Topology => "topology",
         TabKind::Graphics => "graphics",
         TabKind::NotificationCenter => "notifications",
-        TabKind::PluginManager => "plugin_manager",
-        TabKind::Plugin { .. } => "plugin",
         TabKind::CloudSync => "cloud_sync",
         TabKind::Knowledge => "knowledge",
         TabKind::RemoteDesktop => "remote_desktop",

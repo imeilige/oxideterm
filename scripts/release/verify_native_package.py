@@ -27,7 +27,6 @@ REQUIRED_DOCUMENTS = {
     "CC-BY-4.0.txt",
     "MATERIAL-ICON-THEME-LICENSE-MIT",
     "THIRD_PARTY_NOTICES.md",
-    "AGENT_THIRD_PARTY_NOTICES.md",
 }
 LINUX_DEB_GRAPHICS_RECOMMENDS = {"libegl1", "libvulkan1"}
 LINUX_RPM_GRAPHICS_RECOMMENDS = {"libglvnd-egl", "vulkan-loader"}

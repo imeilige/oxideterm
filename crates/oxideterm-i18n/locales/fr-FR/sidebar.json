@@ -53,7 +53,6 @@
       "docker_management": "Gestion de Docker",
       "session_manager": "Gestionnaire de sessions",
       "open_session_manager": "Ouvrir le gestionnaire de sessions",
-      "plugins": "Extensions",
       "activity": "Activité",
       "event_log": "Audit",
       "notifications": "Notifications et audit",
@@ -86,11 +85,33 @@
       "unsupported": "La surveillance GPU / NPU n’est pas prise en charge sur ce système.",
       "no_devices": "Aucun périphérique GPU / NPU pris en charge n’a été détecté.",
       "error": "Échec de la requête GPU / NPU : {{error}}",
-      "actions": { "refresh": "Actualiser les données GPU / NPU" },
-      "summary": { "utilization": "Utilisation moyenne", "memory": "Mémoire du périphérique", "temperature": "Température maximale", "power": "Puissance totale" },
-      "columns": { "device": "Périphérique", "utilization": "Utilisation", "memory": "Mémoire" },
-      "details": { "uuid": "UUID", "driver": "Pilote", "performance_state": "Performance", "health": "État", "temperature": "Température", "power": "Puissance", "fan": "Ventilateur" },
-      "processes": { "title": "Processus de calcul", "empty": "Aucun processus de calcul n’utilise ce périphérique." }
+      "actions": {
+        "refresh": "Actualiser les données GPU / NPU"
+      },
+      "summary": {
+        "utilization": "Utilisation moyenne",
+        "memory": "Mémoire du périphérique",
+        "temperature": "Température maximale",
+        "power": "Puissance totale"
+      },
+      "columns": {
+        "device": "Périphérique",
+        "utilization": "Utilisation",
+        "memory": "Mémoire"
+      },
+      "details": {
+        "uuid": "UUID",
+        "driver": "Pilote",
+        "performance_state": "Performance",
+        "health": "État",
+        "temperature": "Température",
+        "power": "Puissance",
+        "fan": "Ventilateur"
+      },
+      "processes": {
+        "title": "Processus de calcul",
+        "empty": "Aucun processus de calcul n’utilise ce périphérique."
+      }
     },
     "host_processes": {
       "search_placeholder": "Rechercher des processus...",

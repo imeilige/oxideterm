@@ -26,7 +26,6 @@ pub(crate) enum ActionScope {
     FileManager,
     Preview,
     RemoteDesktop,
-    Plugin,
     AiPanel,
 }
 
@@ -39,15 +38,14 @@ impl ActionScope {
                 | Self::FileManager
                 | Self::Preview
                 | Self::RemoteDesktop
-                | Self::Plugin
                 | Self::AiPanel
         )
     }
 
     fn overlaps(self, other: Self) -> bool {
         self == other
-            || matches!(self, Self::Global | Self::Palette | Self::Plugin)
-            || matches!(other, Self::Global | Self::Palette | Self::Plugin)
+            || matches!(self, Self::Global | Self::Palette)
+            || matches!(other, Self::Global | Self::Palette)
             || matches!(
                 (self, other),
                 (Self::Terminal, Self::Split)
@@ -70,7 +68,6 @@ impl ActionScope {
             Self::FileManager => "settings_view.keybindings.scope_files",
             Self::Preview => "settings_view.keybindings.scope_preview",
             Self::RemoteDesktop => "settings_view.keybindings.scope_remote_desktop",
-            Self::Plugin => "settings_view.keybindings.scope_plugins",
             Self::AiPanel => "settings_view.keybindings.scope_ai_panel",
         }
     }
@@ -930,12 +927,6 @@ fn effective_combos(
             combos.push(KeyCombo::plain("+"));
         }
         if side == KeybindingSide::Mac
-            && definition.scope == ActionScope::Plugin
-            && definition.other.ctrl
-        {
-            combos.push(definition.other.clone());
-        }
-        if side == KeybindingSide::Mac
             && definition.scope == ActionScope::FileManager
             && definition.mac.meta
         {
@@ -983,7 +974,7 @@ pub(crate) fn set_unbound_override(
     action_id: &str,
     side: KeybindingSide,
 ) {
-    if action_definition(action_id).is_none() && !is_plugin_action_id(action_id) {
+    if action_definition(action_id).is_none() {
         return;
     }
     let mut entry = overrides
@@ -1055,7 +1046,7 @@ pub(crate) fn sanitize_imported_overrides(value: Value) -> Result<Map<String, Va
 
     let mut sanitized = Map::new();
     for (action_id, value) in input {
-        if action_definition(&action_id).is_none() && !is_plugin_action_id(&action_id) {
+        if action_definition(&action_id).is_none() {
             return Err(format!("unknown action id: {action_id}"));
         }
         let Value::Object(object) = value else {
@@ -1144,50 +1135,6 @@ pub(crate) fn matched_action_for_keystroke(
         .filter(|definition| !definition.scope.local())
         .find(|definition| effective_combo(definition, overrides, side).as_ref() == Some(&combo))
         .map(|definition| (definition, combo))
-}
-
-pub(crate) fn normalize_plugin_keystroke(keystroke: &Keystroke) -> Option<String> {
-    let combo = combo_from_keystroke(keystroke)?;
-    let mut parts = Vec::new();
-    // Tauri's pluginHostUi collapses Cmd/Meta and Ctrl into the same "ctrl"
-    // token for plugin keybindings. Preserve that public contract so existing
-    // plugin descriptors such as "Cmd+Shift+R" keep working cross-platform.
-    if combo.ctrl || combo.meta {
-        parts.push("ctrl".to_string());
-    }
-    if combo.shift {
-        parts.push("shift".to_string());
-    }
-    if combo.alt {
-        parts.push("alt".to_string());
-    }
-    parts.push(normalize_plugin_event_key(&combo.key)?);
-    parts.sort();
-    Some(parts.join("+"))
-}
-
-fn normalize_plugin_key_part(part: &str) -> Option<String> {
-    let normalized = part.trim().to_lowercase();
-    if normalized.is_empty() {
-        return None;
-    }
-    Some(match normalized.as_str() {
-        "cmd" | "command" | "meta" | "super" | "win" | "⌘" => "ctrl".to_string(),
-        "control" | "ctrl" | "⌃" => "ctrl".to_string(),
-        "option" | "alt" | "⌥" => "alt".to_string(),
-        "shift" | "⇧" => "shift".to_string(),
-        "escape" | "esc" => "esc".to_string(),
-        "spacebar" | "space" | " " => "space".to_string(),
-        "left" => "arrowleft".to_string(),
-        "right" => "arrowright".to_string(),
-        "up" => "arrowup".to_string(),
-        "down" => "arrowdown".to_string(),
-        key => key.to_string(),
-    })
-}
-
-fn normalize_plugin_event_key(key: &str) -> Option<String> {
-    normalize_plugin_key_part(if key == " " { "space" } else { key })
 }
 
 pub(crate) fn action_allowed_by_terminal_behavior(
@@ -1419,7 +1366,7 @@ pub(crate) fn runtime_rebind_key_bindings(
     previous: Option<&KeyCombo>,
     next: Option<&KeyCombo>,
 ) -> Vec<KeyBinding> {
-    if is_plugin_action_id(action_id) || terminal_leaf_action(action_id) {
+    if terminal_leaf_action(action_id) {
         return Vec::new();
     }
     if action_definition(action_id).is_some_and(|definition| definition.scope.local()) {
@@ -1620,56 +1567,6 @@ mod tests {
             );
             assert_eq!(bindings.resolve(&Keystroke::parse("cmd-up").unwrap()), None);
         });
-    }
-
-    #[test]
-    fn plugin_keybindings_keep_overrides_across_registration_lifetimes() {
-        let mut entry = oxideterm_plugin_registry::NativePluginRuntimeKeybindingContribution {
-            plugin_id: "test.tools".into(),
-            plugin_name: "Tools".into(),
-            registration_id: "first-instance".into(),
-            keybinding: "Ctrl+Shift+K".into(),
-            normalized_keybinding: "ctrl+k+shift".into(),
-            command: "open-tools".into(),
-            label: "Open tools".into(),
-        };
-        let definition = plugin_action_definition(&entry).unwrap();
-        let mut overrides = Map::new();
-        let original = Keystroke::parse("ctrl-shift-k").unwrap();
-        let custom = Keystroke::parse("ctrl-f10").unwrap();
-        assert!(plugin_binding_matches(&entry, &original, &overrides));
-        set_definition_override(
-            &mut overrides,
-            &definition,
-            KeybindingSide::current(),
-            KeyCombo::ctrl("f10"),
-        );
-        entry.registration_id = "second-instance".into();
-        entry.label = "Reloaded tools".into();
-        let mut imported = sanitize_imported_overrides(Value::Object(overrides)).unwrap();
-        assert!(plugin_binding_matches(&entry, &custom, &imported));
-        assert!(!plugin_binding_matches(&entry, &original, &imported));
-        set_unbound_override(&mut imported, &definition.id, KeybindingSide::current());
-        let mut imported = sanitize_imported_overrides(Value::Object(imported)).unwrap();
-        assert!(!plugin_binding_matches(&entry, &custom, &imported));
-        assert!(!plugin_binding_matches(&entry, &original, &imported));
-        reset_override(&mut imported, &definition.id, KeybindingSide::current());
-        assert!(plugin_binding_matches(&entry, &original, &imported));
-        let mut definitions = ACTION_DEFINITIONS.to_vec();
-        definitions.push(definition.clone());
-        assert_eq!(
-            conflicts_in_definitions(
-                &definition.id,
-                &KeyCombo::ctrl("n"),
-                &imported,
-                KeybindingSide::Other,
-                &definitions
-            )
-            .iter()
-            .map(|definition| definition.id.as_ref())
-            .collect::<Vec<_>>(),
-            ["app.newConnection"]
-        );
     }
 
     #[test]
@@ -2105,67 +2002,6 @@ pub(crate) fn install_context_keybindings(overrides: &Map<String, Value>, cx: &m
             Keystroke::parse(&combo_to_gpui(&combo)).ok()
         },
     });
-}
-
-fn is_plugin_action_id(id: &str) -> bool {
-    id.strip_prefix("plugin.keybinding:")
-        .and_then(|key| serde_json::from_str::<[String; 2]>(key).ok())
-        .is_some_and(|parts| parts.iter().all(|part| !part.is_empty()))
-}
-
-pub(crate) fn plugin_action_definition(
-    entry: &oxideterm_plugin_registry::NativePluginRuntimeKeybindingContribution,
-) -> Option<ActionDefinition> {
-    let mut other = KeyCombo::plain("");
-    for part in entry.normalized_keybinding.split('+') {
-        match part {
-            "ctrl" => other.ctrl = true,
-            "shift" => other.shift = true,
-            "alt" => other.alt = true,
-            key if other.key.is_empty() => other.key = key.to_string(),
-            _ => return None,
-        }
-    }
-    if other.key.is_empty() {
-        return None;
-    }
-    let other = normalize_combo(other);
-    let mut mac = other.clone();
-    if mac.ctrl {
-        mac.ctrl = false;
-        mac.meta = true;
-    }
-    Some(ActionDefinition {
-        // Runtime registration IDs may change on activation. The plugin and
-        // declared chord identify the binding independently of that lifecycle.
-        id: format!(
-            "plugin.keybinding:{}",
-            serde_json::to_string(&[&entry.plugin_id, &entry.normalized_keybinding]).ok()?
-        )
-        .into(),
-        label: Some(format!("{}: {}", entry.plugin_name, entry.label)),
-        scope: ActionScope::Plugin,
-        terminal_behavior: TerminalBehavior::Never,
-        mac,
-        other,
-    })
-}
-
-pub(crate) fn plugin_binding_matches(
-    entry: &oxideterm_plugin_registry::NativePluginRuntimeKeybindingContribution,
-    keystroke: &Keystroke,
-    overrides: &Map<String, Value>,
-) -> bool {
-    let Some(definition) = plugin_action_definition(entry) else {
-        return false;
-    };
-    if override_binding(&definition.id, overrides, KeybindingSide::current()).is_none() {
-        return normalize_plugin_keystroke(keystroke).as_ref()
-            == Some(&entry.normalized_keybinding);
-    }
-    combo_from_keystroke(keystroke).is_some_and(|combo| {
-        effective_combo(&definition, overrides, KeybindingSide::current()).as_ref() == Some(&combo)
-    })
 }
 
 pub(crate) fn matched_scoped_action(

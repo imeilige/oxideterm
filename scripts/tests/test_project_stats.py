@@ -38,7 +38,6 @@ class ProjectStatsTests(unittest.TestCase):
                 "crates/gpui-ce/gpui/src/lib.rs": "pub fn draw() {}\n",
                 "agent/Cargo.toml": '[package]\nname = "oxideterm-agent"\n',
                 "agent/src/main.rs": "fn main() {}\n",
-                "scripts/build/build-agent.sh": "echo build\n",
                 "scripts/local file.py": "print('local')\n",
                 "README.md": "# Docs\n",
                 "target/build.rs": "fn generated() {}\n",
@@ -57,7 +56,7 @@ class ProjectStatsTests(unittest.TestCase):
             expected = {
                 ".github/workflows/check.yml", "crates/fernomade/wire/Cargo.toml",
                 "crates/fernomade/wire/src/lib.rs", "agent/Cargo.toml", "agent/src/main.rs",
-                "scripts/build/build-agent.sh", "scripts/local file.py", "README.md",
+                "scripts/local file.py", "README.md",
             }
             self.assertEqual(set(map(str, project_stats.collect_files(root))), expected)
             self.assertEqual(
@@ -76,7 +75,7 @@ class ProjectStatsTests(unittest.TestCase):
             ).stdout
             project = result.split("Project source\n")[1].split("Bundled third-party source")[0]
             vendor = result.split("Bundled third-party source (including local patches)\n")[1].split("Documentation")[0]
-            self.assertEqual(next(line.split() for line in project.splitlines() if line.startswith("TOTAL")), ["TOTAL", "4", "0", "0", "4"])
+            self.assertEqual(next(line.split() for line in project.splitlines() if line.startswith("TOTAL")), ["TOTAL", "3", "0", "0", "3"])
             self.assertEqual(next(line.split() for line in vendor.splitlines() if line.startswith("TOTAL")), ["TOTAL", "1", "0", "0", "1"])
             self.assertIn("Vendor / gpui", result)
 

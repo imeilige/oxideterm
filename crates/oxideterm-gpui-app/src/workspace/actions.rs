@@ -641,17 +641,6 @@ impl WorkspaceApp {
         self.dispatch_keybinding_action(&definition.id, window, cx)
     }
 
-    pub(super) fn registered_keybinding_matches(&self, event: &KeyDownEvent) -> bool {
-        // Tauri's capture dispatcher checks built-in actions before plugin
-        // keybindings. Even when terminal gating lets the key pass through, the
-        // plugin layer must not steal a built-in combo.
-        crate::keybindings::matched_action_for_keystroke(
-            &event.keystroke,
-            &self.settings_store.settings().keybindings.overrides,
-        )
-        .is_some()
-    }
-
     pub(super) fn dispatch_keybinding_action(
         &mut self,
         action_id: &str,
@@ -998,10 +987,6 @@ impl WorkspaceApp {
                 }
                 _ => {}
             }
-        }
-
-        if self.handle_native_plugin_confirm_key(event, cx) {
-            return;
         }
 
         if self.handle_ai_settings_confirm_key(event, cx) {
@@ -1741,7 +1726,7 @@ impl WorkspaceApp {
         event: &KeyDownEvent,
         cx: &mut Context<Self>,
     ) {
-        let definitions = self.keybinding_definitions(cx);
+        let definitions = self.keybinding_definitions();
         let overrides = &self.settings_store.settings().keybindings.overrides;
         let action = self.settings_workspace.update(cx, |settings, cx| {
             settings.handle_keybinding_recording_key(event, overrides, &definitions, cx)
@@ -1770,7 +1755,7 @@ impl WorkspaceApp {
         }) else {
             return;
         };
-        let Some(definition) = self.keybinding_definition(&commit.action_id, cx) else {
+        let Some(definition) = self.keybinding_definition(&commit.action_id) else {
             return;
         };
 
@@ -1807,7 +1792,7 @@ impl WorkspaceApp {
     }
 
     pub(super) fn reset_keybinding(&mut self, action_id: &str, cx: &mut Context<Self>) {
-        let Some(definition) = self.keybinding_definition(action_id, cx) else {
+        let Some(definition) = self.keybinding_definition(action_id) else {
             return;
         };
         let side = crate::keybindings::KeybindingSide::current();
@@ -1837,7 +1822,7 @@ impl WorkspaceApp {
     }
 
     pub(super) fn unbind_keybinding(&mut self, action_id: &str, cx: &mut Context<Self>) {
-        let Some(definition) = self.keybinding_definition(action_id, cx) else {
+        let Some(definition) = self.keybinding_definition(action_id) else {
             return;
         };
         let side = crate::keybindings::KeybindingSide::current();

@@ -1,9 +1,5 @@
 use super::*;
 use gpui::StatefulInteractiveElement;
-use std::{
-    collections::hash_map::DefaultHasher,
-    hash::{Hash, Hasher},
-};
 
 impl WorkspaceApp {
     pub(in crate::workspace) fn render_activity_bar(
@@ -11,12 +7,10 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = self.tokens.ui;
-        let mut top_items_before_plugins = vec![(SidebarSection::Sessions, LucideIcon::Link2)];
-        top_items_before_plugins.extend([
+        let top_items = [
+            (SidebarSection::Sessions, LucideIcon::Link2),
             (SidebarSection::Connections, LucideIcon::LayoutList),
             (SidebarSection::Runtime, LucideIcon::Gauge),
-        ]);
-        let top_items_after_plugins = [
             (SidebarSection::HostTools, LucideIcon::Wrench),
         ];
         let bottom_items = [
@@ -108,35 +102,7 @@ impl WorkspaceApp {
             .flex()
             .flex_col()
             .items_center();
-        for (section, icon) in top_items_before_plugins {
-            primary_items = primary_items.child(self.render_activity_icon(section, icon, cx));
-        }
-        let plugin_activity_items = self
-            .plugin_entity
-            .read(cx)
-            .registry()
-            .contributions()
-            .runtime_activity_bar_items();
-        // Plugin-provided sidebar panels render as independent activity buttons
-        // ahead of the remaining built-in entries.
-        for panel in self
-            .plugin_entity
-            .read(cx)
-            .registry()
-            .contributions()
-            .runtime_sidebar_panels()
-        {
-            primary_items =
-                primary_items.child(self.render_plugin_sidebar_activity_icon(panel, cx));
-        }
-        for item in plugin_activity_items
-            .iter()
-            .filter(|item| item.position == "top")
-            .cloned()
-        {
-            primary_items = primary_items.child(self.render_plugin_activity_action_icon(item, cx));
-        }
-        for (section, icon) in top_items_after_plugins {
+        for (section, icon) in top_items {
             primary_items = primary_items.child(self.render_activity_icon(section, icon, cx));
         }
         // The sessions footer owns the lock action while visible. Keep the rail
@@ -157,12 +123,6 @@ impl WorkspaceApp {
                 .h(px(self.tokens.metrics.divider_height))
                 .bg(rgb(theme.divider)),
         );
-        for item in plugin_activity_items
-            .into_iter()
-            .filter(|item| item.position == "bottom")
-        {
-            bottom = bottom.child(self.render_plugin_activity_action_icon(item, cx));
-        }
         bottom = bottom.children(
             bottom_items
                 .into_iter()
@@ -394,167 +354,6 @@ impl WorkspaceApp {
         }
     }
 
-    pub(in crate::workspace) fn render_plugin_sidebar_activity_icon(
-        &self,
-        panel: plugin_host::NativePluginRuntimeSidebarPanelContribution,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let theme = self.tokens.ui;
-        let selection = plugin_ui::NativePluginSidebarPanelSelection {
-            plugin_id: panel.plugin_id.clone(),
-            panel_id: panel.panel_id.clone(),
-        };
-        let active = self
-            .plugin_manager_state(cx)
-            .active_sidebar_panel
-            .as_ref()
-            .is_some_and(|active_panel| active_panel == &selection);
-        let tooltip = panel.title.clone();
-        let tooltip_id = format!("activity-plugin-{}-{}", panel.plugin_id, panel.panel_id);
-        let tooltip_id_for_move = tooltip_id.clone();
-        let icon = LucideIcon::from_plugin_name(&panel.icon);
-
-        let button = oxideterm_gpui_ui::button::icon_button(
-            &self.tokens,
-            Self::render_lucide_icon(
-                icon,
-                self.tokens.metrics.activity_icon_glyph_size,
-                rgb(if active { theme.accent } else { theme.text }),
-            ),
-            oxideterm_gpui_ui::button::IconButtonOptions {
-                size: self.tokens.metrics.activity_icon_size,
-                radius: oxideterm_gpui_ui::button::ButtonRadius::Md,
-                has_background: active,
-                background: active.then(|| self.settings_panel_background(theme.bg_panel)),
-                border: active.then(|| rgb(theme.border)),
-                hover_background: Some(rgb(theme.bg_hover)),
-                idle_opacity: 1.0,
-                ..oxideterm_gpui_ui::button::IconButtonOptions::compact(
-                    self.tokens.metrics.activity_icon_size,
-                )
-            },
-        );
-        let button = if active {
-            oxideterm_gpui_ui::theme_card_surface_shadow(button, &self.tokens)
-        } else {
-            button
-        };
-
-        button
-            .id((
-                "activity-plugin-icon",
-                native_plugin_sidebar_activity_id(&panel),
-            ))
-            .relative()
-            .mb(px(self.tokens.metrics.activity_icon_gap))
-            .on_mouse_move(cx.listener({
-                move |this, event: &MouseMoveEvent, _window, cx| {
-                    this.queue_workspace_tooltip(
-                        tooltip_id_for_move.clone(),
-                        tooltip.clone(),
-                        f32::from(event.position.x) + 12.0,
-                        f32::from(event.position.y) + 16.0,
-                        cx,
-                    );
-                }
-            }))
-            .on_hover(cx.listener(move |this, hovered: &bool, _window, cx| {
-                if !*hovered {
-                    this.clear_workspace_tooltip(&tooltip_id, cx);
-                }
-            }))
-            .on_mouse_down(
-                MouseButton::Left,
-                cx.listener(move |this, _event, _window, cx| {
-                    let requested_panel_is_visible = !this.sidebar_collapsed
-                        && this
-                            .plugin_manager_state(cx)
-                            .active_sidebar_panel
-                            .as_ref()
-                            .is_some_and(|active_panel| active_panel == &selection);
-                    if requested_panel_is_visible {
-                        this.toggle_sidebar(cx);
-                        cx.stop_propagation();
-                        return;
-                    }
-                    // Choosing a plugin panel switches only the sidebar content;
-                    // Plugin Manager itself stays a separate workspace tab.
-                    this.plugin_entity.update(cx, |plugins, _cx| {
-                        plugins.select_sidebar_panel(selection.clone());
-                    });
-                    this.active_surface = ActiveSurface::Terminal;
-                    this.set_sidebar_section(SidebarSection::Sessions, cx);
-                    cx.stop_propagation();
-                }),
-            )
-            .into_any_element()
-    }
-
-    pub(in crate::workspace) fn render_plugin_activity_action_icon(
-        &self,
-        item: plugin_host::NativePluginRuntimeActivityBarItemContribution,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let theme = self.tokens.ui;
-        let tooltip_id = format!("activity-plugin-action-{}-{}", item.plugin_id, item.item_id);
-        let tooltip_id_for_move = tooltip_id.clone();
-        let tooltip = item.title.clone();
-        let plugin_id = item.plugin_id.clone();
-        let command = item.command.clone();
-        let icon = LucideIcon::from_plugin_name(&item.icon);
-        let button = oxideterm_gpui_ui::button::icon_button(
-            &self.tokens,
-            Self::render_lucide_icon(
-                icon,
-                self.tokens.metrics.activity_icon_glyph_size,
-                rgb(theme.text),
-            ),
-            oxideterm_gpui_ui::button::IconButtonOptions {
-                size: self.tokens.metrics.activity_icon_size,
-                radius: oxideterm_gpui_ui::button::ButtonRadius::Md,
-                hover_background: Some(rgb(theme.bg_hover)),
-                idle_opacity: 1.0,
-                ..oxideterm_gpui_ui::button::IconButtonOptions::compact(
-                    self.tokens.metrics.activity_icon_size,
-                )
-            },
-        );
-
-        button
-            .id((
-                "activity-plugin-action",
-                native_plugin_activity_bar_item_id(&item),
-            ))
-            .relative()
-            .mb(px(self.tokens.metrics.activity_icon_gap))
-            .on_mouse_move(
-                cx.listener(move |this, event: &MouseMoveEvent, _window, cx| {
-                    this.queue_workspace_tooltip(
-                        tooltip_id_for_move.clone(),
-                        tooltip.clone(),
-                        f32::from(event.position.x) + 12.0,
-                        f32::from(event.position.y) + 16.0,
-                        cx,
-                    );
-                }),
-            )
-            .on_hover(cx.listener(move |this, hovered: &bool, _window, cx| {
-                if !*hovered {
-                    this.clear_workspace_tooltip(&tooltip_id, cx);
-                }
-            }))
-            .on_mouse_down(
-                MouseButton::Left,
-                cx.listener(move |this, _event, _window, cx| {
-                    // Action items invoke only the manifest-declared command
-                    // associated with their host-owned runtime registration.
-                    this.dispatch_native_plugin_command(plugin_id.clone(), command.clone(), cx);
-                    cx.stop_propagation();
-                }),
-            )
-            .into_any_element()
-    }
-
     pub(in crate::workspace) fn render_lucide_icon(
         icon: LucideIcon,
         size: f32,
@@ -604,24 +403,4 @@ impl WorkspaceApp {
                 .text_color(color),
         )
     }
-}
-
-pub(in crate::workspace) fn native_plugin_sidebar_activity_id(
-    panel: &plugin_host::NativePluginRuntimeSidebarPanelContribution,
-) -> u64 {
-    let mut hasher = DefaultHasher::new();
-    panel.registration_id.hash(&mut hasher);
-    panel.plugin_id.hash(&mut hasher);
-    panel.panel_id.hash(&mut hasher);
-    hasher.finish()
-}
-
-pub(in crate::workspace) fn native_plugin_activity_bar_item_id(
-    item: &plugin_host::NativePluginRuntimeActivityBarItemContribution,
-) -> u64 {
-    let mut hasher = DefaultHasher::new();
-    item.registration_id.hash(&mut hasher);
-    item.plugin_id.hash(&mut hasher);
-    item.item_id.hash(&mut hasher);
-    hasher.finish()
 }

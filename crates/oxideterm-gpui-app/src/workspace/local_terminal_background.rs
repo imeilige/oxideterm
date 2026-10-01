@@ -190,7 +190,6 @@ impl WorkspaceApp {
         });
 
         self.register_terminal_pane(pane_id, detached.session_id, pane.clone(), window, cx);
-        self.refresh_native_plugin_terminal_hooks(cx);
         self.insert_tab(
             Tab {
                 id: tab_id,

@@ -20,11 +20,6 @@ members = [
   "crates/oxideterm-gpui-terminal",
   "crates/oxideterm-gpui-ui",
   "crates/oxideterm-environment",
-  "crates/oxideterm-plugin-host-api",
-  "crates/oxideterm-plugin-manifest",
-  "crates/oxideterm-plugin-protocol",
-  "crates/oxideterm-plugin-registry",
-  "crates/oxideterm-plugin-wasm-runtime",
   "crates/oxideterm-ai",
   "crates/oxideterm-ai-tasks",
   "crates/oxideterm-skills",
@@ -34,7 +29,6 @@ members = [
   "crates/oxideterm-editor-core",
   "crates/oxideterm-editor-syntax",
   "crates/oxideterm-gpui-editor",
-  "crates/oxideterm-gpui-ide",
   "crates/oxideterm-connections",
   "crates/oxideterm-desktop-presence",
   "crates/oxideterm-quick-commands",
@@ -45,8 +39,6 @@ members = [
   "crates/oxideterm-topology",
   "crates/oxideterm-backend-classification",
   "crates/oxideterm-cloud-sync",
-  "crates/oxideterm-ide-core",
-  "crates/oxideterm-ide-fs",
   "crates/oxideterm-forwarding",
   "crates/oxideterm-preview",
   "crates/oxideterm-portable-runtime",
@@ -121,7 +113,7 @@ vte = { path = "crates/vte" }
 edition = "2024"
 license = "GPL-3.0-only"
 publish = false
-version = "2.2.4"
+version = "2.2.5"
 
 [workspace.dependencies]
 accesskit = { version = "0.24.0", features = ["enumn"] }

@@ -9,14 +9,13 @@ use base64::Engine;
 use gpui::{App, Context, Task};
 use oxideterm_connections::{ConnectionInfo, ConnectionStore};
 use oxideterm_gpui_terminal::{TerminalNotice, TerminalNoticeVariant};
-use oxideterm_plugin_registry as plugin_host;
 use oxideterm_public_mcp::{
-    AddonRef, ApprovalRef, ApprovalStatus, ArtifactRef, AuditQuery, ClientApprovalMode,
-    ClientCredential, ClientProjection, ClientRef, ClientRegistry, CommandRef, ConnectionRef,
-    DesktopRef, DomainBroker, DomainMessage, DomainRequest, DomainRequestReceiver, FileSessionRef,
-    ForwardRef, NodeRef, OperationRef, PublicMcpHttpServer, PublicMcpState, PublicToolCall,
-    QuickCommandRef, RecordingRef, SyncPlanRef, SyncRestoreArgs, TerminalRef, ToolEnvelope,
-    ToolGroup, ToolOutcome, TransferRef, UndoRef, WorkspaceRef, start_http_server,
+    ApprovalRef, ApprovalStatus, ArtifactRef, AuditQuery, ClientApprovalMode, ClientCredential,
+    ClientProjection, ClientRef, ClientRegistry, CommandRef, ConnectionRef, DesktopRef,
+    DomainBroker, DomainMessage, DomainRequest, DomainRequestReceiver, FileSessionRef, ForwardRef,
+    NodeRef, OperationRef, PublicMcpHttpServer, PublicMcpState, PublicToolCall, QuickCommandRef,
+    RecordingRef, SyncPlanRef, SyncRestoreArgs, TerminalRef, ToolEnvelope, ToolGroup, ToolOutcome,
+    TransferRef, UndoRef, start_http_server,
 };
 use oxideterm_session_adapter::ssh_config_from_saved_connection;
 use oxideterm_ssh::{ConnectionConsumer, NodeId, NodeRouter, SshTransportError};
@@ -28,7 +27,6 @@ use zeroize::Zeroizing;
 
 use super::{TabId, TerminalSessionId, WorkspaceApp};
 
-mod addons;
 mod cloud_sync;
 mod connections;
 pub(in crate::workspace) mod desktops;
@@ -39,7 +37,6 @@ mod quick_commands;
 mod recordings;
 pub(in crate::workspace) mod terminals;
 mod transfers;
-mod workspaces;
 
 const PUBLIC_MCP_CLIENTS_FILE: &str = "public-mcp-clients.json";
 const PUBLIC_MCP_ENDPOINT_FILE: &str = "public-mcp-endpoint.json";
@@ -81,8 +78,6 @@ pub(in crate::workspace) struct PublicMcpWorkspaceBridge {
     connection_ids: HashMap<ConnectionRef, (ClientRef, String)>,
     quick_command_refs: HashMap<(ClientRef, String), QuickCommandRef>,
     quick_command_ids: HashMap<QuickCommandRef, (ClientRef, String)>,
-    addon_refs: HashMap<(ClientRef, String), AddonRef>,
-    addon_ids: HashMap<AddonRef, (ClientRef, String)>,
     sync_plans: HashMap<SyncPlanRef, cloud_sync::PublicMcpSyncPlan>,
     sync_undos: HashMap<UndoRef, cloud_sync::PublicMcpSyncUndo>,
     terminals: HashMap<TerminalRef, PublicMcpTerminalRecord>,
@@ -113,7 +108,6 @@ struct PublicMcpRuntimeHandles {
     forwards: HashMap<ForwardRef, PublicMcpForwardRecord>,
     file_sessions: HashMap<FileSessionRef, PublicMcpFileSessionRecord>,
     transfers: HashMap<TransferRef, PublicMcpTransferRecord>,
-    workspaces: HashMap<WorkspaceRef, PublicMcpWorkspaceRecord>,
 }
 
 #[derive(Clone)]
@@ -194,33 +188,6 @@ struct PublicMcpTransferRecord {
     error_code: Option<&'static str>,
     remote_residue: Option<&'static str>,
     finished_at: Option<Instant>,
-}
-
-/// Keeps one headless IDE owner scoped to an external client and SFTP root.
-#[derive(Clone)]
-struct PublicMcpWorkspaceRecord {
-    client_ref: ClientRef,
-    file_session_ref: FileSessionRef,
-    node_id: NodeId,
-    root: String,
-    owner: oxideterm_ide_fs::NodeAgentIdeFileSystem,
-    revisions: Arc<Mutex<HashMap<String, PublicMcpWorkspaceRevision>>>,
-    cancellation: CancellationToken,
-    edit_cancellation: CancellationToken,
-}
-
-impl PublicMcpWorkspaceRecord {
-    fn revoke(&self) {
-        self.cancellation.cancel();
-        self.edit_cancellation.cancel();
-        self.owner.release_all_ide_consumers();
-    }
-}
-
-#[derive(Clone)]
-struct PublicMcpWorkspaceRevision {
-    public_revision: String,
-    version: oxideterm_ide_core::SavedFileVersion,
 }
 
 #[derive(Clone)]
@@ -395,8 +362,6 @@ impl PublicMcpWorkspaceBridge {
             connection_ids: HashMap::new(),
             quick_command_refs: HashMap::new(),
             quick_command_ids: HashMap::new(),
-            addon_refs: HashMap::new(),
-            addon_ids: HashMap::new(),
             sync_plans: HashMap::new(),
             sync_undos: HashMap::new(),
             terminals: HashMap::new(),
@@ -805,7 +770,6 @@ impl PublicMcpWorkspaceBridge {
         target: &str,
         store: &ConnectionStore,
         node_router: &NodeRouter,
-        plugin_registry: &plugin_host::NativePluginRegistry,
         forwarding_service: &super::forwards::ForwardingRuntimeService,
     ) -> String {
         if let Some(quickcommand_ref) = target
@@ -903,22 +867,6 @@ impl PublicMcpWorkspaceBridge {
                 .trim();
             return format!("{} {}", record.title, action).trim().to_owned();
         }
-        let (addon_target, addon_action) = target.split_once(' ').unwrap_or((target, ""));
-        if let Ok(addon_ref) = addon_target.parse::<AddonRef>()
-            && let Some((owner, plugin_id)) = self.addon_ids.get(&addon_ref)
-            && owner == client_ref
-            && let Some(plugin) = plugin_registry
-                .plugins()
-                .iter()
-                .find(|plugin| &plugin.manifest.id == plugin_id)
-        {
-            return format!(
-                "{} ({}) {}",
-                plugin.manifest.name, plugin.manifest.id, addon_action
-            )
-            .trim()
-            .to_owned();
-        }
         let (forward_target, forward_action) = target.split_once(' ').unwrap_or((target, ""));
         if let Ok(forward_ref) = forward_target.parse::<ForwardRef>()
             && let Some(record) = self
@@ -965,19 +913,6 @@ impl PublicMcpWorkspaceBridge {
             .trim()
             .to_owned();
         }
-        if let Ok(workspace_ref) = file_target.parse::<WorkspaceRef>()
-            && let Some(record) = self
-                .runtime_handles
-                .lock()
-                .workspaces
-                .get(&workspace_ref)
-                .filter(|record| record.client_ref == *client_ref)
-                .cloned()
-        {
-            return format!("IDE {} {}", record.root, file_action)
-                .trim()
-                .to_owned();
-        }
         let node_target = target.split_whitespace().next().unwrap_or(target);
         if let Ok(node_ref) = node_target.parse::<NodeRef>()
             && let Some(lease) = self.runtime_handles.lock().nodes.get(&node_ref).cloned()
@@ -991,16 +926,6 @@ impl PublicMcpWorkspaceBridge {
 
 impl Drop for PublicMcpWorkspaceBridge {
     fn drop(&mut self) {
-        let workspaces = self
-            .runtime_handles
-            .lock()
-            .workspaces
-            .drain()
-            .map(|(_, record)| record)
-            .collect::<Vec<_>>();
-        for record in workspaces {
-            record.revoke();
-        }
         self.delivery_task.take();
         self.revealed_credential.take();
         self.server.take();
@@ -1077,7 +1002,6 @@ impl WorkspaceApp {
             self.revoke_public_mcp_client_runtime(client_ref, cx);
             self.public_mcp.remove_client_connection_refs(client_ref);
             self.public_mcp.remove_client_quick_command_refs(client_ref);
-            self.public_mcp.remove_client_addon_refs(client_ref);
         }
         Ok(())
     }
@@ -1121,9 +1045,6 @@ impl WorkspaceApp {
         match tool_group {
             ToolGroup::DesktopObserve => {
                 self.set_public_mcp_client_desktop_observation(client_ref, true, cx)
-            }
-            ToolGroup::FileWrite | ToolGroup::WorkspaceEdit => {
-                self.reset_public_mcp_client_workspace_edit_cancellation(client_ref)
             }
             _ => {}
         }
@@ -1170,13 +1091,7 @@ impl WorkspaceApp {
             }
             ToolGroup::ForwardManage => self.revoke_public_mcp_client_forwards(client_ref),
             ToolGroup::FileRead => self.revoke_public_mcp_client_file_sessions(client_ref),
-            ToolGroup::FileWrite => {
-                // Uploads and workspace edits both require remote write access.
-                self.cancel_public_mcp_client_uploads(client_ref);
-                self.cancel_public_mcp_client_workspace_edits(client_ref);
-            }
-            ToolGroup::WorkspaceRead => self.revoke_public_mcp_client_workspaces(client_ref),
-            ToolGroup::WorkspaceEdit => self.cancel_public_mcp_client_workspace_edits(client_ref),
+            ToolGroup::FileWrite => self.cancel_public_mcp_client_uploads(client_ref),
             ToolGroup::CloudSync => self.public_mcp.revoke_client_sync_handles(client_ref),
             ToolGroup::Basic
             | ToolGroup::ConnectionDirectory
@@ -1192,8 +1107,6 @@ impl WorkspaceApp {
             | ToolGroup::QuickCommandRead
             | ToolGroup::QuickCommandContentRead
             | ToolGroup::QuickCommandManage
-            | ToolGroup::AddonRead
-            | ToolGroup::AddonManage
             | ToolGroup::ForwardRead => {}
         }
     }
@@ -1207,7 +1120,6 @@ impl WorkspaceApp {
         self.revoke_public_mcp_client_runtime(client_ref, cx);
         self.public_mcp.remove_client_connection_refs(client_ref);
         self.public_mcp.remove_client_quick_command_refs(client_ref);
-        self.public_mcp.remove_client_addon_refs(client_ref);
         Ok(())
     }
 
@@ -1215,15 +1127,12 @@ impl WorkspaceApp {
         &self,
         client_ref: &ClientRef,
         target: &str,
-        cx: &App,
     ) -> String {
-        let plugin_registry = self.plugin_entity.read(cx).registry_snapshot();
         self.public_mcp.target_label(
             client_ref,
             target,
             &self.connection_store,
             &self.node_router,
-            &plugin_registry,
             &self.forwarding_service,
         )
     }
@@ -1267,7 +1176,6 @@ impl WorkspaceApp {
     }
 
     fn revoke_public_mcp_client_file_sessions(&self, client_ref: &ClientRef) {
-        self.revoke_public_mcp_client_workspaces(client_ref);
         self.revoke_public_mcp_client_transfers(client_ref);
         for record in files::take_client_file_sessions(&self.public_mcp.runtime_handles, client_ref)
         {
@@ -1275,40 +1183,6 @@ impl WorkspaceApp {
                 self.node_router
                     .release_consumer(&connection_id, &record.consumer);
             }
-        }
-    }
-
-    fn revoke_public_mcp_client_workspaces(&self, client_ref: &ClientRef) {
-        for record in
-            workspaces::take_client_workspaces(&self.public_mcp.runtime_handles, client_ref)
-        {
-            record.revoke();
-        }
-    }
-
-    fn cancel_public_mcp_client_workspace_edits(&self, client_ref: &ClientRef) {
-        for record in self
-            .public_mcp
-            .runtime_handles
-            .lock()
-            .workspaces
-            .values()
-            .filter(|record| record.client_ref == *client_ref)
-        {
-            record.edit_cancellation.cancel();
-        }
-    }
-
-    fn reset_public_mcp_client_workspace_edit_cancellation(&self, client_ref: &ClientRef) {
-        for record in self
-            .public_mcp
-            .runtime_handles
-            .lock()
-            .workspaces
-            .values_mut()
-            .filter(|record| record.client_ref == *client_ref)
-        {
-            record.edit_cancellation = CancellationToken::new();
         }
     }
 
@@ -1472,16 +1346,6 @@ impl WorkspaceApp {
                 PublicToolCall::PreparedQuickCommandRun(_) => {
                     self.handle_public_mcp_prepared_quick_command_run(request)
                 }
-                PublicToolCall::AddonsList(_) => self.handle_public_mcp_addons_list(request, cx),
-                PublicToolCall::AddonsInstall(_) => {
-                    self.handle_public_mcp_addons_install(request, cx)
-                }
-                PublicToolCall::AddonsSetEnabled(_) => {
-                    self.handle_public_mcp_addons_set_enabled(request, cx)
-                }
-                PublicToolCall::AddonsRemove(_) => {
-                    self.handle_public_mcp_addons_remove(request, cx)
-                }
                 PublicToolCall::ForwardsList(_) => self.handle_public_mcp_forwards_list(request),
                 PublicToolCall::ForwardsOpen(_) => {
                     self.handle_public_mcp_forwards_open(request, cx)
@@ -1517,20 +1381,6 @@ impl WorkspaceApp {
                 }
                 PublicToolCall::TransferCancel(_) => {
                     self.handle_public_mcp_transfer_cancel(request)
-                }
-                PublicToolCall::WorkspaceMount(_) => {
-                    self.handle_public_mcp_workspace_mount(request, cx)
-                }
-                PublicToolCall::WorkspaceTree(_) => self.handle_public_mcp_workspace_tree(request),
-                PublicToolCall::WorkspaceRead(_) => self.handle_public_mcp_workspace_read(request),
-                PublicToolCall::WorkspaceApplyEdits(_) => {
-                    self.handle_public_mcp_workspace_apply_edits(request)
-                }
-                PublicToolCall::WorkspaceSearch(_) => {
-                    self.handle_public_mcp_workspace_search(request)
-                }
-                PublicToolCall::WorkspaceClose(_) => {
-                    self.handle_public_mcp_workspace_close(request)
                 }
             }
         });
@@ -2379,17 +2229,12 @@ impl WorkspaceApp {
             transfers::invalidate_for_disconnected_nodes(&mut handles, &disconnected);
         forwards::invalidate_for_disconnected_nodes(&mut handles, &disconnected);
         files::invalidate_for_disconnected_nodes(&mut handles, &disconnected);
-        let disconnected_workspaces =
-            workspaces::take_disconnected_workspaces(&mut handles, &disconnected);
         drop(handles);
         for cancellation in cancellations {
             cancellation.cancel();
         }
         for transfer_id in interrupted_transfers {
             self.sftp_transfer_manager.cancel(&transfer_id);
-        }
-        for record in disconnected_workspaces {
-            record.revoke();
         }
         finish_serialized(
             request,

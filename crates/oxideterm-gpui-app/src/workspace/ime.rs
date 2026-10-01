@@ -153,7 +153,6 @@ pub(super) enum WorkspaceImeTarget {
     AiChatInput,
     AiConversationRename,
     AiMessageEdit,
-    PluginControl { key: u64, secret: bool },
     Sftp(crate::workspace::sftp::SftpSurfaceId, SftpInput),
     NewConnection(NewConnectionField),
     KeyboardInteractive(usize),
@@ -531,7 +530,6 @@ impl WorkspaceImeTarget {
             Self::AiChatInput => 1_897,
             Self::AiMessageEdit => 1_898,
             Self::AiConversationRename => 1_899,
-            Self::PluginControl { key, .. } => key.wrapping_add(10_000),
             Self::Sftp(surface, input) => {
                 (1_u64 << 62)
                     | (match surface {
@@ -1325,16 +1323,6 @@ impl WorkspaceApp {
             && self.ai_entity.read(cx).chat_ui().editing_message_focused
         {
             return Some(WorkspaceImeTarget::AiMessageEdit);
-        }
-
-        if let Some(key) = self.plugin_ui_state(cx).focused_input
-            && self.native_plugin_ui_control_is_visible(key, cx)
-        {
-            let secret = self
-                .plugin_ui_state(cx)
-                .context(key)
-                .is_some_and(|context| context.control_kind == "password");
-            return Some(WorkspaceImeTarget::PluginControl { key, secret });
         }
 
         if terminal_tab_visible && self.terminal.read(cx).cast_search_focused() {
@@ -2399,14 +2387,6 @@ impl WorkspaceApp {
                         .editing_message_draft
                         .clone()
                 }),
-            WorkspaceImeTarget::PluginControl { key, .. } => self
-                .native_plugin_ui_control_is_visible(key, cx)
-                .then(|| {
-                    self.plugin_ui_state(cx)
-                        .text(key)
-                        .map(|value| ime_text_snapshot(target, value))
-                })
-                .flatten(),
             WorkspaceImeTarget::Sftp(surface, input) => {
                 if !self.has_sftp_surface(surface) {
                     return None;
@@ -3352,20 +3332,6 @@ impl WorkspaceApp {
                     cx.notify();
                 }
             }
-            WorkspaceImeTarget::PluginControl { key, .. } => {
-                if self.plugin_ui_state(cx).focused_input == Some(key)
-                    && self.native_plugin_ui_control_is_visible(key, cx)
-                {
-                    self.update_plugin_ui_state(cx, |ui| {
-                        if let Some(value) = ui.text_mut(key) {
-                            replace_utf16(value, replacement_range, text);
-                        }
-                    });
-                    self.show_active_input_caret(cx);
-                    self.dispatch_native_plugin_ui_input_event(key, cx);
-                    cx.notify();
-                }
-            }
             WorkspaceImeTarget::Sftp(surface, input) => {
                 if !self.has_sftp_surface(surface) {
                     return;
@@ -3762,10 +3728,6 @@ fn ime_target_is_secret(target: WorkspaceImeTarget) -> bool {
             | WorkspaceImeTarget::HostTmuxDialogInput
     ) || matches!(target, WorkspaceImeTarget::Settings(input) if input.is_secret())
         || matches!(target, WorkspaceImeTarget::SessionManager(input) if input.is_secret())
-        || matches!(
-            target,
-            WorkspaceImeTarget::PluginControl { secret: true, .. }
-        )
 }
 
 fn ime_target_should_blink_caret(target: WorkspaceImeTarget) -> bool {
@@ -4402,10 +4364,6 @@ mod tests {
             WorkspaceImeTarget::NewConnection(NewConnectionField::UpstreamProxyPassword),
             WorkspaceImeTarget::KeyboardInteractive(0),
             WorkspaceImeTarget::HostTmuxDialogInput,
-            WorkspaceImeTarget::PluginControl {
-                key: 42,
-                secret: true,
-            },
         ];
 
         for target in targets {

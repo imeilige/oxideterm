@@ -1591,7 +1591,6 @@ impl WorkspaceApp {
     ) -> bool {
         self.ai_active_terminal_context_available(cx)
             || self.ai_active_tab_has_split_panes(cx)
-            || self.ai_has_ide_context(cx)
             || self.ai_has_sftp_context(cx)
     }
 
@@ -1660,20 +1659,6 @@ impl WorkspaceApp {
                         cx.stop_propagation();
                         cx.notify();
                     }),
-                ),
-                oxideterm_gpui_ui::motion::MotionDuration::Micro,
-            ));
-        }
-        if self.ai_has_ide_context(cx) {
-            chips = chips.child(oxideterm_gpui_ui::motion::fade_in(
-                &self.tokens,
-                "ai-ide-context-enter",
-                ai_context_chip(
-                    &self.tokens,
-                    self.i18n.t("ai.input.ide_context"),
-                    AiTone::Emerald,
-                    true,
-                    Self::render_lucide_icon(LucideIcon::Code2, 12.0, rgb(self.tokens.ui.success)),
                 ),
                 oxideterm_gpui_ui::motion::MotionDuration::Micro,
             ));

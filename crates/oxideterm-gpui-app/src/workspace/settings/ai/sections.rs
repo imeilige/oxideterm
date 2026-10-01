@@ -1188,22 +1188,6 @@ impl WorkspaceApp {
     }
 
     pub(in crate::workspace) fn refresh_ai_skill_registry(&mut self) {
-        let plugin_registry =
-            plugin_host::NativePluginRegistry::discover(self.settings_store.path());
-        let plugin_roots = plugin_registry
-            .plugins()
-            .iter()
-            .filter(|plugin| {
-                matches!(
-                    plugin.state,
-                    plugin_host::NativePluginState::ReadyManifestOnly
-                        | plugin_host::NativePluginState::ReadyWasm
-                        | plugin_host::NativePluginState::ReadyProcess
-                        | plugin_host::NativePluginState::Active
-                )
-            })
-            .map(|plugin| plugin.install_dir.clone())
-            .collect();
         let disabled_paths = self
             .settings_store
             .settings()
@@ -1217,7 +1201,7 @@ impl WorkspaceApp {
             oxideterm_skills::SkillRegistry::discover(&oxideterm_skills::SkillDiscoveryOptions {
                 workspace_root: self.skill_workspace_root.clone(),
                 settings_path: Some(self.settings_store.path().to_path_buf()),
-                plugin_roots,
+                plugin_roots: Vec::new(),
                 disabled_paths,
             });
         *self.skill_registry.write() = registry;

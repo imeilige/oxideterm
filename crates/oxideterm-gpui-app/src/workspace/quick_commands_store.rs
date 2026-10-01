@@ -7,9 +7,9 @@ use super::{
     default_quick_command_categories, default_quick_commands, now_ms,
 };
 use oxideterm_quick_commands::{
-    QuickCommandDraft, delete_quick_command, delete_quick_command_category,
-    ensure_active_quick_command_category, new_quick_command_id, upsert_quick_command,
-    upsert_quick_command_category, visible_quick_commands, visible_quick_commands_for_management,
+    delete_quick_command, delete_quick_command_category, ensure_active_quick_command_category,
+    new_quick_command_id, upsert_quick_command_category, visible_quick_commands,
+    visible_quick_commands_for_management,
 };
 
 impl QuickCommandsState {
@@ -54,28 +54,6 @@ impl QuickCommandsState {
 
     pub(super) fn visible_commands_for_management(&self) -> Vec<QuickCommand> {
         visible_quick_commands_for_management(&self.commands, &self.active_category, &self.query)
-    }
-
-    pub(in crate::workspace) fn upsert_command(&mut self, draft: QuickCommandDraft) {
-        let updated_at = now_ms();
-        let mut commands = self.commands.clone();
-        if !upsert_quick_command(&mut commands, &self.categories, draft, updated_at) {
-            return;
-        }
-        // Plugin-originated candidates become visible only after full snapshot validation succeeds.
-        let snapshot = QuickCommandsSnapshot {
-            version: QUICK_COMMANDS_SCHEMA_VERSION,
-            categories: self.categories.clone(),
-            commands: commands.clone(),
-            updated_at,
-        };
-        match oxideterm_quick_commands::save_snapshot(&self.settings_path, &snapshot) {
-            Ok(()) => {
-                self.commands = commands;
-                self.last_persist_error = None;
-            }
-            Err(error) => self.last_persist_error = Some(error),
-        }
     }
 
     pub(in crate::workspace) fn upsert_editor_command(
@@ -388,9 +366,9 @@ fn split_choices(value: &str) -> Vec<String> {
 #[cfg(test)]
 mod quick_command_tests {
     use super::{
-        QUICK_COMMANDS_SCHEMA_VERSION, QuickCommand, QuickCommandCategoryDraft, QuickCommandDraft,
-        QuickCommandImportStrategy, QuickCommandsSnapshot, QuickCommandsState,
-        default_quick_command_categories, default_quick_commands, now_ms,
+        QUICK_COMMANDS_SCHEMA_VERSION, QuickCommand, QuickCommandCategoryDraft,
+        QuickCommandEditorDraft, QuickCommandImportStrategy, QuickCommandsSnapshot,
+        QuickCommandsState, default_quick_command_categories, default_quick_commands, now_ms,
     };
     use crate::workspace::quick_commands::{QuickCommandCategory, QuickCommandIcon};
     use std::fs;
@@ -407,17 +385,19 @@ mod quick_command_tests {
     fn upsert_command_persists_to_quick_commands_json() {
         let settings_path = temp_settings_path("persist");
         let mut state = QuickCommandsState::load(&settings_path);
-        state.upsert_command(QuickCommandDraft {
+        assert!(state.upsert_editor_command(QuickCommandEditorDraft {
             id: None,
             name: "List root".to_string(),
             command: "ls /".to_string(),
-            category: Some("files".to_string()),
-            description: Some("root listing".to_string()),
-            parameters: None,
-            protocols: None,
-            host_patterns: None,
-            confirmation: None,
-        });
+            category: "files".to_string(),
+            description: "root listing".to_string(),
+            host_patterns: String::new(),
+            parameters: Vec::new(),
+            protocols: Vec::new(),
+            confirmation: oxideterm_quick_commands::QuickCommandConfirmationPolicy::Inherit,
+            created_at: now_ms(),
+            sort_order: 0,
+        }));
 
         let reloaded = QuickCommandsState::load(&settings_path);
         assert!(reloaded.commands.iter().any(|command| {
@@ -465,17 +445,19 @@ mod quick_command_tests {
             name: "Ops".to_string(),
             icon: QuickCommandIcon::Zap,
         });
-        state.upsert_command(QuickCommandDraft {
+        assert!(state.upsert_editor_command(QuickCommandEditorDraft {
             id: None,
             name: "Restart service".to_string(),
             command: "systemctl restart example".to_string(),
-            category: Some(custom.clone()),
-            description: None,
-            parameters: None,
-            protocols: None,
-            host_patterns: None,
-            confirmation: None,
-        });
+            category: custom.clone(),
+            description: String::new(),
+            host_patterns: String::new(),
+            parameters: Vec::new(),
+            protocols: Vec::new(),
+            confirmation: oxideterm_quick_commands::QuickCommandConfirmationPolicy::Inherit,
+            created_at: now_ms(),
+            sort_order: 0,
+        }));
         let mut expected_commands = state.commands.clone();
         for command in &mut expected_commands {
             command.category = "custom".into();

@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.2.4-blue" alt="版本">
+  <img src="https://img.shields.io/badge/version-2.2.5-blue" alt="版本">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue" alt="平台">
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="许可证">
   <img src="https://img.shields.io/badge/rust-2024%20edition-orange" alt="Rust 2024">
@@ -272,7 +272,6 @@ trzsz 继续走终端数据流，不需要额外端口或远端 agent：
 cargo run
 OXIDETERM_RENDER_PROFILE=compatibility cargo run
 ./scripts/build/build-cli.sh
-./scripts/build/build-agent.sh
 ```
 
 CLI 二进制输出到 `crates/oxideterm-gpui-app/resources/cli-bin/<target-triple>/oxideterm`。

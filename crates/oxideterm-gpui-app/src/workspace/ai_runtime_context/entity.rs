@@ -57,7 +57,6 @@ impl std::fmt::Debug for AiSftpRuntimeOwner {
 #[derive(Clone)]
 struct IdeRuntimeOwner {
     key: RuntimeOwnerKey,
-    generation: RuntimeOwnerGeneration,
     node_id: NodeId,
 }
 
@@ -355,50 +354,6 @@ impl AiRuntimeContextEntity {
             .expect("SFTP lifecycle owner generation is monotonic");
     }
 
-    /// IDE tabs own their editor runtime independently from the shared node.
-    pub(in crate::workspace) fn register_ide_surface(
-        &mut self,
-        tab_id: TabId,
-        node_id: NodeId,
-        label: String,
-        resource_ref: Option<oxideterm_ai::StableResourceRef>,
-    ) {
-        let owner = self
-            .ide_owners
-            .entry(tab_id.0)
-            .or_insert_with(|| IdeRuntimeOwner {
-                key: RuntimeOwnerKey::new(),
-                generation: RuntimeOwnerGeneration::new(1),
-                node_id: node_id.clone(),
-            });
-        if owner.node_id != node_id {
-            owner.node_id = node_id;
-            owner.generation = next_owner_generation(owner.generation);
-        }
-        let registration = RuntimeOwnerRegistration::new(
-            owner.key.clone(),
-            RuntimeOwnerKind::IdeSurface,
-            owner.generation,
-            label,
-            [RuntimeCapability::IdeRead, RuntimeCapability::IdeWrite],
-            resource_ref,
-        )
-        .expect("IDE lifecycle data creates a valid runtime owner");
-        self.registry
-            .register_owner(registration)
-            .expect("IDE lifecycle owner generation is monotonic");
-    }
-
-    /// Closing an IDE tab revokes only that surface capability; it must never
-    /// release the shared NodeRouter connection.
-    pub(in crate::workspace) fn revoke_ide_surface(&mut self, tab_id: TabId) {
-        let Some(owner) = self.ide_owners.remove(&tab_id.0) else {
-            return;
-        };
-        self.registry
-            .revoke_owner(&owner.key, RuntimeRevocationReason::OwnerClosed);
-    }
-
     /// A mounted tab is the exact owner of focus authority. Reopening the same
     /// surface kind creates another owner instead of rebinding a stale handle.
     pub(in crate::workspace) fn register_app_surface(
@@ -670,28 +625,6 @@ impl AiRuntimeContextEntity {
                     connection_id: owner.connection_id.clone(),
                     session_generation: owner.session_generation,
                 })
-            })
-            .ok_or_else(|| RuntimeValidationError::new(RuntimeValidationFailure::OwnerClosed))
-    }
-
-    pub(in crate::workspace) fn validate_ide_handle(
-        &self,
-        tool_session_id: &ToolSessionId,
-        raw_handle_id: Option<&str>,
-        capability: RuntimeCapability,
-    ) -> Result<(TabId, NodeId), RuntimeValidationError> {
-        let validated = self.validate_handle_for_kind(
-            tool_session_id,
-            raw_handle_id,
-            capability,
-            RuntimeOwnerKind::IdeSurface,
-        )?;
-        self.ide_owners
-            .iter()
-            .find_map(|(tab_id, owner)| {
-                (owner.key == *validated.owner_key()
-                    && owner.generation == validated.owner_generation())
-                .then(|| (TabId(*tab_id), owner.node_id.clone()))
             })
             .ok_or_else(|| RuntimeValidationError::new(RuntimeValidationFailure::OwnerClosed))
     }
@@ -1040,11 +973,10 @@ mod tests {
     }
 
     #[test]
-    fn node_disconnect_revokes_sftp_and_ide_but_not_terminal_handles() {
+    fn node_disconnect_revokes_sftp_but_not_terminal_handles() {
         let mut entity = AiRuntimeContextEntity::new();
         let node_id = NodeId::new("node-a");
         let terminal_session_id = TerminalSessionId(42);
-        let ide_tab_id = TabId(13);
         entity.register_node_connection(
             node_id.clone(),
             "connection-a".to_string(),
@@ -1059,7 +991,6 @@ mod tests {
             "SFTP owner".to_string(),
             None,
         );
-        entity.register_ide_surface(ide_tab_id, node_id.clone(), "IDE owner".to_string(), None);
         let tool_session_id = entity.begin_tool_session(7);
         let terminal_handle = entity
             .issue_terminal_handle(&tool_session_id, terminal_session_id)
@@ -1070,9 +1001,6 @@ mod tests {
         let sftp_handle = entity
             .issue_sftp_handle(&tool_session_id, &node_id)
             .expect("SFTP handle issues");
-        let ide_handle = entity
-            .issue_ide_handle(&tool_session_id, ide_tab_id)
-            .expect("IDE handle issues");
 
         entity.revoke_node_connection(&node_id);
 
@@ -1092,15 +1020,6 @@ mod tests {
                     &tool_session_id,
                     Some(sftp_handle.handle_id.as_str()),
                     oxideterm_ai::RuntimeCapability::SftpRead,
-                )
-                .is_err()
-        );
-        assert!(
-            entity
-                .validate_ide_handle(
-                    &tool_session_id,
-                    Some(ide_handle.handle_id.as_str()),
-                    oxideterm_ai::RuntimeCapability::IdeRead,
                 )
                 .is_err()
         );
@@ -1148,56 +1067,6 @@ mod tests {
                     oxideterm_ai::RuntimeCapability::NodeInspect,
                 )
                 .is_ok()
-        );
-    }
-
-    #[test]
-    fn closing_one_ide_surface_does_not_select_another_surface() {
-        let mut entity = AiRuntimeContextEntity::new();
-        let first_tab = TabId(11);
-        let second_tab = TabId(12);
-        entity.register_ide_surface(
-            first_tab,
-            NodeId::new("node-a"),
-            "First IDE".to_string(),
-            None,
-        );
-        entity.register_ide_surface(
-            second_tab,
-            NodeId::new("node-a"),
-            "Second IDE".to_string(),
-            None,
-        );
-        let tool_session_id = entity.begin_tool_session(7);
-        let first_handle = entity
-            .issue_ide_handle(&tool_session_id, first_tab)
-            .expect("first IDE handle issues");
-        let second_handle = entity
-            .issue_ide_handle(&tool_session_id, second_tab)
-            .expect("second IDE handle issues");
-
-        entity.revoke_ide_surface(first_tab);
-
-        assert!(
-            entity
-                .validate_ide_handle(
-                    &tool_session_id,
-                    Some(first_handle.handle_id.as_str()),
-                    oxideterm_ai::RuntimeCapability::IdeRead,
-                )
-                .is_err(),
-            "a closed surface must not rebind to another surface on the same node"
-        );
-        assert_eq!(
-            entity
-                .validate_ide_handle(
-                    &tool_session_id,
-                    Some(second_handle.handle_id.as_str()),
-                    oxideterm_ai::RuntimeCapability::IdeRead,
-                )
-                .expect("the second surface remains valid")
-                .0,
-            second_tab
         );
     }
 

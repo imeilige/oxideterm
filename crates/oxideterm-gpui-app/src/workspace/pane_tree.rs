@@ -1021,7 +1021,6 @@ impl WorkspaceApp {
         }
         self.set_main_window_active_tab(Some(page), cx);
         self.sync_active_tab_surface(cx);
-        self.sync_ide_surface_mount(page, cx);
         if new_window {
             self.detach_tab_to_window(page, None, window, cx);
         } else if let Some(main) = self
@@ -1057,7 +1056,6 @@ impl WorkspaceApp {
                 let container = tab_id.unwrap_or(page_id);
                 let content = match page.kind {
                     TabKind::Sftp => self.render_sftp_surface_for_tab(page_id, window, cx),
-                    TabKind::Ide => self.render_ide_surface_for_tab(page_id, cx),
                     TabKind::Forwards => self.render_forwards_surface_for_tab(page_id, window, cx),
                     _ => div().into_any_element(),
                 };

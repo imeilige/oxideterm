@@ -203,8 +203,6 @@ impl WorkspaceApp {
                         | TabKind::ConnectionPool
                         | TabKind::Topology
                         | TabKind::NotificationCenter
-                        | TabKind::PluginManager
-                        | TabKind::Plugin { .. }
                         | TabKind::CloudSync
                         | TabKind::Knowledge
                         | TabKind::RemoteDesktop
@@ -239,15 +237,8 @@ impl WorkspaceApp {
                 (TabKind::Topology, _) => self.render_topology_surface(cx),
                 (TabKind::NotificationCenter, _) => self.render_notification_center_surface(cx),
                 (TabKind::Sftp, _) => self.render_sftp_surface(window, cx),
-                (TabKind::Ide, _) => self.render_ide_surface(cx),
                 (TabKind::Forwards, _) => self.render_forwards_surface(window, cx),
                 (TabKind::SessionManager, _) => self.render_session_manager_surface(window, cx),
-                (TabKind::PluginManager, _) => self.render_plugin_manager_surface(cx),
-                (TabKind::Plugin { plugin_id, tab_id }, _) => {
-                    let plugin_id = plugin_id.clone();
-                    let tab_id = tab_id.clone();
-                    self.render_native_plugin_tab_surface(&plugin_id, &tab_id, cx)
-                }
                 (TabKind::CloudSync, _) => self.render_cloud_sync_surface(cx),
                 (TabKind::Knowledge, _) => self.render_knowledge_workspace_surface(
                     KnowledgeWorkspaceLayout::MainWindow,
@@ -622,11 +613,6 @@ impl WorkspaceApp {
                 } else if this.dispatch_registered_keybinding(event, window, cx) {
                     window.prevent_default();
                     cx.stop_propagation();
-                } else if !this.registered_keybinding_matches(event)
-                    && this.dispatch_runtime_plugin_keybinding(event, cx)
-                {
-                    window.prevent_default();
-                    cx.stop_propagation();
                 } else if this.forward_terminal_tab_from_capture(event, window, cx) {
                     window.prevent_default();
                     cx.stop_propagation();
@@ -851,18 +837,12 @@ impl WorkspaceApp {
                 if this.copy_active_text_input(cx) {
                     return;
                 }
-                if this.copy_active_ide_selection(cx) {
-                    return;
-                }
                 if this.connection_form_state(cx).form.is_none() {
                     this.copy(cx);
                 }
             }))
             .on_action(cx.listener(|this, _: &Cut, _window, cx| {
                 if this.cut_active_text_input(cx) {
-                    return;
-                }
-                if this.cut_active_ide_selection(cx) {
                     return;
                 }
                 if this.connection_form_state(cx).form.is_none() {
@@ -873,9 +853,6 @@ impl WorkspaceApp {
                 if this.paste_active_text_input(cx) {
                     return;
                 }
-                if this.paste_into_active_ide_editor(cx) {
-                    return;
-                }
                 if this.connection_form_state(cx).form.is_some() {
                     this.paste_into_new_connection_field(cx);
                 } else {
@@ -883,21 +860,12 @@ impl WorkspaceApp {
                 }
             }))
             .on_action(cx.listener(|this, _: &Find, window, cx| {
-                if this.open_active_ide_search(cx) {
-                    return;
-                }
                 this.open_search(window, cx);
             }))
             .on_action(cx.listener(|this, _: &FindNext, _window, cx| {
-                if this.select_next_active_ide_search_match(cx) {
-                    return;
-                }
                 this.search_next(true, cx);
             }))
             .on_action(cx.listener(|this, _: &FindPrev, _window, cx| {
-                if this.select_previous_active_ide_search_match(cx) {
-                    return;
-                }
                 this.search_next(false, cx);
             }))
             .on_action(cx.listener(|this, _: &CloseSearch, window, cx| {
@@ -1255,10 +1223,6 @@ impl WorkspaceApp {
             .when_some(self.render_host_schedule_logs_dialog(cx), |root, dialog| {
                 root.child(dialog)
             })
-            .when_some(
-                self.render_native_plugin_confirm_dialog(cx),
-                |root, dialog| root.child(dialog),
-            )
             // Tab renaming is a main-window portal and never remounts the terminal tab.
             .when_some(self.render_tab_rename_dialog(cx), |root, dialog| {
                 root.child(dialog)

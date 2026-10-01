@@ -167,7 +167,8 @@ impl WorkspaceApp {
         };
         self.prepare_modal_interaction_boundary(cx);
         let tokens = self.tokens;
-        let runtime_settings = self.ide_runtime_settings();
+        let editor_typography = self.surface_editor_typography();
+        let background_active = self.settings_background_active();
         let placeholder = self.i18n.t(match dialog {
             AiTextEditorDialog::SystemPrompt => "settings_view.ai.system_prompt_placeholder",
             AiTextEditorDialog::Memory => "settings_view.ai.memory_placeholder",
@@ -191,13 +192,13 @@ impl WorkspaceApp {
             editor.set_context_menu_labels(context_menu_labels);
             editor.apply_ide_runtime_settings(
                 &tokens,
-                runtime_settings.editor_font_family.clone(),
-                runtime_settings.editor_font_weight,
-                runtime_settings.editor_font_fallback.clone(),
-                runtime_settings.editor_font_size,
-                runtime_settings.editor_line_height,
+                editor_typography.font_family.clone(),
+                editor_typography.font_weight,
+                editor_typography.font_fallback_family.clone(),
+                editor_typography.font_size,
+                editor_typography.line_height,
                 true,
-                runtime_settings.background_active,
+                background_active,
                 cx,
             );
             editor.set_on_save(Box::new(move |text, _window, cx| {

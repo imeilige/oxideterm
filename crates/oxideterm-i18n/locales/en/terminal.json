@@ -418,8 +418,7 @@
       "switch_to_directory": "Switch to this directory",
       "copy_path": "Copy path",
       "open_file_manager": "Open in File Manager",
-      "open_sftp": "Open in SFTP",
-      "open_ide": "Open in IDE"
+      "open_sftp": "Open in SFTP"
     },
     "project": {
       "search_tasks": "Search project tasks...",

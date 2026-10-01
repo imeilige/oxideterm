@@ -565,20 +565,7 @@ impl WorkspaceApp {
                         .trim()
                         .hash(&mut hasher);
                 }
-                settings.keybindings.overrides.len().hash(&mut hasher);
-                for entry in &self
-                    .plugin_entity
-                    .read(cx)
-                    .registry()
-                    .contributions()
-                    .runtime_keybindings
-                {
-                    entry.plugin_id.hash(&mut hasher);
-                    entry.normalized_keybinding.hash(&mut hasher);
-                    entry.label.hash(&mut hasher);
-                }
             }
-            _ => {}
         }
 
         hasher.finish()
@@ -602,7 +589,7 @@ impl WorkspaceApp {
     }
 
     pub(in crate::workspace) fn visible_keybinding_scope_count(&self, cx: &App) -> usize {
-        let catalog = self.keybinding_definitions(cx);
+        let catalog = self.keybinding_definitions();
         let keybinding_state = self.settings_workspace.read(cx);
         let query = keybinding_state
             .keybinding_search_query()
@@ -619,7 +606,6 @@ impl WorkspaceApp {
             crate::keybindings::ActionScope::FileManager,
             crate::keybindings::ActionScope::Preview,
             crate::keybindings::ActionScope::RemoteDesktop,
-            crate::keybindings::ActionScope::Plugin,
             crate::keybindings::ActionScope::AiPanel,
         ]
         .into_iter()
@@ -1065,7 +1051,6 @@ impl WorkspaceApp {
         self.settings_workspace.update(cx, |settings, _cx| {
             settings.acknowledge_external_store_state()
         });
-        self.emit_native_plugin_settings_events(&previous_settings, &settings, cx);
         self.sync_tab_titles(cx);
         cx.notify();
     }
@@ -1094,7 +1079,6 @@ impl WorkspaceApp {
         // of relying on stale in-memory settings or browser-style stores.
         self.apply_loaded_settings_to_runtime(&previous_settings, &settings, cx);
         self.refresh_ai_skill_registry();
-        self.emit_native_plugin_settings_events(&previous_settings, &settings, cx);
         self.queue_cloud_sync_dirty_refresh(cx);
         self.sync_tab_titles(cx);
         if previous_settings.appearance.window_opacity != settings.appearance.window_opacity {
@@ -1200,11 +1184,6 @@ impl WorkspaceApp {
         self.tab_host.update(cx, |tab_host, _cx| {
             tab_host
                 .configure_terminal_output_highlight(settings.terminal.highlight_tab_on_new_output);
-        });
-        self.ai_entity.update(cx, |ai, _cx| {
-            ai.set_agent_fs_mode(crate::workspace::ide::node_agent_mode_from_settings(
-                &settings,
-            ));
         });
         // Monitoring settings own recurring remote shells and page-scoped GPU work.
         self.apply_host_tool_monitoring_settings(cx);
@@ -1341,55 +1320,8 @@ impl WorkspaceApp {
                 }
             });
         }
-        // Tauri's IDE reads Settings.ide live from settingsStore. Native IDE
-        // surfaces keep their own GPUI owners, so push typography/wrap/autosave
-        // changes into each open surface after the settings store changes.
-        self.apply_ide_runtime_settings_to_surfaces(cx);
         self.sync_terminal_command_sender_appearance(cx);
         self.sync_active_terminal_metadata_context(cx);
-    }
-
-    pub(in crate::workspace) fn emit_native_plugin_settings_events(
-        &mut self,
-        previous_settings: &PersistedSettings,
-        settings: &PersistedSettings,
-        cx: &mut Context<Self>,
-    ) {
-        if previous_settings.terminal.theme != settings.terminal.theme {
-            self.emit_native_plugin_event_to_subscribers(
-                plugin_host::NATIVE_PLUGIN_APP_THEME_CHANGED_EVENT,
-                serde_json::json!({
-                    "theme": crate::workspace::plugin_lifecycle::native_plugin_theme_snapshot(
-                        &settings.terminal.theme
-                    ),
-                }),
-                cx,
-            );
-        }
-
-        if previous_settings.general.language != settings.general.language {
-            let language = settings.general.language.as_str();
-            self.emit_native_plugin_event_to_subscribers(
-                plugin_host::NATIVE_PLUGIN_I18N_LANGUAGE_CHANGED_EVENT,
-                serde_json::json!({ "language": language }),
-                cx,
-            );
-        }
-
-        let previous_value =
-            serde_json::to_value(previous_settings).unwrap_or_else(|_| serde_json::json!({}));
-        let current_value =
-            serde_json::to_value(settings).unwrap_or_else(|_| serde_json::json!({}));
-        if previous_value != current_value {
-            // Tauri exposes app.onSettingsChange as an application-level
-            // snapshot callback. Native sends the same immutable snapshot over
-            // the plugin event channel after persistence succeeds.
-            self.emit_native_plugin_event_to_subscribers(
-                plugin_host::NATIVE_PLUGIN_APP_SETTINGS_CHANGED_EVENT,
-                serde_json::json!({ "settings": current_value }),
-                cx,
-            );
-        }
     }
 }
 

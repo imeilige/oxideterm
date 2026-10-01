@@ -1,5 +1,14 @@
 use super::*;
 
+#[derive(Clone)]
+pub(in crate::workspace) struct SurfaceEditorTypography {
+    pub font_family: String,
+    pub font_weight: f32,
+    pub font_fallback_family: Option<String>,
+    pub font_size: f32,
+    pub line_height: f32,
+}
+
 // Match the browser slider debounce while keeping exactly one retained task.
 const BACKGROUND_BLUR_COMMIT_DELAY: Duration = Duration::from_millis(150);
 
@@ -292,6 +301,33 @@ impl WorkspaceApp {
 
     pub(in crate::workspace) fn settings_background_active(&self) -> bool {
         self.background_surface_active("settings")
+    }
+
+    /// Typography for embedded text editors outside the removed IDE surface.
+    /// The terminal font settings are the only user-configurable editor font
+    /// left, so these editors follow them instead of the UI default.
+    pub(in crate::workspace) fn surface_editor_typography(&self) -> SurfaceEditorTypography {
+        let terminal = &self.settings_store.settings().terminal;
+        let font_family = terminal
+            .font_family
+            .terminal_family_name(&terminal.custom_font_family);
+        // An empty CJK override reuses the primary family and lets the editor's
+        // platform fallback chain resolve the remaining scripts.
+        let configured_cjk_family = terminal.cjk_font_family.trim();
+        let font_fallback_family =
+            oxideterm_gpui_ui::css_font_family_head(if configured_cjk_family.is_empty() {
+                &font_family
+            } else {
+                configured_cjk_family
+            })
+            .map(|family| family.to_string());
+        SurfaceEditorTypography {
+            font_family,
+            font_weight: terminal.font_weight as f32,
+            font_fallback_family,
+            font_size: terminal.font_size as f32,
+            line_height: terminal.line_height as f32,
+        }
     }
 
     pub(in crate::workspace) fn settings_panel_background(&self, color: u32) -> Rgba {
@@ -1309,19 +1345,6 @@ impl WorkspaceApp {
             SettingsInput::TerminalCommandSpecsJson => {
                 self.terminal_command_specs_editor_initial_value()
             }
-            SettingsInput::NativePluginInstallUrl => {
-                self.plugin_manager_state(cx).install_url_draft.clone()
-            }
-            SettingsInput::NativePluginInstallChecksum => {
-                self.plugin_manager_state(cx).install_checksum_draft.clone()
-            }
-            SettingsInput::NativePluginRegistryUrl => {
-                self.plugin_manager_state(cx).registry_url_draft.clone()
-            }
-            SettingsInput::NativePluginMarketplaceSearch => self
-                .plugin_manager_state(cx)
-                .marketplace_search_draft
-                .clone(),
             SettingsInput::PortableCurrentPassword
             | SettingsInput::PortableNewPassword
             | SettingsInput::PortableConfirmPassword => String::new(),
@@ -1340,21 +1363,6 @@ impl WorkspaceApp {
             | SettingsInput::LocalPrivilegeUsernameHint
             | SettingsInput::LocalPrivilegeSecret
             | SettingsInput::LocalPrivilegePromptPatterns => String::new(),
-            SettingsInput::PluginSetting(index) => self
-                .plugin_entity
-                .read(cx)
-                .registry()
-                .contributions()
-                .settings
-                .get(index)
-                .and_then(|setting| {
-                    self.plugin_entity
-                        .read(cx)
-                        .registry()
-                        .plugin_setting_value(&setting.plugin_id, &setting.definition.id)
-                })
-                .map(|value| plugin_setting_input_value(&value))
-                .unwrap_or_default(),
             _ => String::new(),
         }
     }
@@ -1411,34 +1419,6 @@ impl WorkspaceApp {
             SettingsInput::TerminalCommandSpecsJson => {
                 cx.notify();
             }
-            SettingsInput::NativePluginInstallUrl => {
-                let draft = self.settings_input_draft.trim().to_string();
-                self.update_plugin_manager_state(cx, |manager| {
-                    manager.install_url_draft = draft;
-                });
-                cx.notify();
-            }
-            SettingsInput::NativePluginInstallChecksum => {
-                let draft = self.settings_input_draft.trim().to_string();
-                self.update_plugin_manager_state(cx, |manager| {
-                    manager.install_checksum_draft = draft;
-                });
-                cx.notify();
-            }
-            SettingsInput::NativePluginRegistryUrl => {
-                let draft = self.settings_input_draft.trim().to_string();
-                self.update_plugin_manager_state(cx, |manager| {
-                    manager.registry_url_draft = draft;
-                });
-                cx.notify();
-            }
-            SettingsInput::NativePluginMarketplaceSearch => {
-                let draft = self.settings_input_draft.trim().to_string();
-                self.update_plugin_manager_state(cx, |manager| {
-                    manager.marketplace_search_draft = draft;
-                });
-                cx.notify();
-            }
             SettingsInput::PortableCurrentPassword
             | SettingsInput::PortableNewPassword
             | SettingsInput::PortableConfirmPassword => {}
@@ -1460,48 +1440,6 @@ impl WorkspaceApp {
             SettingsInput::NetworkProxyPassword
             | SettingsInput::NetworkProxyTestHost
             | SettingsInput::NetworkProxyTestPort => {}
-            SettingsInput::PluginSetting(index) => {
-                let Some(setting) = self
-                    .plugin_entity
-                    .read(cx)
-                    .registry()
-                    .contributions()
-                    .settings
-                    .get(index)
-                    .cloned()
-                else {
-                    cx.notify();
-                    return;
-                };
-                let value = match plugin_setting_draft_to_value(
-                    &setting.definition.setting_type,
-                    &self.settings_input_draft,
-                ) {
-                    Ok(value) => value,
-                    Err(error) => {
-                        self.plugin_entity.update(cx, |plugins, _cx| {
-                            plugins
-                                .registry_mut()
-                                .record_manager_error(setting.plugin_id.clone(), error);
-                        });
-                        cx.notify();
-                        return;
-                    }
-                };
-                if let Err(error) = self.set_native_plugin_setting_value_and_emit(
-                    &setting.plugin_id,
-                    &setting.definition.id,
-                    value,
-                    cx,
-                ) {
-                    self.plugin_entity.update(cx, |plugins, _cx| {
-                        plugins
-                            .registry_mut()
-                            .record_manager_error(setting.plugin_id.clone(), error);
-                    });
-                }
-                cx.notify();
-            }
             _ => {
                 cx.notify();
             }

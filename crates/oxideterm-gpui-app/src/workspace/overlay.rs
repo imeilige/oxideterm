@@ -21,18 +21,6 @@ const TERMINAL_FONT_SIZE_HUD_BACKGROUND_ALPHA: u32 = 0xe6;
 
 /// Typed cross-system updates accepted by the window overlay owner.
 pub(in crate::workspace) enum WorkspaceOverlayIntent {
-    Notice {
-        notice: TerminalNotice,
-        ttl: Duration,
-    },
-    PluginProgress {
-        key: String,
-        notice: TerminalNotice,
-        ttl: Duration,
-    },
-    DismissPluginProgress {
-        key: String,
-    },
     ConnectionTraceEvents(Vec<ConnectionTraceEvent>),
     QueueTooltip {
         id: String,
@@ -249,17 +237,6 @@ impl WorkspaceOverlayEntity {
         cx: &mut Context<Self>,
     ) -> bool {
         let changed = match intent {
-            WorkspaceOverlayIntent::Notice { notice, ttl } => {
-                self.push_notice(notice, ttl);
-                true
-            }
-            WorkspaceOverlayIntent::PluginProgress { key, notice, ttl } => {
-                self.upsert_plugin_progress(key, notice, ttl);
-                true
-            }
-            WorkspaceOverlayIntent::DismissPluginProgress { key } => {
-                self.dismiss_plugin_progress(&key, Instant::now())
-            }
             WorkspaceOverlayIntent::ConnectionTraceEvents(events) => {
                 self.apply_connection_trace_events(events, Instant::now())
             }
@@ -491,31 +468,6 @@ impl WorkspaceOverlayEntity {
             remove_at: None,
             presence: oxideterm_gpui_ui::motion::ExitPresence::visible(),
         });
-    }
-
-    fn upsert_plugin_progress(&mut self, key: String, notice: TerminalNotice, ttl: Duration) {
-        let expires_at = Instant::now() + ttl;
-        if let Some(toast) = self.plugin_progress_toasts.get_mut(&key) {
-            toast.notice = notice;
-            toast.expires_at = expires_at;
-            toast.remove_at = None;
-            if toast.presence.phase() == oxideterm_gpui_ui::motion::ExitPhase::Exiting {
-                toast.presence.reopen();
-            }
-            return;
-        }
-        let id = self.next_toast_id;
-        self.next_toast_id = self.next_toast_id.wrapping_add(1).max(1);
-        self.plugin_progress_toasts.insert(
-            key,
-            OverlayToast {
-                id,
-                notice,
-                expires_at,
-                remove_at: None,
-                presence: oxideterm_gpui_ui::motion::ExitPresence::visible(),
-            },
-        );
     }
 
     fn queue_tooltip(&mut self, id: String, label: String, x: f32, y: f32, now: Instant) -> bool {

@@ -72,7 +72,6 @@ pub(in crate::workspace) fn ai_sftp_target_for_node(
     ))
 }
 
-
 pub(in crate::workspace) fn ai_opened_local_terminal_target(
     target: &AiOrchestratorTarget,
 ) -> AiOrchestratorTarget {
@@ -81,34 +80,6 @@ pub(in crate::workspace) fn ai_opened_local_terminal_target(
     ai_target_from_projection(oxideterm_ai::opened_local_terminal_projection(
         &ai_target_projection(target),
     ))
-}
-
-pub(in crate::workspace) fn ai_ide_workspace_target_for_node(
-    tab_id: TabId,
-    node_id: &NodeId,
-    node: &WorkspaceSshNode,
-    active_editor_tab_id: Option<String>,
-    project_root_path: Option<String>,
-    project_name: Option<String>,
-) -> AiOrchestratorTarget {
-    // Tauri's IDE target is keyed by node id and carries the active editor tab
-    // separately; it never uses the outer app tab id as the workspace tab ref.
-    let mut target = ai_target_from_projection(oxideterm_ai::ide_workspace_target_projection(
-        oxideterm_ai::AiIdeTargetInput {
-            node_id: node_id.0.clone(),
-            connection_id: node.saved_connection_id.clone(),
-            active_editor_tab_id,
-            project_root_path,
-            project_name,
-        },
-    ));
-    // The internal target map must preserve surface identity when one node has
-    // multiple IDE projects. The tab id is never emitted in the v2 projection.
-    target.id = format!("ide-surface:{}", tab_id.0);
-    target
-        .refs
-        .insert("surfaceTabId".to_string(), tab_id.0.to_string());
-    target
 }
 
 impl WorkspaceApp {
@@ -265,20 +236,6 @@ impl WorkspaceApp {
                 continue;
             };
             targets.push(ai_sftp_target_for_node(node_id, node, sftp_session_id));
-        }
-
-        for ide_target in self.ide_workspace.read(cx).target_snapshots(cx) {
-            let Some(node) = self.ssh_nodes.get(&ide_target.node_id) else {
-                continue;
-            };
-            targets.push(ai_ide_workspace_target_for_node(
-                ide_target.tab_id,
-                &ide_target.node_id,
-                node,
-                ide_target.active_editor_tab_id,
-                ide_target.project_root_path,
-                ide_target.project_name,
-            ));
         }
 
         let tab_host = self.tab_host.read(cx);
@@ -915,24 +872,6 @@ impl WorkspaceApp {
                     &current_snapshot,
                     result,
                     "Forwarding action accepted.",
-                    "write",
-                )
-            }
-            "list_plugins" => {
-                let data = self.execute_ai_list_plugins(cx);
-                current_snapshot.ok(
-                    "Installed plugins listed.",
-                    serde_json::to_string_pretty(&data).unwrap_or_default(),
-                    data,
-                    "read",
-                )
-            }
-            "manage_plugin" => {
-                let result = self.execute_ai_manage_plugin(&args, window, cx);
-                ai_application_action_result(
-                    &current_snapshot,
-                    result,
-                    "Plugin action accepted.",
                     "write",
                 )
             }
@@ -1729,67 +1668,27 @@ impl WorkspaceApp {
             }
         };
         let raw_handle_id = args.get("handle_id").and_then(serde_json::Value::as_str);
-        let (node_id, sftp_owner, ide_file_system) = if operation.requires_ide_owner() {
-            let (tab_id, node_id) = match self.ai_runtime_context.read(cx).validate_ide_handle(
-                &tool_session_id,
-                raw_handle_id,
-                operation.capability(),
-            ) {
-                Ok(owner) => owner,
-                Err(error) => {
-                    self.send_ai_live_resource_validation_failure(
-                        &tool_session_id,
-                        tool_call_id,
-                        tool_name,
-                        sender,
-                        error,
-                        post_user_approval,
-                        started.elapsed().as_millis(),
-                        cx,
-                    );
-                    return;
-                }
-            };
-            let Some(file_system) = self.ide_workspace.read(cx).ai_owner_file_system(tab_id, cx)
-            else {
+        let owner = match self.ai_runtime_context.read(cx).validate_sftp_handle(
+            &tool_session_id,
+            raw_handle_id,
+            operation.capability(),
+        ) {
+            Ok(node_id) => node_id,
+            Err(error) => {
                 self.send_ai_live_resource_validation_failure(
                     &tool_session_id,
                     tool_call_id,
                     tool_name,
                     sender,
-                    oxideterm_ai::RuntimeValidationError::new(
-                        oxideterm_ai::RuntimeValidationFailure::OwnerClosed,
-                    ),
+                    error,
                     post_user_approval,
                     started.elapsed().as_millis(),
                     cx,
                 );
                 return;
-            };
-            (node_id, None, Some(file_system))
-        } else {
-            let owner = match self.ai_runtime_context.read(cx).validate_sftp_handle(
-                &tool_session_id,
-                raw_handle_id,
-                operation.capability(),
-            ) {
-                Ok(node_id) => node_id,
-                Err(error) => {
-                    self.send_ai_live_resource_validation_failure(
-                        &tool_session_id,
-                        tool_call_id,
-                        tool_name,
-                        sender,
-                        error,
-                        post_user_approval,
-                        started.elapsed().as_millis(),
-                        cx,
-                    );
-                    return;
-                }
-            };
-            (owner.node_id.clone(), Some(owner), None)
+            }
         };
+        let sftp_owner = Some(owner);
         let snapshot = self.ai_orchestrator_snapshot_for_tool_session(Some(&tool_session_id), cx);
         let services = self.ai_live_tool_services();
         let audit_context = oxideterm_audit::AuditContext::current_request();
@@ -1801,10 +1700,8 @@ impl WorkspaceApp {
                         snapshot
                             .read_live_resource(
                                 &services,
-                                node_id,
                                 sftp_owner,
                                 &args,
-                                ide_file_system,
                                 post_user_approval,
                             )
                             .await
@@ -1813,10 +1710,8 @@ impl WorkspaceApp {
                         snapshot
                             .write_live_resource(
                                 &services,
-                                node_id,
                                 sftp_owner,
                                 &args,
-                                ide_file_system,
                                 post_user_approval,
                             )
                             .await
@@ -1916,19 +1811,11 @@ impl WorkspaceApp {
             } else {
                 let operation = ai_live_resource_operation(tool_name, &args)?;
                 let raw_handle_id = args.get("handle_id").and_then(serde_json::Value::as_str);
-                if operation.requires_ide_owner() {
-                    self.ai_runtime_context.read(cx).validate_ide_handle(
-                        tool_session_id,
-                        raw_handle_id,
-                        operation.capability(),
-                    )?;
-                } else {
-                    self.ai_runtime_context.read(cx).validate_sftp_handle(
-                        tool_session_id,
-                        raw_handle_id,
-                        operation.capability(),
-                    )?;
-                }
+                self.ai_runtime_context.read(cx).validate_sftp_handle(
+                    tool_session_id,
+                    raw_handle_id,
+                    operation.capability(),
+                )?;
             }
             return Ok(args);
         }
@@ -3567,37 +3454,6 @@ impl WorkspaceApp {
                     .ok(
                         "Opened sftp.",
                         "Opened sftp.",
-                        serde_json::Value::Null,
-                        "write",
-                    )
-                    .with_optional_target(target)
-            }
-            "ide" => {
-                let node_id = target
-                    .as_ref()
-                    .and_then(|target| target.refs.get("nodeId"))
-                    .map(|value| NodeId::new(value.clone()))
-                    .or_else(|| self.active_ssh_node_id.clone());
-                let Some(node_id) = node_id else {
-                    return snapshot
-                        .fail(
-                            "IDE requires a connected SSH target.",
-                            "missing_node_context",
-                            "Connect an SSH target first, then rediscover the current IDE surface.",
-                            "write",
-                        )
-                        .with_optional_target(target)
-                        .with_next_actions(vec![serde_json::json!({
-                            "action": "list_targets",
-                            "args": { "view": "files" },
-                            "reason": "Find a connected IDE or SSH target before opening IDE."
-                        })]);
-                };
-                self.open_ide_folder_picker_tab(node_id, cx);
-                snapshot
-                    .ok(
-                        "Opened ide.",
-                        "Opened ide.",
                         serde_json::Value::Null,
                         "write",
                     )

@@ -356,8 +356,7 @@
       "switch_to_directory": "Passa a questa directory",
       "copy_path": "Copia percorso",
       "open_file_manager": "Apri nel file manager",
-      "open_sftp": "Apri in SFTP",
-      "open_ide": "Apri nell'IDE"
+      "open_sftp": "Apri in SFTP"
     },
     "project": {
       "search_tasks": "Cerca attività del progetto...",

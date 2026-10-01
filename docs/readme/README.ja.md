@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.2.4-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-2.2.5-blue" alt="Version">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue" alt="Platform">
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License">
   <img src="https://img.shields.io/badge/rust-2024%20edition-orange" alt="Rust 2024">
@@ -267,7 +267,6 @@ trzsz は引き続き terminal stream を使い、追加 port や remote agent �
 cargo run
 OXIDETERM_RENDER_PROFILE=compatibility cargo run
 ./scripts/build/build-cli.sh
-./scripts/build/build-agent.sh
 ```
 
 ## CLI

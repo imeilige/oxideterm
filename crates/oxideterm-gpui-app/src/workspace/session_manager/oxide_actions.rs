@@ -2103,7 +2103,6 @@ impl WorkspaceApp {
                         self.settings_workspace.update(cx, |settings, _cx| {
                             settings.acknowledge_external_store_state()
                         });
-                        self.emit_native_plugin_settings_events(&previous, &saved.settings, cx);
                         self.sync_tab_titles(cx);
                         cx.notify();
                         (true, false)

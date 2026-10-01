@@ -24,10 +24,6 @@ stats *args:
 build-cli target="":
     bash scripts/build/build-cli.sh {{ target }}
 
-# Build and stage the bundled Linux remote agents.
-build-agent:
-    bash scripts/build/build-agent.sh
-
 # Run the terminal throughput benchmark in the active OxideTerm terminal.
 benchmark:
     sh benchmark/benchmark.sh

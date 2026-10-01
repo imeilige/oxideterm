@@ -44,8 +44,6 @@ enum PaletteSection {
     Commands,
     Sessions,
     Connections,
-    #[allow(dead_code)]
-    Plugins,
     Help,
 }
 
@@ -83,7 +81,6 @@ enum PaletteAction {
     OpenSessionManager,
     OpenRuntime(ConnectionRuntimeSection),
     OpenTopology,
-    OpenPluginManager,
     OpenCloudSync,
     ManageTerminalTriggers,
     ReloadWindow,
@@ -103,11 +100,6 @@ enum PaletteAction {
     ToggleTerminalPerformance,
     ShowWelcome,
     ShowVersionMigration,
-    RuntimePluginCommand {
-        plugin_id: String,
-        command: String,
-    },
-    PluginCommandPending,
 }
 
 #[derive(Clone)]
@@ -154,7 +146,6 @@ enum ShortcutsModalVirtualRow {
 
 impl WorkspaceApp {
     pub(super) fn open_command_palette(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        self.bootstrap_native_plugin_runtime(cx);
         self.prepare_modal_interaction_boundary(cx);
         let auto_load_hosts = self.settings_store.settings().ssh_config.auto_load_hosts;
         let existing_names = self.command_palette_existing_connection_names();
@@ -552,7 +543,6 @@ impl WorkspaceApp {
                 self.open_connection_runtime_tab(section, window, cx)
             }
             PaletteAction::OpenTopology => self.open_topology_tab(window, cx),
-            PaletteAction::OpenPluginManager => self.open_plugin_manager_tab(window, cx),
             PaletteAction::OpenCloudSync => self.open_cloud_sync_tab(window, cx),
             PaletteAction::ManageTerminalTriggers => {
                 self.open_terminal_trigger_settings(window, cx)
@@ -587,17 +577,6 @@ impl WorkspaceApp {
             }
             PaletteAction::ShowWelcome => self.open_onboarding_from_palette(cx),
             PaletteAction::ShowVersionMigration => self.open_version_migration_from_palette(cx),
-            PaletteAction::RuntimePluginCommand { plugin_id, command } => {
-                self.dispatch_native_plugin_command(plugin_id, command, cx);
-            }
-            PaletteAction::PluginCommandPending => {
-                self.command_palette.update(cx, |palette, cx| {
-                    palette.set_error(
-                        "Plugin command runtime is not available yet.".to_string(),
-                        cx,
-                    );
-                });
-            }
         }
         cx.notify();
     }
@@ -943,7 +922,6 @@ impl WorkspaceApp {
         let session_items = self.command_palette_session_items(cx);
         let mut connection_items = self.command_palette_connection_items();
         connection_items.extend(self.command_palette_ssh_config_items(&ssh_config_hosts));
-        let plugin_items = self.command_palette_plugin_items(cx);
         let help_items = self.command_palette_help_items();
 
         if mode == PaletteMode::All && query.is_empty() {
@@ -952,7 +930,6 @@ impl WorkspaceApp {
                 .iter()
                 .chain(session_items.iter())
                 .chain(connection_items.iter())
-                .chain(plugin_items.iter())
                 .chain(help_items.iter())
             {
                 by_id.insert(item.id.clone(), item.clone());
@@ -985,7 +962,6 @@ impl WorkspaceApp {
             ranked.extend(rank_palette_section(connection_items, &query));
         }
         if matches!(mode, PaletteMode::All | PaletteMode::Commands) {
-            ranked.extend(rank_palette_section(plugin_items, &query));
             ranked.extend(rank_palette_section(help_items, &query));
         }
 
@@ -1086,8 +1062,6 @@ impl WorkspaceApp {
                     TabKind::ConnectionPool => self.i18n.t("sidebar.panels.runtime_overview"),
                     TabKind::Topology => self.i18n.t("topology.title"),
                     TabKind::NotificationCenter => self.i18n.t("sidebar.panels.notifications"),
-                    TabKind::PluginManager => self.i18n.t("plugin.manager_title"),
-                    TabKind::Plugin { .. } => self.i18n.t("sidebar.panels.plugins"),
                     TabKind::CloudSync => self.i18n.t("plugin.cloud_sync.panel_title"),
                     TabKind::Knowledge => self.i18n.t("sidebar.panels.knowledge"),
                     TabKind::RemoteDesktop => {
@@ -1095,7 +1069,6 @@ impl WorkspaceApp {
                     }
                     TabKind::Forwards => self.i18n.t("sidebar.panels.forwarding"),
                     TabKind::Sftp => self.i18n.t("sidebar.panels.sftp"),
-                    TabKind::Ide => self.i18n.t("settings_view.tabs.ide"),
                     TabKind::FileManager => self.i18n.t("settings_view.help.category_file_manager"),
                     TabKind::Graphics => self.i18n.t("settings_view.tabs.graphics"),
                 };
@@ -1175,117 +1148,6 @@ impl WorkspaceApp {
                 }
             })
             .collect()
-    }
-
-    fn command_palette_plugin_items(&self, cx: &Context<Self>) -> Vec<PaletteItem> {
-        let plugin_entity = self.plugin_entity.read(cx);
-        let contributions = plugin_entity.registry().contributions();
-        let mut items = Vec::new();
-        items.extend(contributions.api_commands.iter().map(|command| {
-            // Phase 2 mirrors Tauri command registry visibility without
-            // executing handlers before the native runtime bridge exists.
-            PaletteItem {
-                id: format!("plugin-command:{}:{}", command.plugin_id, command.command),
-                label: format!("{}: {}", command.plugin_name, command.command),
-                section: PaletteSection::Plugins,
-                icon: LucideIcon::Puzzle,
-                detail: Some(self.i18n.t("plugin.command_runtime_pending")),
-                shortcut: None,
-                value: format!(
-                    "{} {} {}",
-                    command.plugin_name, command.plugin_id, command.command
-                ),
-                action: PaletteAction::PluginCommandPending,
-                disabled: true,
-            }
-        }));
-        items.extend(contributions.runtime_commands.iter().map(|command| {
-            // Tauri registerCommand installs a command palette entry backed by
-            // a plugin handler. Native dispatches the same command id through
-            // the process runtime RPC boundary instead of running JS handlers.
-            PaletteItem {
-                id: format!(
-                    "plugin-runtime-command:{}:{}",
-                    command.plugin_id, command.registration_id
-                ),
-                label: format!("{}: {}", command.plugin_name, command.label),
-                section: PaletteSection::Plugins,
-                icon: LucideIcon::Puzzle,
-                detail: Some(self.i18n.t("plugin.command_detail")),
-                shortcut: command.shortcut.clone(),
-                value: format!(
-                    "{} {} {} {}",
-                    command.plugin_name, command.plugin_id, command.command, command.label
-                ),
-                action: PaletteAction::RuntimePluginCommand {
-                    plugin_id: command.plugin_id.clone(),
-                    command: command.command.clone(),
-                },
-                disabled: false,
-            }
-        }));
-        items.extend(contributions.runtime_keybindings.iter().map(|keybinding| {
-            // Tauri registerKeybinding stores a key combo plus handler. Native
-            // keeps the keybinding as host-owned metadata and dispatches the
-            // associated command through the same runtime RPC path as commands.
-            PaletteItem {
-                id: format!(
-                    "plugin-runtime-keybinding:{}:{}",
-                    keybinding.plugin_id, keybinding.registration_id
-                ),
-                label: format!("{}: {}", keybinding.plugin_name, keybinding.label),
-                section: PaletteSection::Plugins,
-                icon: LucideIcon::Keyboard,
-                detail: Some(self.i18n.t("plugin.keybinding_detail")),
-                shortcut: crate::keybindings::plugin_action_definition(keybinding)
-                    .and_then(|definition| {
-                        crate::keybindings::effective_combo(
-                            &definition,
-                            &self.settings_store.settings().keybindings.overrides,
-                            crate::keybindings::KeybindingSide::current(),
-                        )
-                    })
-                    .map(|combo| crate::keybindings::format_combo(&combo)),
-                value: format!(
-                    "{} {} {} {}",
-                    keybinding.plugin_name,
-                    keybinding.plugin_id,
-                    keybinding.command,
-                    keybinding.keybinding
-                ),
-                action: PaletteAction::RuntimePluginCommand {
-                    plugin_id: keybinding.plugin_id.clone(),
-                    command: keybinding.command.clone(),
-                },
-                disabled: false,
-            }
-        }));
-        items.extend(
-            contributions
-                .terminal_shortcuts
-                .iter()
-                .map(|shortcut| PaletteItem {
-                    id: format!(
-                        "plugin-shortcut:{}:{}",
-                        shortcut.plugin_id, shortcut.definition.command
-                    ),
-                    label: format!("{}: {}", shortcut.plugin_name, shortcut.definition.command),
-                    section: PaletteSection::Plugins,
-                    icon: LucideIcon::Keyboard,
-                    detail: Some(self.i18n.t("plugin.terminal_shortcut_pending")),
-                    shortcut: Some(shortcut.definition.key.clone()),
-                    value: format!(
-                        "{} {} {} {}",
-                        shortcut.plugin_name,
-                        shortcut.plugin_id,
-                        shortcut.definition.command,
-                        shortcut.definition.key
-                    ),
-                    action: PaletteAction::PluginCommandPending,
-                    disabled: true,
-                }),
-        );
-        items
     }
 
     fn quick_connect_label(&self, target: &str) -> String {
@@ -2293,7 +2155,6 @@ fn section_label_key(section: PaletteSection) -> &'static str {
         PaletteSection::Commands => "command_palette.section_commands",
         PaletteSection::Sessions => "command_palette.section_sessions",
         PaletteSection::Connections => "command_palette.section_connections",
-        PaletteSection::Plugins => "command_palette.section_plugins",
         PaletteSection::Help => "command_palette.section_help",
     }
 }
@@ -2321,9 +2182,6 @@ fn tab_kind_icon(kind: &TabKind) -> LucideIcon {
         TabKind::NotificationCenter => LucideIcon::Bell,
         TabKind::Forwards => LucideIcon::ArrowLeftRight,
         TabKind::Sftp => LucideIcon::HardDrive,
-        TabKind::Ide => LucideIcon::Code2,
-        TabKind::PluginManager => LucideIcon::Puzzle,
-        TabKind::Plugin { .. } => LucideIcon::Puzzle,
         TabKind::CloudSync => LucideIcon::Cloud,
         TabKind::Knowledge => LucideIcon::BookOpen,
         TabKind::RemoteDesktop => LucideIcon::Monitor,
@@ -2671,13 +2529,6 @@ fn command_palette_specs() -> Vec<CommandSpec> {
             icon: LucideIcon::Layers,
             shortcut_action: None,
             action: PaletteAction::ResetPanes,
-        },
-        CommandSpec {
-            id: "cmd:open_plugin_manager",
-            label_key: "command_palette.cmd_open_plugin_manager".into(),
-            icon: LucideIcon::Puzzle,
-            shortcut_action: None,
-            action: PaletteAction::OpenPluginManager,
         },
         CommandSpec {
             id: "cmd:open_cloud_sync",

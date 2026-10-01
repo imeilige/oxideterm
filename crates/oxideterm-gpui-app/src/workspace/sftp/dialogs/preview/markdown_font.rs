@@ -293,7 +293,8 @@ impl WorkspaceApp {
         let existing_editor = self.sftp_view().read(cx).preview_editor.clone();
         let editor = existing_editor.unwrap_or_else(|| {
             let tokens = self.tokens;
-            let runtime_settings = self.ide_runtime_settings();
+            let editor_typography = self.surface_editor_typography();
+            let background_active = self.background_surface_active("sftp");
             let preview_path = self.sftp_view().read(cx).preview_path.clone();
             let name = preview_path
                 .as_deref()
@@ -315,13 +316,13 @@ impl WorkspaceApp {
                 editor.set_context_menu_labels(context_menu_labels);
                 editor.apply_ide_runtime_settings(
                     &tokens,
-                    runtime_settings.editor_font_family.clone(),
-                    runtime_settings.editor_font_weight,
-                    runtime_settings.editor_font_fallback.clone(),
-                    runtime_settings.editor_font_size,
-                    runtime_settings.editor_line_height,
-                    runtime_settings.word_wrap,
-                    runtime_settings.background_active,
+                    editor_typography.font_family.clone(),
+                    editor_typography.font_weight,
+                    editor_typography.font_fallback_family.clone(),
+                    editor_typography.font_size,
+                    editor_typography.line_height,
+                    false,
+                    background_active,
                     cx,
                 );
                 editor.set_language(syntax_language, cx);

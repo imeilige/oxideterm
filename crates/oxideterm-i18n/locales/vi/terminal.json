@@ -356,8 +356,7 @@
       "switch_to_directory": "Chuyển sang thư mục này",
       "copy_path": "Sao chép đường dẫn",
       "open_file_manager": "Mở trong trình quản lý tệp",
-      "open_sftp": "Mở trong SFTP",
-      "open_ide": "Mở trong IDE"
+      "open_sftp": "Mở trong SFTP"
     },
     "project": {
       "search_tasks": "Tìm tác vụ dự án...",

@@ -396,7 +396,6 @@ impl WorkspaceApp {
         });
 
         self.register_terminal_pane(pane_id, session_id, pane.clone(), window, cx);
-        self.refresh_native_plugin_terminal_hooks(cx);
         self.insert_tab(
             Tab {
                 id: tab_id,
@@ -542,7 +541,6 @@ impl WorkspaceApp {
         // Telnet is a local transport in the plugin API: it owns no SSH node,
         // but it still participates in the normal tab/pane/session registry.
         self.register_terminal_pane(pane_id, session_id, pane.clone(), window, cx);
-        self.refresh_native_plugin_terminal_hooks(cx);
         self.insert_tab(
             Tab {
                 id: tab_id,
@@ -661,7 +659,6 @@ impl WorkspaceApp {
         // Serial owns no SSH node and must not expose SFTP, forwarding, or ProxyJump.
         self.register_terminal_pane(pane_id, session_id, pane.clone(), window, cx);
         self.serial_terminal_configs.insert(session_id, config);
-        self.refresh_native_plugin_terminal_hooks(cx);
         self.insert_tab(
             Tab {
                 id: tab_id,
@@ -721,7 +718,6 @@ impl WorkspaceApp {
 
         // Mosh owns one UDP terminal and deliberately has no SSH node capabilities.
         self.register_terminal_pane(pane_id, session_id, pane.clone(), window, cx);
-        self.refresh_native_plugin_terminal_hooks(cx);
         self.insert_tab(
             Tab {
                 id: tab_id,
@@ -1497,7 +1493,6 @@ impl WorkspaceApp {
                 cx,
             );
         }
-        self.refresh_native_plugin_terminal_hooks(cx);
         self.persist_session_tree_snapshot();
         Ok((pane_id, session_id))
     }

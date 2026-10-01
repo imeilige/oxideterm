@@ -95,9 +95,6 @@ pub(in crate::workspace) enum ActiveWindowModalOwner {
         phase: oxideterm_gpui_ui::motion::ExitPhase,
     },
     HostScheduleLogs,
-    NativePluginConfirm {
-        phase: oxideterm_gpui_ui::motion::ExitPhase,
-    },
     TabRename,
     ActiveTabWindowModal {
         kind: ActiveTabWindowModalKind,
@@ -166,7 +163,6 @@ impl ActiveWindowModalOwner {
             Self::HostTmuxInput => 25,
             Self::HostScheduleConfirm { .. } => 26,
             Self::HostScheduleLogs => 27,
-            Self::NativePluginConfirm { .. } => 28,
             Self::TabRename => 29,
             Self::ActiveTabWindowModal { .. } => 30,
             Self::TerminalCastPlayer => 31,
@@ -207,7 +203,6 @@ impl ActiveWindowModalOwner {
             | Self::HostServiceConfirm { phase }
             | Self::HostTmuxConfirm { phase }
             | Self::HostScheduleConfirm { phase }
-            | Self::NativePluginConfirm { phase }
             | Self::ActiveTabWindowModal { phase, .. }
             | Self::ThemeEditor { phase }
             | Self::SettingsSshConfigImport { phase }
@@ -322,7 +317,6 @@ pub(in crate::workspace) struct ActiveWindowModalProjection {
     pub(in crate::workspace) tab_close_phase: Option<oxideterm_gpui_ui::motion::ExitPhase>,
     pub(in crate::workspace) host_tools_modal:
         Option<connection_monitor::HostToolsWindowModalSnapshot>,
-    pub(in crate::workspace) native_plugin_phase: Option<oxideterm_gpui_ui::motion::ExitPhase>,
     pub(in crate::workspace) tab_rename_open: bool,
     pub(in crate::workspace) active_tab_modal: Option<ActiveTabWindowModalSnapshot>,
     pub(in crate::workspace) terminal_cast_player_open: bool,
@@ -451,9 +445,6 @@ impl ActiveWindowModalProjection {
                 ActiveWindowModalOwner::HostScheduleLogs
             }
         });
-        let native_plugin_owner = self
-            .native_plugin_phase
-            .map(|phase| ActiveWindowModalOwner::NativePluginConfirm { phase });
         let tab_rename_owner = self
             .tab_rename_open
             .then_some(ActiveWindowModalOwner::TabRename);
@@ -529,7 +520,6 @@ impl ActiveWindowModalProjection {
             cloud_sync_owner,
             tab_owner,
             host_tools_owner,
-            native_plugin_owner,
             tab_rename_owner,
             active_tab_owner,
             terminal_cast_owner,
@@ -616,13 +606,6 @@ impl WorkspaceApp {
                 .is_some()
                 .then_some(cloud_sync.view.confirm_presence.phase())
         };
-        let native_plugin_phase = {
-            let plugins = self.plugin_entity.read(cx);
-            plugins
-                .confirm_dialog()
-                .is_some()
-                .then_some(plugins.confirm_phase())
-        };
         let (oxide_import_phase, oxide_export_phase) = {
             let session_manager = self.session_manager.read(cx);
             (
@@ -683,7 +666,6 @@ impl WorkspaceApp {
             cloud_sync_phase,
             tab_close_phase: self.tab_host.read(cx).close_confirm_phase(),
             host_tools_modal: self.host_tools.read(cx).window_modal_snapshot(),
-            native_plugin_phase,
             tab_rename_open: self.tab_rename_dialog.is_some(),
             active_tab_modal: self.active_tab_window_modal_owner(cx),
             terminal_cast_player_open: self.terminal.read(cx).cast_player_open(),
@@ -1047,9 +1029,6 @@ impl WorkspaceApp {
                     cx,
                 );
             }
-            ActiveWindowModalOwner::NativePluginConfirm { .. } => {
-                let _ = self.handle_native_plugin_confirm_key(event, cx);
-            }
             ActiveWindowModalOwner::TabRename => {
                 let _ = self.handle_tab_rename_dialog_key(event, window, cx);
             }
@@ -1252,7 +1231,6 @@ mod tests {
             ai_summarize_phase: Some(VISIBLE),
             settings_data_directory_phase: Some(VISIBLE),
             host_tools_modal: Some(connection_monitor::HostToolsWindowModalSnapshot::ScheduleLogs),
-            native_plugin_phase: Some(VISIBLE),
             active_tab_modal: Some(ActiveTabWindowModalSnapshot {
                 kind: ActiveTabWindowModalKind::ForwardDelete,
                 phase: VISIBLE,

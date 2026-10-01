@@ -53,7 +53,6 @@
       "docker_management": "Gerenciamento do Docker",
       "session_manager": "Gerenciador de sessões",
       "open_session_manager": "Abrir gerenciador de sessões",
-      "plugins": "Plugins",
       "activity": "Atividade",
       "event_log": "Auditoria",
       "notifications": "Notificações e auditoria",
@@ -86,11 +85,33 @@
       "unsupported": "O monitoramento de GPU / NPU não é compatível com este sistema operacional.",
       "no_devices": "Nenhum dispositivo GPU / NPU compatível foi encontrado.",
       "error": "Falha na consulta de GPU / NPU: {{error}}",
-      "actions": { "refresh": "Atualizar dados de GPU / NPU" },
-      "summary": { "utilization": "Uso médio", "memory": "Memória do dispositivo", "temperature": "Temperatura máxima", "power": "Potência total" },
-      "columns": { "device": "Dispositivo", "utilization": "Uso", "memory": "Memória" },
-      "details": { "uuid": "UUID", "driver": "Driver", "performance_state": "Desempenho", "health": "Estado", "temperature": "Temperatura", "power": "Potência", "fan": "Ventoinha" },
-      "processes": { "title": "Processos de computação", "empty": "Nenhum processo de computação está usando este dispositivo." }
+      "actions": {
+        "refresh": "Atualizar dados de GPU / NPU"
+      },
+      "summary": {
+        "utilization": "Uso médio",
+        "memory": "Memória do dispositivo",
+        "temperature": "Temperatura máxima",
+        "power": "Potência total"
+      },
+      "columns": {
+        "device": "Dispositivo",
+        "utilization": "Uso",
+        "memory": "Memória"
+      },
+      "details": {
+        "uuid": "UUID",
+        "driver": "Driver",
+        "performance_state": "Desempenho",
+        "health": "Estado",
+        "temperature": "Temperatura",
+        "power": "Potência",
+        "fan": "Ventoinha"
+      },
+      "processes": {
+        "title": "Processos de computação",
+        "empty": "Nenhum processo de computação está usando este dispositivo."
+      }
     },
     "host_processes": {
       "search_placeholder": "Buscar processos...",

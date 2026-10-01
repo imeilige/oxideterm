@@ -991,7 +991,7 @@ mod tests {
     fn unsafe_relative_paths_are_rejected() {
         assert!(validated_relative_path("../data", "test").is_err());
         assert!(validated_relative_path("/tmp/app", "test").is_err());
-        assert!(validated_top_level_entry("resources/agents").is_err());
+        assert!(validated_top_level_entry("resources/icons").is_err());
     }
 
     #[test]
