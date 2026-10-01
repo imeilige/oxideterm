@@ -133,4 +133,3 @@ impl WorkspaceApp {
         settings_ai_textarea_row(&self.tokens, label, control.into_any_element(), hint)
     }
 }
-

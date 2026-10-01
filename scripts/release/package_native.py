@@ -602,9 +602,14 @@ def build_macos_info_plist(version: str, identity: ReleaseIdentity) -> dict:
     return merge_macos_info_plist_extensions(plist)
 
 
+def macos_codesign_identity() -> str:
+    """Return the configured codesign identity, or "-" for an ad-hoc build."""
+    return os.environ.get("MACOS_CODESIGN_IDENTITY", "-").strip() or "-"
+
+
 def macos_codesign_command(codesign: str, app_dir: Path) -> list[str]:
     command = [codesign, "--force", "--deep"]
-    signing_identity = os.environ.get("MACOS_CODESIGN_IDENTITY", "-").strip() or "-"
+    signing_identity = macos_codesign_identity()
     if signing_identity != "-":
         command.extend(["--options", "runtime", "--timestamp"])
     if MACOS_ENTITLEMENTS.exists():
@@ -616,10 +621,18 @@ def macos_codesign_command(codesign: str, app_dir: Path) -> list[str]:
     return command
 
 
+def should_build_macos_notarization_zip() -> bool:
+    """The ZIP only exists to submit the bundle for notarization.
+
+    An ad-hoc build has nothing to submit, so it must not emit a second copy of
+    the app beside the DMG.
+    """
+    return macos_codesign_identity() != "-"
+
+
 def should_include_macos_unsigned_install_notice(identity: ReleaseIdentity) -> bool:
     """Include Gatekeeper help only in an unsigned stable-release DMG."""
-    signing_identity = os.environ.get("MACOS_CODESIGN_IDENTITY", "-").strip() or "-"
-    return identity.channel == "stable" and signing_identity == "-"
+    return identity.channel == "stable" and macos_codesign_identity() == "-"
 
 
 def copy_macos_unsigned_install_notice(
@@ -894,15 +907,13 @@ def zip_macos_app_bundle(app_dir: Path, dest: Path) -> None:
         dest.unlink()
     # ditto preserves macOS bundle metadata and code-signing state; Python zip
     # is fine for generic archives but can break .app signature metadata.
-    run([ditto, "-c", "-k", "--keepParent", app_dir.name, str(dest)], cwd=app_dir.parent)
-
-
-def archive_macos_tauri_bundle(app_dir: Path, dest: Path) -> None:
-    """Create the app.tar.gz shape consumed by the OxideTerm 1.x updater."""
-    if dest.exists():
-        dest.unlink()
-    with tarfile.open(dest, "w:gz", format=tarfile.PAX_FORMAT) as archive:
-        archive.add(app_dir, arcname=app_dir.name)
+    # --norsrc drops the AppleDouble `._*` sidecars that a non-HFS staging
+    # directory otherwise emits for every file; they only bloat the archive and
+    # make suffix-based verification match the same file twice.
+    run(
+        [ditto, "-c", "-k", "--norsrc", "--keepParent", app_dir.name, str(dest)],
+        cwd=app_dir.parent,
+    )
 
 
 
@@ -1267,21 +1278,17 @@ def create_macos_app(
         plistlib.dump(plist, file)
 
     sign_macos_path(app_dir)
-    app_zip = DIST_DIR / f"OxideTerm_{version}_{label}.app.zip"
-    zip_macos_app_bundle(app_dir, app_zip)
-    if notarize_macos_artifact(app_zip, staple=False):
-        # The ZIP is only the submission container. Staple the accepted ticket
-        # to the application itself, then rebuild the distributable archive.
-        run(["xcrun", "stapler", "staple", str(app_dir)])
+    # The ZIP is the notarization submission container, so only a build that can
+    # actually be notarized needs one. Ad-hoc local builds would otherwise emit a
+    # second ~50 MB copy of the same bundle next to the DMG.
+    if should_build_macos_notarization_zip():
+        app_zip = DIST_DIR / f"OxideTerm_{version}_{label}.app.zip"
         zip_macos_app_bundle(app_dir, app_zip)
-
-    if identity.channel == "stable":
-        # OxideTerm 1.x uses Tauri's app.tar.gz installer contract. Keep this
-        # bridge asset beside the native ZIP until the 1.x population retires.
-        archive_macos_tauri_bundle(
-            app_dir,
-            DIST_DIR / f"OxideTerm_{version}_{label}.app.tar.gz",
-        )
+        if notarize_macos_artifact(app_zip, staple=False):
+            # The ZIP is only the submission container. Staple the accepted ticket
+            # to the application itself, then rebuild the distributable archive.
+            run(["xcrun", "stapler", "staple", str(app_dir)])
+            zip_macos_app_bundle(app_dir, app_zip)
 
     if shutil.which("hdiutil"):
         dmg_root = DIST_DIR / f"dmg-{label}"

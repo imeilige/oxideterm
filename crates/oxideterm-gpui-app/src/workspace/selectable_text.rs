@@ -235,9 +235,6 @@ impl WorkspaceApp {
             [
                 file_manager.preview_document_scroll.clone(),
                 file_manager.preview_metadata_scroll.clone(),
-                sftp.diff_document_scroll.clone(),
-                sftp.preview_document_scroll.clone(),
-                sftp.font_preview_scroll.clone(),
                 sftp.drives_scroll.clone(),
             ]
         };

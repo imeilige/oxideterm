@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Tests for native release packaging helpers."""
 
+import os
 from pathlib import Path
 import codecs
 import plistlib
@@ -269,24 +270,26 @@ class MacosConnectionUriTests(unittest.TestCase):
         )
 
 
-class MacosBridgeArchiveTests(unittest.TestCase):
-    def test_tauri_bridge_archive_keeps_app_bundle_root(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            app = root / "OxideTerm.app"
-            executable = app / "Contents" / "MacOS" / "oxideterm-native"
-            executable.parent.mkdir(parents=True)
-            executable.write_bytes(b"native")
-            executable.chmod(0o755)
-            archive_path = root / "OxideTerm.app.tar.gz"
-
-            package_native.archive_macos_tauri_bundle(app, archive_path)
-
-            with package_native.tarfile.open(archive_path, "r:gz") as archive:
-                member = archive.getmember(
-                    "OxideTerm.app/Contents/MacOS/oxideterm-native"
+class MacosArtifactSelectionTests(unittest.TestCase):
+    def test_notarization_zip_is_only_built_for_notarizable_builds(self) -> None:
+        # The ZIP is the notarization submission container. An ad-hoc build has
+        # nothing to submit, so it must not emit a second ~50 MB copy of the app
+        # beside the DMG.
+        for signing_identity, expected in [("-", False), ("Developer ID Application", True)]:
+            with self.subTest(signing_identity=signing_identity), patch.dict(
+                os.environ, {"MACOS_CODESIGN_IDENTITY": signing_identity}
+            ):
+                self.assertEqual(
+                    package_native.should_build_macos_notarization_zip(), expected
                 )
-                self.assertEqual(member.mode & 0o111, 0o111)
+
+    def test_legacy_tauri_bridge_archive_helper_is_removed(self) -> None:
+        # The app.tar.gz bridge existed only for the 1.x Tauri updater, which the
+        # native updater deletion removed.
+        self.assertFalse(
+            hasattr(package_native, "archive_macos_tauri_bundle"),
+            "the 1.x updater bridge must not be re-introduced",
+        )
 
 
 class MacosDmgCreateTests(unittest.TestCase):

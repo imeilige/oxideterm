@@ -3,7 +3,7 @@ use super::*;
 #[cfg(windows)]
 const SFTP_EXTERNAL_BRIDGE_CREATE_NO_WINDOW: u32 = 0x08000000;
 
-pub(in crate::workspace::sftp) fn open_path_in_external_app(path: &str) -> Result<(), String> {
+fn open_sftp_external_path(path: &str) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     let mut command = {
         let mut command = std::process::Command::new("open");

@@ -4419,7 +4419,7 @@ impl WorkspaceApp {
                                     cx,
                                 ),
                             )),
-                    )
+                    ),
             )
             .child(self.render_connection_checkbox_with_help(
                 "new-connection-dedicated-terminal-help",

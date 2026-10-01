@@ -1,21 +1,13 @@
 use super::ime::WorkspaceImeTarget;
 use super::*;
 use gpui::{
-    AnchoredPositionMode, Corner, Entity, EventEmitter, Focusable, ObjectFit, PathPromptOptions,
-    Pixels, Point, SharedString, Subscription, Task, UniformListScrollHandle, anchored, deferred,
+    AnchoredPositionMode, Corner, Entity, EventEmitter, Focusable, PathPromptOptions, Pixels,
+    Point, SharedString, Subscription, Task, UniformListScrollHandle, anchored, deferred,
     prelude::*,
 };
 use oxideterm_connections::SshChannelStrategy;
-use oxideterm_editor_syntax::LanguageId;
-use oxideterm_gpui_editor::{EditorContextMenuLabels, TextEditorView};
-use oxideterm_gpui_markdown::{
-    MarkdownVirtualListScrollHandle, markdown_virtual_with_code_actions,
-};
 use oxideterm_gpui_ui::{
-    button::{
-        ButtonOptions, ButtonRadius, ButtonSize, ButtonVariant, IconButtonOptions,
-        ToolbarButtonOptions,
-    },
+    button::{ButtonRadius, ButtonVariant, IconButtonOptions, ToolbarButtonOptions},
     context_menu::{ContextMenuActionableStyle, context_menu_event_boundary},
     modal::{dismissible_dialog_backdrop, overlay_content_boundary, rounded_shell_child_radius},
     surface::{
@@ -23,30 +15,22 @@ use oxideterm_gpui_ui::{
     },
     text_input::{TextInputView, text_input},
 };
-use oxideterm_preview::{
-    AudioPreviewBackend, AudioPreviewCommand, AudioPreviewState, PreviewAssetOwner,
-    RodioAudioPreviewBackend, TextLineEnding, font_family_name_from_bytes,
-    normalize_text_line_endings, restore_text_line_endings,
-};
+use oxideterm_preview::AudioPreviewBackend;
+pub(in crate::workspace::sftp) use oxideterm_sftp::TextDiffLineKind as SftpDiffLineKind;
 use oxideterm_sftp::TransferConflict as SftpConflictInfo;
 use oxideterm_sftp::{
-    AssetFileKind, BackgroundTransferDirection, BackgroundTransferKind, BackgroundTransferSnapshot,
+    BackgroundTransferDirection, BackgroundTransferKind, BackgroundTransferSnapshot,
     BackgroundTransferState, FileInfo as RemoteFileInfo, FileType as RemoteFileType,
     ListFilter as RemoteListFilter, LocalDownloadDisposition, PreviewContent,
     RemoteRelayProgressContext, SftpError, SftpSession, SftpTransferGuard,
     SortOrder as RemoteSortOrder, StoredTransferProgress, TarCapabilities, TarTransferOptions,
     TransferDirection as SftpTransferDirection, TransferProgress,
     TransferProtocol as RemoteTransferProtocol, TransferStrategy as RemoteTransferStrategy,
-    TransferType as RemoteTransferType, encode_to_encoding, profile_local_directory,
-    scp_download_directory, scp_download_file, scp_upload_directory, scp_upload_file,
-    tar_download_directory, tar_upload_directory,
-};
-pub(in crate::workspace::sftp) use oxideterm_sftp::{
-    TextDiffLine as SftpDiffLine, TextDiffLineKind as SftpDiffLineKind,
-    compute_text_diff as compute_sftp_diff, text_diff_stats as sftp_diff_stats,
+    TransferType as RemoteTransferType, profile_local_directory, scp_download_directory,
+    scp_download_file, scp_upload_directory, scp_upload_file, tar_download_directory,
+    tar_upload_directory,
 };
 use std::{
-    borrow::Cow,
     collections::VecDeque,
     path::Path,
     time::{Duration, Instant},
@@ -54,8 +38,6 @@ use std::{
 
 pub(super) mod ftp;
 pub(super) mod native_video;
-
-use native_video::{SharedSftpNativeVideoSurface, sftp_native_video_element};
 
 const SFTP_ROOT_PADDING: f32 = 8.0; // Tauri p-2
 const SFTP_GAP: f32 = 8.0; // Tauri gap-2
@@ -91,11 +73,6 @@ const SFTP_ICON_MD: f32 = 14.0; // Tauri h-3.5 w-3.5
 const SFTP_TOOL_BUTTON: f32 = 24.0; // Tauri h-6 w-6
 const SFTP_ROW_HEIGHT: f32 = 25.0; // Tauri px-2 py-1 text-xs
 const SFTP_VIRTUAL_OVERSCAN: usize = 15; // Keep SFTP file panes aligned with FileList virtual overdraw.
-const SFTP_DIFF_ROW_HEIGHT: f32 = 21.0; // Tauri FileDiffDialog text-xs py-0.5 border row
-const SFTP_DIFF_VIRTUAL_OVERSCAN: usize = 15; // Diff dialog keeps the same file-list overdraw budget.
-const SFTP_DIFF_LINE_NUMBER_COL: f32 = 48.0; // Tauri w-12
-const SFTP_DIFF_WRAP_COLUMNS: usize = 64; // max-w-5xl split diff leaves roughly this many mono chars per side.
-const SFTP_PREVIEW_FONT_DEFAULT_SIZE: f32 = 32.0; // Tauri FontPreview initial fontSize
 const SFTP_SIZE_COL: f32 = 80.0; // Tauri w-20
 const SFTP_MODIFIED_COL: f32 = 96.0; // Tauri w-24
 const SFTP_DIRECTORY_PROGRESS_SAVE_INTERVAL_MS: u64 = 1_000; // Keep resume progress fresh without writing on every file tick.
@@ -134,26 +111,12 @@ const SFTP_BUTTON_TRANSPARENT_ALPHA: u32 = 0x00; // Tauri Button border-transpar
 const SFTP_DESTRUCTIVE_BG_ALPHA: u32 = 0xe6;
 const SFTP_DESTRUCTIVE_BORDER_ALPHA: u32 = 0xcc;
 const SFTP_DIALOG_SHADOW_ALPHA: u32 = 0x40; // Tauri shadow-lg-ish overlay shadow
-const SFTP_DIALOG_BORDER_SUBTLE_ALPHA: u32 = 0x99; // Tauri border-theme-border/60
 const SFTP_DIALOG_BORDER_HALF_ALPHA: u32 = 0x80; // Tauri border-theme-border/50
-const SFTP_DIALOG_DIVIDER_ALPHA: u32 = 0x66; // Tauri border-theme-border/40
-const SFTP_CONFIRM_ICON_BG_ALPHA: u32 = 0x1a; // Tauri bg-theme-accent/10
-const SFTP_CONFIRM_ICON_RING_ALPHA: u32 = 0x33; // Tauri ring-theme-accent/20
-const SFTP_CONFIRM_ACTION_HOVER_ALPHA: u32 = 0x1a; // Tauri hover:bg-theme-accent/10
-const SFTP_EDITOR_RETRY_HOVER_ALPHA: u32 = 0x1a; // Tauri hover:bg-orange-500/10
 const SFTP_CONFLICT_NEWER_BG_ALPHA: u32 = 0x4d; // Tauri bg-green-950/30
-const SFTP_DIFF_HEADER_BG_ALPHA: u32 = 0x33; // Tauri bg-red/green-950/20
-const SFTP_DIFF_LINE_BG_ALPHA: u32 = 0x4d; // Tauri bg-red/green-950/30
 const SFTP_READONLY_BADGE_BG_ALPHA: u32 = 0x26; // Tauri warning badge translucent fill
 const SFTP_DIALOG_WIDTH_XS: f32 = 320.0; // Tauri max-w-xs
 const SFTP_DIALOG_WIDTH_SM: f32 = 384.0; // Tauri max-w-sm
 const SFTP_DIALOG_WIDTH_LG: f32 = 512.0; // Tauri max-w-lg
-const SFTP_DIALOG_WIDTH_4XL: f32 = 896.0; // Tauri max-w-4xl
-const SFTP_DIALOG_WIDTH_5XL: f32 = 1024.0; // Tauri max-w-5xl
-const SFTP_EDITOR_DIALOG_WIDTH_6XL: f32 = 1152.0; // Tauri max-w-6xl
-const SFTP_PREVIEW_DIALOG_HEIGHT_RATIO: f32 = 0.85; // Tauri SFTP preview/editor h-[85vh]
-const SFTP_DIFF_DIALOG_HEIGHT_RATIO: f32 = 0.80; // Tauri FileDiffDialog h-[80vh]
-const SFTP_HEX_PREVIEW_CHUNK_SIZE: u64 = 16 * 1024; // Tauri nodeSftpPreviewHex load-more step
 
 fn configured_transfer_protocol(
     preference: oxideterm_settings::FileTransferProtocolPreference,
@@ -550,24 +513,6 @@ pub(super) enum SftpWorkerResult {
         remote_id: SftpRemoteId,
         result: Result<Vec<BackgroundTransferSnapshot>, String>,
     },
-    PreviewLoaded {
-        generation: u64,
-        path: String,
-        result: Result<PreviewContent, String>,
-    },
-    PreviewHexLoaded {
-        generation: u64,
-        path: String,
-        error_prefix: String,
-        result: Result<PreviewContent, String>,
-    },
-    PreviewSaved {
-        generation: u64,
-        path: String,
-        content: Arc<str>,
-        network_error_message: String,
-        result: Result<SftpPreviewSaveResult, String>,
-    },
     LocalFilesLoaded {
         view_generation: u64,
         path: String,
@@ -668,28 +613,12 @@ pub(super) enum SftpWorkspaceEvent {
         remote_id: SftpRemoteId,
         delivery: delivery::ActiveDeliverySender<SftpWorkerResult>,
     },
-    PreviewSaveRequested {
-        path: String,
-        content: Arc<str>,
-        encoding: Arc<str>,
-        line_ending: TextLineEnding,
-        generation: u64,
-        delivery: delivery::ActiveDeliverySender<SftpWorkerResult>,
-    },
 }
 
 #[derive(Clone, Debug)]
 pub(super) struct RemoteSftpListing {
     cwd: String,
     files: Vec<SftpFileEntry>,
-}
-
-#[derive(Clone, Debug)]
-pub(super) struct SftpPreviewSaveResult {
-    mtime: Option<u64>,
-    size: Option<u64>,
-    encoding_used: String,
-    atomic_write: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -965,33 +894,10 @@ mod directory_progress_tests {
 #[derive(Clone, Debug)]
 pub(super) enum SftpDialog {
     Drives,
-    Rename {
-        pane: SftpPane,
-        old_name: String,
-    },
-    NewFolder {
-        pane: SftpPane,
-    },
-    Delete {
-        pane: SftpPane,
-        files: Vec<String>,
-    },
+    Rename { pane: SftpPane, old_name: String },
+    NewFolder { pane: SftpPane },
+    Delete { pane: SftpPane, files: Vec<String> },
     Conflict,
-    Diff {
-        local_path: String,
-        local_content: String,
-        remote_path: String,
-        remote_content: String,
-    },
-    Preview {
-        name: String,
-    },
-    Editor {
-        name: String,
-    },
-    EditorCloseConfirm {
-        name: String,
-    },
 }
 
 #[derive(Clone, Debug)]
@@ -1030,11 +936,6 @@ pub(super) struct SftpWorkspaceEntity {
     pane_resize_drag: Option<SftpPaneResizeDrag>,
     queue_height: f32,
     queue_resize_drag: Option<SftpQueueResizeDrag>,
-    diff_scroll: UniformListScrollHandle,
-    preview_markdown_scroll: MarkdownVirtualListScrollHandle,
-    pub(in crate::workspace) diff_document_scroll: ScrollHandle,
-    pub(in crate::workspace) preview_document_scroll: ScrollHandle,
-    pub(in crate::workspace) font_preview_scroll: ScrollHandle,
     pub(in crate::workspace) drives_scroll: ScrollHandle,
     local_last_selected: Option<String>,
     remote_last_selected: Option<String>,
@@ -1064,39 +965,6 @@ pub(super) struct SftpWorkspaceEntity {
     dialog_exit_task: Option<Task<()>>,
     conflict_state: Option<SftpConflictState>,
     dialog_value: String,
-    preview_pane: Option<SftpPane>,
-    preview_path: Option<String>,
-    // Preview payloads can contain large text or media buffers. Renderers share
-    // immutable snapshots instead of cloning the payload on every frame.
-    preview_content: Option<Arc<PreviewContent>>,
-    preview_asset_owner: Option<PreviewAssetOwner>,
-    preview_generation: u64,
-    preview_audio: RodioAudioPreviewBackend,
-    preview_audio_tick_active: bool,
-    preview_audio_tick_task: Option<Task<()>>,
-    preview_video_surface: SharedSftpNativeVideoSurface,
-    preview_error: Option<String>,
-    preview_loading: bool,
-    preview_hex_loading_more: bool,
-    preview_markdown_source_mode: bool,
-    preview_font_family: Option<String>,
-    preview_font_error: Option<String>,
-    preview_font_size: f32,
-    preview_editor: Option<Entity<TextEditorView>>,
-    preview_editor_observer: Option<Subscription>,
-    preview_editor_initial_content: Arc<str>,
-    preview_editor_observed_content: Arc<str>,
-    preview_editor_language: Option<String>,
-    preview_editor_encoding: String,
-    preview_editor_line_ending: TextLineEnding,
-    preview_editor_dirty: bool,
-    preview_editor_saving: bool,
-    preview_editor_save_error: Option<String>,
-    preview_editor_network_error: bool,
-    preview_editor_retry_count: u32,
-    preview_editor_last_saved_mtime: Option<u64>,
-    preview_editor_last_atomic_write: Option<bool>,
-    preview_editor_retry_task: Option<Task<()>>,
     transfers: Vec<SftpTransferItem>,
     transfer_queue_list_state: ListState,
     transfer_queue_list_cache: RefCell<VirtualListSignatureCache>,
@@ -1153,11 +1021,6 @@ impl Default for SftpWorkspaceEntity {
             pane_resize_drag: None,
             queue_height: SFTP_QUEUE_DEFAULT_HEIGHT,
             queue_resize_drag: None,
-            diff_scroll: UniformListScrollHandle::new(),
-            preview_markdown_scroll: MarkdownVirtualListScrollHandle::new(),
-            diff_document_scroll: ScrollHandle::new(),
-            preview_document_scroll: ScrollHandle::new(),
-            font_preview_scroll: ScrollHandle::new(),
             drives_scroll: ScrollHandle::new(),
             local_last_selected: None,
             remote_last_selected: None,
@@ -1187,37 +1050,6 @@ impl Default for SftpWorkspaceEntity {
             dialog_exit_task: None,
             conflict_state: None,
             dialog_value: String::new(),
-            preview_pane: None,
-            preview_path: None,
-            preview_content: None,
-            preview_asset_owner: None,
-            preview_generation: 0,
-            preview_audio: RodioAudioPreviewBackend::new(),
-            preview_audio_tick_active: false,
-            preview_audio_tick_task: None,
-            preview_video_surface: SharedSftpNativeVideoSurface::default(),
-            preview_error: None,
-            preview_loading: false,
-            preview_hex_loading_more: false,
-            preview_markdown_source_mode: false,
-            preview_font_family: None,
-            preview_font_error: None,
-            preview_font_size: SFTP_PREVIEW_FONT_DEFAULT_SIZE,
-            preview_editor: None,
-            preview_editor_observer: None,
-            preview_editor_initial_content: Arc::from(""),
-            preview_editor_observed_content: Arc::from(""),
-            preview_editor_language: None,
-            preview_editor_encoding: "UTF-8".to_string(),
-            preview_editor_line_ending: TextLineEnding::Lf,
-            preview_editor_dirty: false,
-            preview_editor_saving: false,
-            preview_editor_save_error: None,
-            preview_editor_network_error: false,
-            preview_editor_retry_count: 0,
-            preview_editor_last_saved_mtime: None,
-            preview_editor_last_atomic_write: None,
-            preview_editor_retry_task: None,
             transfers: Vec::new(),
             // Transfer queues are fixed-height browser scroll regions; use the
             // shared variable list state so large transfer batches do not build
@@ -1424,8 +1256,6 @@ impl SftpWorkspaceEntity {
         if self.dialog.is_none() {
             return false;
         }
-        self.stop_preview_media();
-        self.preview_generation = self.preview_generation.wrapping_add(1);
         let Some(generation) = self.dialog_presence.begin_exit() else {
             return false;
         };
@@ -1458,89 +1288,9 @@ impl SftpWorkspaceEntity {
         self.dialog_exit_task = None;
         self.conflict_state = None;
         self.dialog_value.clear();
-        self.preview_asset_owner = None;
-        self.preview_hex_loading_more = false;
-        self.preview_markdown_source_mode = false;
-        self.preview_markdown_scroll = MarkdownVirtualListScrollHandle::new();
-        self.preview_font_family = None;
-        self.preview_font_error = None;
-        self.preview_font_size = SFTP_PREVIEW_FONT_DEFAULT_SIZE;
-        self.reset_preview_editor();
         self.focused_input = None;
         cx.notify();
         true
-    }
-
-    pub(in crate::workspace::sftp) fn reset_preview_editor(&mut self) {
-        self.preview_editor = None;
-        self.preview_editor_observer = None;
-        self.preview_editor_initial_content = Arc::from("");
-        self.preview_editor_observed_content = Arc::from("");
-        self.preview_editor_language = None;
-        self.preview_editor_encoding = "UTF-8".to_string();
-        self.preview_editor_line_ending = TextLineEnding::Lf;
-        self.preview_editor_dirty = false;
-        self.preview_editor_saving = false;
-        self.preview_editor_save_error = None;
-        self.preview_editor_network_error = false;
-        self.preview_editor_retry_count = 0;
-        self.preview_editor_last_saved_mtime = None;
-        self.preview_editor_last_atomic_write = None;
-        self.preview_editor_retry_task = None;
-    }
-
-    pub(in crate::workspace::sftp) fn stop_preview_media(&mut self) {
-        let _ = self.preview_audio.command(AudioPreviewCommand::Stop);
-        self.preview_audio_tick_active = false;
-        self.preview_audio_tick_task = None;
-        self.preview_video_surface.detach();
-    }
-
-    pub(in crate::workspace::sftp) fn toggle_preview_audio(&mut self, cx: &mut Context<Self>) {
-        let _ = self.preview_audio.command(AudioPreviewCommand::PlayPause);
-        self.schedule_preview_audio_tick(cx);
-    }
-
-    pub(in crate::workspace::sftp) fn seek_preview_audio(
-        &mut self,
-        position: Duration,
-        cx: &mut Context<Self>,
-    ) {
-        let _ = self
-            .preview_audio
-            .command(AudioPreviewCommand::Seek(position));
-        self.schedule_preview_audio_tick(cx);
-    }
-
-    fn schedule_preview_audio_tick(&mut self, cx: &mut Context<Self>) {
-        if self.preview_audio_tick_active {
-            return;
-        }
-        self.preview_audio_tick_active = true;
-        self.preview_audio_tick_task = Some(cx.spawn(async move |entity, cx| {
-            loop {
-                cx.background_executor()
-                    .timer(Duration::from_millis(250))
-                    .await;
-                let should_continue = entity
-                    .update(cx, |sftp, cx| {
-                        let playing = matches!(
-                            sftp.preview_audio.snapshot().state,
-                            AudioPreviewState::Playing
-                        );
-                        if !playing {
-                            sftp.preview_audio_tick_active = false;
-                            sftp.preview_audio_tick_task = None;
-                        }
-                        cx.notify();
-                        playing
-                    })
-                    .unwrap_or(false);
-                if !should_continue {
-                    break;
-                }
-            }
-        }));
     }
 
     pub(super) fn set_dialog(&mut self, dialog: SftpDialog) {
@@ -1950,16 +1700,12 @@ pub(super) mod views;
 // Re-export only the cross-module helpers needed by the SFTP facade and its children.
 pub(in crate::workspace::sftp) use actions::{SftpTransferLaunch, sftp_extract_archive_kind};
 use helpers::{
-    default_download_path, diff_cell, format_conflict_modified, format_file_size, format_modified,
-    format_sftp_media_time, format_transfer_speed, home_path,
-    is_sftp_incomplete_store_compat_error, join_local_path, join_sftp_path, list_local_files,
-    load_remote_sftp_completion_listing, load_remote_sftp_listing, load_remote_sftp_preview,
-    load_remote_sftp_preview_hex, local_drives, local_files_or_error, new_sftp_transfer_id,
-    normalize_external_dropped_path, normalize_remote_path, parent_path, preview_content_text,
-    remote_directory_prefixes, save_remote_sftp_preview, sftp_bg, sftp_border, sftp_card_surface,
-    sftp_conflict_resolution_from_settings, sftp_diff_visual_lines, sftp_editor_language,
-    sftp_editor_language_id, sftp_file_name, sftp_hover_bg, sftp_panel_bg, sftp_path_segments,
-    sftp_preview_editor_is_network_error, sftp_preview_is_markdown,
-    sftp_source_not_newer_than_target, sftp_transfer_conflicts,
+    default_download_path, format_conflict_modified, format_file_size, format_modified,
+    format_transfer_speed, home_path, is_sftp_incomplete_store_compat_error, join_local_path,
+    join_sftp_path, list_local_files, load_remote_sftp_completion_listing,
+    load_remote_sftp_listing, local_drives, local_files_or_error, new_sftp_transfer_id,
+    normalize_external_dropped_path, normalize_remote_path, parent_path, remote_directory_prefixes,
+    sftp_bg, sftp_border, sftp_card_surface, sftp_conflict_resolution_from_settings, sftp_hover_bg,
+    sftp_panel_bg, sftp_path_segments, sftp_source_not_newer_than_target, sftp_transfer_conflicts,
     sftp_transfer_state_from_background, sorted_sftp_files, unique_sftp_conflict_name,
 };

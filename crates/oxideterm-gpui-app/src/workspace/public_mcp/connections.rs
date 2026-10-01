@@ -2,13 +2,13 @@ use chrono::SecondsFormat;
 use oxideterm_connections::{
     ConnectionCredentialSlot, ConnectionTerminalBackspaceSequence,
     ConnectionTerminalDeleteSequence, ConnectionTerminalEncoding, ConnectionTerminalOptions,
-    ConnectionX11ForwardingMode,
-    ConnectionX11ForwardingOptions, DEFAULT_SSH_CONNECT_TIMEOUT_SECONDS,
-    DEFAULT_X11_UNTRUSTED_TIMEOUT_SECONDS, MoshIpFamily, MoshPredictionMode, MoshUdpPortSelection,
-    SaveConnectionRequest, SaveMoshProfileRequest, SaveRemoteDesktopProfileRequest,
-    SaveSerialProfileRequest, SaveTelnetProfileRequest, SavedAuth, SavedConnection, SavedProxyHop,
-    SavedUpstreamProxyAuth, SavedUpstreamProxyConfig, SavedUpstreamProxyPolicy,
-    SavedUpstreamProxyProtocol, SecretString, SerialFlowControl, SerialParity, SshChannelStrategy,
+    ConnectionX11ForwardingMode, ConnectionX11ForwardingOptions,
+    DEFAULT_SSH_CONNECT_TIMEOUT_SECONDS, DEFAULT_X11_UNTRUSTED_TIMEOUT_SECONDS, MoshIpFamily,
+    MoshPredictionMode, MoshUdpPortSelection, SaveConnectionRequest, SaveMoshProfileRequest,
+    SaveRemoteDesktopProfileRequest, SaveSerialProfileRequest, SaveTelnetProfileRequest, SavedAuth,
+    SavedConnection, SavedProxyHop, SavedUpstreamProxyAuth, SavedUpstreamProxyConfig,
+    SavedUpstreamProxyPolicy, SavedUpstreamProxyProtocol, SecretString, SerialFlowControl,
+    SerialParity, SshChannelStrategy,
 };
 use oxideterm_public_mcp::{
     ClientRef, ConnectionRef, DomainRequest, PublicConnectionAuth, PublicCredentialSlot,
@@ -16,9 +16,9 @@ use oxideterm_public_mcp::{
     PublicRdpNetworkProfile, PublicRemoteDesktopOptions, PublicSavedConnectionProfile,
     PublicSerialFlowControl, PublicSerialParity, PublicSshChannelStrategy,
     PublicTerminalBackspaceSequence, PublicTerminalDeleteSequence, PublicTerminalEncoding,
-    PublicTerminalOptions, PublicToolCall, PublicUpstreamProxy,
-    PublicUpstreamProxyProtocol, PublicVncCompression, PublicVncImageQuality,
-    PublicVncSecurityPolicy, PublicVncSessionMode, PublicX11ForwardingMode, ToolEnvelope,
+    PublicTerminalOptions, PublicToolCall, PublicUpstreamProxy, PublicUpstreamProxyProtocol,
+    PublicVncCompression, PublicVncImageQuality, PublicVncSecurityPolicy, PublicVncSessionMode,
+    PublicX11ForwardingMode, ToolEnvelope,
 };
 use oxideterm_remote_desktop::{
     RemoteDesktopAudioOptions, RemoteDesktopClipboardOptions, RemoteDesktopDisplayOptions,

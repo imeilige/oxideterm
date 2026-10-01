@@ -90,25 +90,6 @@ impl WorkspaceApp {
         }
     }
 
-    pub(in crate::workspace::sftp) fn stop_sftp_preview_media(&mut self, cx: &mut Context<Self>) {
-        self.sftp_view()
-            .update(cx, |sftp, _cx| sftp.stop_preview_media());
-    }
-
-    pub(in crate::workspace::sftp) fn toggle_sftp_preview_audio(&mut self, cx: &mut Context<Self>) {
-        self.sftp_view()
-            .update(cx, |sftp, cx| sftp.toggle_preview_audio(cx));
-    }
-
-    pub(in crate::workspace::sftp) fn seek_sftp_preview_audio(
-        &mut self,
-        position: std::time::Duration,
-        cx: &mut Context<Self>,
-    ) {
-        self.sftp_view()
-            .update(cx, |sftp, cx| sftp.seek_preview_audio(position, cx));
-    }
-
     pub(in crate::workspace::sftp) fn accept_sftp_dialog(&mut self, cx: &mut Context<Self>) {
         let Some(dialog) = self.sftp_view().read(cx).dialog() else {
             return;

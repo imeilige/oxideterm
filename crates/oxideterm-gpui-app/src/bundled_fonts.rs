@@ -204,9 +204,7 @@ mod tests {
                 | BundledTerminalFace::JetBrainsBoldItalic => {
                     oxideterm_settings::JETBRAINS_MONO_SUBSET_FAMILY
                 }
-                BundledTerminalFace::MapleRegular => {
-                    oxideterm_settings::MAPLE_MONO_SUBSET_FAMILY
-                }
+                BundledTerminalFace::MapleRegular => oxideterm_settings::MAPLE_MONO_SUBSET_FAMILY,
             };
 
             let bytes = face.load().unwrap();

@@ -230,7 +230,7 @@ impl WorkspaceApp {
                 .child(self.i18n.t("sftp.sidebar.no_follow_target"))
                 .child(self.render_sftp_icon_button(
                     LucideIcon::X,
-                    self.i18n.t("sftp.preview.close"),
+                    self.i18n.t("window_controls.close"),
                     self.sftp_listener(cx, |this, _event, _window, cx| {
                         if let Some(node) = this.embedded_sftp_node_id.clone() {
                             this.close_embedded_sftp_for_node(&node, cx);
@@ -377,7 +377,7 @@ impl WorkspaceApp {
                             // and its other consumers connected.
                             .child(self.render_sftp_icon_button(
                                 LucideIcon::X,
-                                self.i18n.t("sftp.preview.close"),
+                                self.i18n.t("window_controls.close"),
                                 self.sftp_listener(cx, move |this, _event, _window, cx| {
                                     this.close_embedded_sftp_for_node(&close_node_id, cx);
                                     cx.stop_propagation();
@@ -956,7 +956,7 @@ impl WorkspaceApp {
             ))
             .child(self.render_sftp_icon_button(
                 LucideIcon::Pencil,
-                self.i18n.t("sftp.preview.edit"),
+                self.i18n.t("sftp.toolbar.edit_path"),
                 self.sftp_listener(cx, move |this, _event, _window, cx| {
                     this.start_sftp_path_edit(pane, cx);
                     cx.stop_propagation();

@@ -557,22 +557,16 @@ impl AiOrchestratorRuntimeSnapshot {
         };
         let result = {
             let sftp = shared.lock().await;
-            if matches!(resource, "directory" | "sftp") {
-                sftp.list_dir(
-                    path,
-                    Some(oxideterm_sftp::ListFilter {
-                        show_hidden: true,
-                        pattern: None,
-                        sort: oxideterm_sftp::SortOrder::Name,
-                    }),
-                )
-                .await
-                .map(|entries| serde_json::json!(entries))
-            } else {
-                sftp.preview(path)
-                    .await
-                    .map(|preview| serde_json::json!(preview))
-            }
+            sftp.list_dir(
+                path,
+                Some(oxideterm_sftp::ListFilter {
+                    show_hidden: true,
+                    pattern: None,
+                    sort: oxideterm_sftp::SortOrder::Name,
+                }),
+            )
+            .await
+            .map(|entries| serde_json::json!(entries))
         };
         match result {
             Ok(data) => {

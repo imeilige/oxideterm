@@ -9,10 +9,6 @@ impl WorkspaceApp {
     ) -> AnyElement {
         let dialog_visible = self.sftp_view().read(cx).dialog_presence.phase()
             == oxideterm_gpui_ui::motion::ExitPhase::Visible;
-        if let SftpDialog::EditorCloseConfirm { name } = dialog.clone() {
-            return self.render_sftp_editor_close_confirm_dialog(name, cx);
-        }
-
         let theme = self.tokens.ui;
         let (title, description, body, primary) = match dialog.clone() {
             SftpDialog::Drives => (
@@ -47,37 +43,6 @@ impl WorkspaceApp {
                 self.render_sftp_conflict_body(has_background, cx),
                 Some(self.i18n.t("sftp.conflict.keep_both")),
             ),
-            SftpDialog::Diff {
-                local_path,
-                local_content,
-                remote_path,
-                remote_content,
-            } => (
-                self.i18n.t("sftp.diff.title"),
-                self.i18n.t("sftp.diff.description"),
-                self.render_sftp_diff_body(
-                    &local_path,
-                    &local_content,
-                    &remote_path,
-                    &remote_content,
-                    has_background,
-                    cx,
-                ),
-                Some(self.i18n.t("sftp.diff.close")),
-            ),
-            SftpDialog::Preview { name } => (
-                name,
-                self.i18n.t("sftp.preview.description"),
-                self.render_sftp_preview_body(has_background, cx),
-                Some(self.i18n.t("sftp.preview.close")),
-            ),
-            SftpDialog::Editor { name } => (
-                name,
-                self.i18n.t("sftp.preview.editor_description"),
-                self.render_sftp_editor_body(has_background, cx),
-                None,
-            ),
-            SftpDialog::EditorCloseConfirm { .. } => unreachable!(),
         };
         let width = match &dialog {
             SftpDialog::Drives => SFTP_DIALOG_WIDTH_XS,
@@ -85,28 +50,10 @@ impl WorkspaceApp {
             | SftpDialog::NewFolder { .. }
             | SftpDialog::Delete { .. } => SFTP_DIALOG_WIDTH_SM,
             SftpDialog::Conflict => SFTP_DIALOG_WIDTH_LG,
-            SftpDialog::Diff { .. } => SFTP_DIALOG_WIDTH_5XL,
-            SftpDialog::Preview { .. } => SFTP_DIALOG_WIDTH_4XL,
-            SftpDialog::Editor { .. } => SFTP_EDITOR_DIALOG_WIDTH_6XL,
-            SftpDialog::EditorCloseConfirm { .. } => unreachable!(),
         };
-        let height_ratio = match &dialog {
-            SftpDialog::Diff { .. } => Some(SFTP_DIFF_DIALOG_HEIGHT_RATIO),
-            SftpDialog::Preview { .. } | SftpDialog::Editor { .. } => {
-                Some(SFTP_PREVIEW_DIALOG_HEIGHT_RATIO)
-            }
-            _ => None,
-        };
-        let header_py = match &dialog {
-            SftpDialog::Preview { .. } => 8.0,
-            _ => 12.0,
-        };
-        let show_description =
-            !description.is_empty() && !matches!(&dialog, SftpDialog::Preview { .. });
-        let edge_owned_dialog = matches!(
-            &dialog,
-            SftpDialog::Preview { .. } | SftpDialog::Editor { .. } | SftpDialog::Diff { .. }
-        );
+        let header_py = 12.0;
+        let show_description = !description.is_empty();
+        let edge_owned_dialog = false;
 
         let outside_dialog = dialog.clone();
         dismissible_dialog_backdrop()
@@ -114,10 +61,8 @@ impl WorkspaceApp {
                 MouseButton::Left,
                 self.sftp_listener(cx, move |this, _event, _window, cx| {
                     // Tauri SFTP dialogs are Radix Dialogs. Backdrop clicks map
-                    // to their onOpenChange(false) close/cancel path; editor
-                    // shells run the same dirty-check path as the close button.
+                    // to their onOpenChange(false) close/cancel path.
                     match outside_dialog {
-                        SftpDialog::Editor { .. } => this.request_close_sftp_editor(cx),
                         SftpDialog::Conflict => this.cancel_sftp_transfer_conflicts(cx),
                         _ => this.close_sftp_dialog(cx),
                     }
@@ -132,7 +77,6 @@ impl WorkspaceApp {
                     .w(px(width))
                     .max_w(relative(0.9))
                     .max_h(relative(0.9))
-                    .when_some(height_ratio, |dialog, ratio| dialog.h(relative(ratio)))
                     .flex()
                     .flex_col()
                     .overflow_hidden()
@@ -184,18 +128,6 @@ impl WorkspaceApp {
                                             rgb(SFTP_YELLOW),
                                         ))
                                     })
-                                    .when(matches!(&dialog, SftpDialog::Diff { .. }), |row| {
-                                        row.child(Self::render_lucide_icon(
-                                            LucideIcon::ArrowLeftRight,
-                                            16.0,
-                                            rgb(theme.accent),
-                                        ))
-                                    })
-                                    .when(matches!(&dialog, SftpDialog::Preview { .. }), |row| {
-                                        row.font_family(settings_mono_font_family(
-                                            self.settings_store.settings(),
-                                        ))
-                                    })
                                     .child(self.render_selectable_text_scoped(
                                         "sftp-dialog-title",
                                         &title,
@@ -208,13 +140,7 @@ impl WorkspaceApp {
                                 header.child(
                                     div()
                                         .mt(px(6.0))
-                                        .text_size(px(
-                                            if matches!(&dialog, SftpDialog::Diff { .. }) {
-                                                SFTP_TEXT_XS
-                                            } else {
-                                                SFTP_TEXT_SM
-                                            },
-                                        ))
+                                        .text_size(px(SFTP_TEXT_SM))
                                         .text_color(rgb(theme.text_muted))
                                         .when(matches!(&dialog, SftpDialog::Conflict), |desc| {
                                             let remaining = self.sftp_conflict_remaining_count(cx);
@@ -298,12 +224,7 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = self.tokens.ui;
-        let (footer_px, footer_py) = match dialog {
-            SftpDialog::Preview { .. } | SftpDialog::Editor { .. } | SftpDialog::Diff { .. } => {
-                (8.0, 8.0)
-            }
-            _ => (16.0, 12.0),
-        };
+        let (footer_px, footer_py) = (16.0, 12.0);
         let footer = div()
             .px(px(footer_px))
             .py(px(footer_py))
@@ -319,231 +240,6 @@ impl WorkspaceApp {
             .flex_wrap()
             .justify_end()
             .gap(px(8.0));
-
-        if let SftpDialog::Preview { name } = dialog.clone() {
-            let (path, markdown_source_mode, can_download) = {
-                let sftp = self.sftp_view().read(cx);
-                (
-                    sftp.preview_path.clone().unwrap_or_default(),
-                    sftp.preview_markdown_source_mode,
-                    sftp.preview_pane == Some(SftpPane::Remote) && sftp.preview_path.is_some(),
-                )
-            };
-            let can_compare = self.can_compare_sftp_preview(&name, cx);
-            let can_edit = self.can_edit_sftp_preview(cx);
-            let is_markdown = self.sftp_preview_is_markdown_content(cx);
-            return footer
-                .justify_between()
-                .child(
-                    div()
-                        .flex_1()
-                        .min_w(px(0.0))
-                        .px(px(8.0))
-                        .truncate()
-                        .text_size(px(SFTP_TEXT_XS))
-                        .text_color(rgb(theme.text_muted))
-                        .child(path),
-                )
-                .child(
-                    div()
-                        .flex()
-                        .gap(px(8.0))
-                        .when(is_markdown, |actions| {
-                            let label = if markdown_source_mode {
-                                self.i18n.t("sftp.preview.rendered")
-                            } else {
-                                self.i18n.t("sftp.preview.source")
-                            };
-                            actions.child(self.render_sftp_text_button(
-                                label,
-                                false,
-                                self.sftp_listener(cx, |this, _event, _window, cx| {
-                                    this.sftp_view().update(cx, |sftp, cx| {
-                                        sftp.preview_markdown_source_mode =
-                                            !sftp.preview_markdown_source_mode;
-                                        cx.notify();
-                                    });
-                                    cx.stop_propagation();
-                                }),
-                            ))
-                        })
-                        .when(can_edit, |actions| {
-                            let name = name.clone();
-                            actions.child(self.render_sftp_text_button(
-                                self.i18n.t("sftp.preview.edit"),
-                                true,
-                                self.sftp_listener(cx, move |this, _event, window, cx| {
-                                    this.open_sftp_preview_editor(&name, window, cx);
-                                    cx.stop_propagation();
-                                    cx.notify();
-                                }),
-                            ))
-                        })
-                        .when(can_compare, |actions| {
-                            let name = name.clone();
-                            actions.child(self.render_sftp_text_button(
-                                self.i18n.t("sftp.preview.compare"),
-                                false,
-                                self.sftp_listener(cx, move |this, _event, _window, cx| {
-                                    this.open_sftp_preview_compare(&name, cx);
-                                    cx.stop_propagation();
-                                    cx.notify();
-                                }),
-                            ))
-                        })
-                        .when(can_download, |actions| {
-                            let name = name.clone();
-                            actions.child(self.render_sftp_text_button(
-                                self.i18n.t("sftp.preview.download"),
-                                false,
-                                self.sftp_listener(cx, move |this, _event, _window, cx| {
-                                    this.download_sftp_preview(&name, cx);
-                                    this.close_sftp_dialog(cx);
-                                    cx.stop_propagation();
-                                    cx.notify();
-                                }),
-                            ))
-                        })
-                        .child(self.render_sftp_text_button(
-                            self.i18n.t("sftp.preview.close"),
-                            false,
-                            self.sftp_listener(cx, |this, _event, _window, cx| {
-                                this.close_sftp_dialog(cx);
-                                cx.stop_propagation();
-                                cx.notify();
-                            }),
-                        )),
-                )
-                .into_any_element();
-        }
-
-        if let SftpDialog::Editor { .. } = dialog.clone() {
-            let (path, saving, dirty) = {
-                let sftp = self.sftp_view().read(cx);
-                (
-                    sftp.preview_path.clone().unwrap_or_default(),
-                    sftp.preview_editor_saving,
-                    sftp.preview_editor_dirty,
-                )
-            };
-            let save_label = if saving {
-                self.i18n.t("sftp.preview.saving")
-            } else {
-                self.i18n.t("sftp.preview.save")
-            };
-            return footer
-                .justify_between()
-                .child(
-                    div()
-                        .flex_1()
-                        .min_w(px(0.0))
-                        .px(px(8.0))
-                        .truncate()
-                        .text_size(px(SFTP_TEXT_XS))
-                        .text_color(rgb(theme.text_muted))
-                        .child(path),
-                )
-                .child(
-                    div()
-                        .flex()
-                        .gap(px(8.0))
-                        .child(self.render_sftp_text_button(
-                            save_label,
-                            true,
-                            self.sftp_listener(cx, move |this, _event, _window, cx| {
-                                if !saving && dirty {
-                                    this.save_sftp_preview_editor(cx);
-                                }
-                                cx.stop_propagation();
-                                cx.notify();
-                            }),
-                        ))
-                        .child(self.render_sftp_text_button(
-                            self.i18n.t("sftp.preview.close"),
-                            false,
-                            self.sftp_listener(cx, |this, _event, _window, cx| {
-                                this.request_close_sftp_editor(cx);
-                                cx.stop_propagation();
-                                cx.notify();
-                            }),
-                        )),
-                )
-                .into_any_element();
-        }
-
-        if let SftpDialog::EditorCloseConfirm { name } = dialog.clone() {
-            return footer
-                .child(self.render_sftp_text_button(
-                    self.i18n.t("sftp.dialogs.cancel"),
-                    false,
-                    self.sftp_listener(cx, move |this, _event, window, cx| {
-                        this.cancel_sftp_editor_close_confirm(name.clone(), window, cx);
-                        cx.stop_propagation();
-                        cx.notify();
-                    }),
-                ))
-                .child(self.render_sftp_text_button(
-                    self.i18n.t("sftp.preview.discard"),
-                    true,
-                    self.sftp_listener(cx, |this, _event, _window, cx| {
-                        this.discard_sftp_editor_changes(cx);
-                        cx.stop_propagation();
-                        cx.notify();
-                    }),
-                ))
-                .into_any_element();
-        }
-
-        if let SftpDialog::Diff {
-            local_content,
-            remote_content,
-            ..
-        } = dialog.clone()
-        {
-            let stats = sftp_diff_stats(&compute_sftp_diff(&local_content, &remote_content));
-            return footer
-                .justify_between()
-                .child(
-                    div()
-                        .flex()
-                        .items_center()
-                        .flex_1()
-                        .min_w(px(0.0))
-                        .text_size(px(SFTP_TEXT_XS))
-                        .text_color(rgb(theme.text_muted))
-                        .child(
-                            self.i18n
-                                .t("sftp.diff.unchanged")
-                                .replace("{{count}}", &stats.unchanged.to_string()),
-                        )
-                        .child(", ")
-                        .child(
-                            div().text_color(rgb(SFTP_GREEN)).child(
-                                self.i18n
-                                    .t("sftp.diff.added")
-                                    .replace("{{count}}", &stats.added.to_string()),
-                            ),
-                        )
-                        .child(", ")
-                        .child(
-                            div().text_color(rgb(SFTP_RED)).child(
-                                self.i18n
-                                    .t("sftp.diff.removed")
-                                    .replace("{{count}}", &stats.removed.to_string()),
-                            ),
-                        ),
-                )
-                .child(self.render_sftp_text_button(
-                    self.i18n.t("sftp.diff.close"),
-                    false,
-                    self.sftp_listener(cx, |this, _event, _window, cx| {
-                        this.close_sftp_dialog(cx);
-                        cx.stop_propagation();
-                        cx.notify();
-                    }),
-                ))
-                .into_any_element();
-        }
 
         if matches!(dialog, SftpDialog::Conflict) {
             let source_newer = self

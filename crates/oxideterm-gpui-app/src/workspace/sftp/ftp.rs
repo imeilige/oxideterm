@@ -88,25 +88,6 @@ impl FtpRuntime {
         })
     }
 
-    pub async fn save(
-        &self,
-        path: &str,
-        bytes: &[u8],
-        encoding: &str,
-    ) -> Result<SftpPreviewSaveResult, String> {
-        let mut session = self.transfer().await?;
-        let result = session.write(path, bytes, &self.cancel).await;
-        if result.is_err() {
-            self.cleanup_upload(&mut session).await;
-        }
-        result.map_err(|error| error.to_string())?;
-        Ok(SftpPreviewSaveResult {
-            mtime: None,
-            size: Some(bytes.len() as u64),
-            encoding_used: encoding.to_owned(),
-            atomic_write: false,
-        })
-    }
     pub async fn connect(
         options: ConnectOptions,
         attempt: CancellationToken,

@@ -659,12 +659,9 @@ impl WorkspaceApp {
             && self.sftp_view.read(cx).current_surface_id == Some(sftp::SftpSurfaceId::Sidebar)
             && let Some(dialog) = self.sftp_view.read(cx).dialog()
         {
+            let _ = &dialog;
             return Some(ActiveTabWindowModalSnapshot {
-                kind: if matches!(dialog, crate::workspace::sftp::SftpDialog::Editor { .. }) {
-                    ActiveTabWindowModalKind::SftpEditor
-                } else {
-                    ActiveTabWindowModalKind::SftpDialog
-                },
+                kind: ActiveTabWindowModalKind::SftpDialog,
                 phase: self.sftp_view.read(cx).dialog_phase(),
             });
         }
@@ -793,14 +790,7 @@ impl WorkspaceApp {
                 let _scope = self.enter_sftp_surface(sftp::SftpSurfaceId::Tab(active_tab.id));
                 let sftp = self.sftp_view().read(cx);
                 sftp.dialog_is_open().then(|| ActiveTabWindowModalSnapshot {
-                    kind: if matches!(
-                        sftp.dialog(),
-                        Some(crate::workspace::sftp::SftpDialog::Editor { .. })
-                    ) {
-                        ActiveTabWindowModalKind::SftpEditor
-                    } else {
-                        ActiveTabWindowModalKind::SftpDialog
-                    },
+                    kind: ActiveTabWindowModalKind::SftpDialog,
                     phase: sftp.dialog_phase(),
                 })
             }

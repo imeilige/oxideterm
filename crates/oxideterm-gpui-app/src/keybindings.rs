@@ -545,12 +545,6 @@ pub(crate) static ACTION_DEFINITIONS: LazyLock<Vec<ActionDefinition>> = LazyLock
             KeyCombo::plain("enter"),
         ),
         def(
-            "sftp.preview",
-            ActionScope::Sftp,
-            KeyCombo::plain("space"),
-            KeyCombo::plain("space"),
-        ),
-        def(
             "sftp.upload",
             ActionScope::Sftp,
             KeyCombo::plain("arrowright"),

@@ -85,7 +85,7 @@ impl WorkspaceApp {
                         {
                             let file = file.clone();
                             move |this, _event, _window, cx| {
-                                this.open_or_preview_sftp_file(menu.pane, &file, cx);
+                                this.navigate_sftp_directory(menu.pane, &file, cx);
                             }
                         },
                         cx,

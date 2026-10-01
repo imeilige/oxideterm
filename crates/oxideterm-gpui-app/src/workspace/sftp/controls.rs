@@ -45,7 +45,7 @@ impl WorkspaceApp {
                         }),
                     ))
                     .child(self.render_sftp_text_button(
-                        self.i18n.t("sftp.preview.retry"),
+                        self.i18n.t("common.actions.retry"),
                         false,
                         self.sftp_listener(cx, |this, _event, _window, cx| {
                             this.sftp_view().update(cx, |sftp, cx| {

@@ -505,7 +505,7 @@ mod tests {
         session.update(cx, |session, cx| {
             // Opening a window draws it synchronously, so the builder must not
             // read the session Entity that owns this active update.
-            let focus_handle_slot = session.focus_handle_slot;
+            let _focus_handle_slot = session.focus_handle_slot;
             cx.open_window(gpui::WindowOptions::default(), move |_window, cx| {
                 cx.new(|_cx| BootstrapWindow)
             })

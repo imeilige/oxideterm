@@ -4,30 +4,10 @@ impl WorkspaceApp {
     pub(in crate::workspace) fn handle_sftp_key(
         &mut self,
         event: &KeyDownEvent,
-        window: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Self>,
     ) -> bool {
         let key = event.keystroke.key.as_str();
-        if matches!(
-            self.sftp_view().read(cx).dialog,
-            Some(SftpDialog::Editor { .. })
-        ) {
-            if crate::keybindings::keystroke_matches_action(
-                &event.keystroke,
-                "editor.save",
-                &self.settings_store.settings().keybindings.overrides,
-            ) {
-                self.save_sftp_preview_editor(cx);
-                cx.notify();
-                return true;
-            }
-            if key == "escape" {
-                self.request_close_sftp_editor(cx);
-                cx.notify();
-                return true;
-            }
-            return false;
-        }
         if key == "escape" && self.dismiss_workspace_context_menus(cx) {
             cx.notify();
             return true;
@@ -37,37 +17,14 @@ impl WorkspaceApp {
             (sftp.dialog.clone(), sftp.focused_input)
         };
         if dialog.is_some() && focused_input.is_none() {
-            if matches!(dialog, Some(SftpDialog::Preview { .. }))
-                && self.sftp_preview_is_markdown_content(cx)
-                && crate::keybindings::keystroke_matches_action(
-                    &event.keystroke,
-                    "sftp.togglePreviewSource",
-                    &self.settings_store.settings().keybindings.overrides,
-                )
-            {
-                self.sftp_view().update(cx, |sftp, cx| {
-                    sftp.preview_markdown_source_mode = !sftp.preview_markdown_source_mode;
-                    cx.notify();
-                });
-                cx.notify();
-                return true;
-            }
             match key {
                 "escape" => {
-                    if let Some(SftpDialog::EditorCloseConfirm { name }) = dialog {
-                        self.cancel_sftp_editor_close_confirm(name, window, cx);
-                    } else {
-                        self.close_sftp_dialog(cx);
-                    }
+                    self.close_sftp_dialog(cx);
                     cx.notify();
                     return true;
                 }
                 "enter" => {
-                    if matches!(dialog, Some(SftpDialog::EditorCloseConfirm { .. })) {
-                        self.discard_sftp_editor_changes(cx);
-                    } else {
-                        self.accept_sftp_dialog(cx);
-                    }
+                    self.accept_sftp_dialog(cx);
                     cx.notify();
                     return true;
                 }
@@ -147,7 +104,6 @@ impl WorkspaceApp {
             ("sftp.selectAll", "selectAll"),
             ("sftp.editPath", "editPath"),
             ("sftp.open", "enter"),
-            ("sftp.preview", "space"),
             ("sftp.upload", "right"),
             ("sftp.download", "left"),
             ("sftp.delete", "delete"),
@@ -197,10 +153,8 @@ impl WorkspaceApp {
             }
             "enter" => {
                 if let Some(file) = self.single_selected_sftp_file(active_pane, cx) {
-                    // Tauri SFTP only opens directories on Enter; file quick-look is
-                    // intentionally bound to Space and double-click.
                     if file.file_type == SftpFileType::Directory {
-                        self.open_or_preview_sftp_file(active_pane, &file, cx);
+                        self.navigate_sftp_directory(active_pane, &file, cx);
                         cx.notify();
                         return true;
                     }
@@ -208,17 +162,6 @@ impl WorkspaceApp {
                 } else {
                     false
                 }
-            }
-            "space" | " " => {
-                if active_pane == SftpPane::Remote
-                    && let Some(file) = self.single_selected_sftp_file(active_pane, cx)
-                    && file.file_type != SftpFileType::Directory
-                {
-                    self.open_or_preview_sftp_file(active_pane, &file, cx);
-                    cx.notify();
-                    return true;
-                }
-                false
             }
             "right" | "arrowright" => {
                 if active_pane == SftpPane::Local
@@ -855,6 +798,24 @@ impl WorkspaceApp {
 
     fn single_selected_sftp_file(&self, pane: SftpPane, cx: &App) -> Option<SftpFileEntry> {
         self.sftp_view().read(cx).single_selected_file(pane)
+    }
+
+    /// Enter a directory row. Remote files are no longer openable in place;
+    /// the file list context menu keeps the download/upload transfers.
+    pub(in crate::workspace) fn navigate_sftp_directory(
+        &mut self,
+        pane: SftpPane,
+        file: &SftpFileEntry,
+        cx: &mut Context<Self>,
+    ) {
+        if file.file_type != SftpFileType::Directory {
+            return;
+        }
+        let base = match pane {
+            SftpPane::Local => self.sftp_view().read(cx).local_path.clone(),
+            SftpPane::Remote => self.sftp_view().read(cx).remote_path.clone(),
+        };
+        self.set_sftp_path(pane, join_sftp_path(&base, &file.name), cx);
     }
 }
 

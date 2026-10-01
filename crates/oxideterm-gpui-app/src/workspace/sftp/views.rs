@@ -150,7 +150,7 @@ impl WorkspaceApp {
                 self.handle_sftp_worker_effects(effects, cx);
             }
             sftp::SftpWorkspaceEvent::OpenFileRequested { pane, file } => {
-                self.open_or_preview_sftp_file(*pane, file, cx);
+                self.navigate_sftp_directory(*pane, file, cx);
             }
             sftp::SftpWorkspaceEvent::TransferStateRequested { id, state } => {
                 self.set_sftp_transfer_state(*id, *state, cx);
@@ -169,32 +169,6 @@ impl WorkspaceApp {
             }
             sftp::SftpWorkspaceEvent::TooltipCleared { id } => {
                 self.clear_workspace_tooltip(id, cx);
-            }
-            sftp::SftpWorkspaceEvent::PreviewSaveRequested {
-                path,
-                content,
-                encoding,
-                line_ending,
-                generation,
-                delivery,
-            } => {
-                if !self.spawn_remote_sftp_preview_save(
-                    path.clone(),
-                    content.clone(),
-                    encoding.clone(),
-                    *line_ending,
-                    *generation,
-                    delivery.clone(),
-                    cx,
-                ) {
-                    let _ = delivery.send(sftp::SftpWorkerResult::PreviewSaved {
-                        generation: *generation,
-                        path: path.clone(),
-                        content: content.clone(),
-                        network_error_message: self.i18n.t("sftp.errors.connection_lost"),
-                        result: Err("SFTP connection unavailable".to_string()),
-                    });
-                }
             }
             sftp::SftpWorkspaceEvent::RemoteLoadReady {
                 surface_id,

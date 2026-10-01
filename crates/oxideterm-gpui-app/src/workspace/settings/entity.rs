@@ -1722,7 +1722,7 @@ mod tests {
         path::PathBuf,
         sync::{
             Arc,
-            atomic::{AtomicBool, AtomicUsize, Ordering},
+            atomic::{AtomicBool, Ordering},
         },
         time::{Duration, SystemTime},
     };

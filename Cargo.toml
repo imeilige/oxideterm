@@ -181,7 +181,18 @@ http-body-util = "0.1"
 hyper = { version = "1.9", features = ["http1", "server"] }
 hyper-util = { version = "0.1", features = ["server", "tokio"] }
 icy_sixel = "0.5.0"
-image = "0.25.10"
+# AVIF (rav1e/ravif) and OpenEXR decoders cost ~57 MB of link-time constants and
+# no shipped surface routes those extensions to the decoder. The file preview and
+# the img element only need the raster formats listed here.
+image = { version = "0.25.10", default-features = false, features = [
+    "bmp",
+    "gif",
+    "ico",
+    "jpeg",
+    "png",
+    "tiff",
+    "webp",
+] }
 inventory = "0.3.19"
 itertools = "0.14.0"
 keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }

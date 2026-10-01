@@ -32,6 +32,10 @@ LINUX_DEB_GRAPHICS_RECOMMENDS = {"libegl1", "libvulkan1"}
 LINUX_RPM_GRAPHICS_RECOMMENDS = {"libglvnd-egl", "vulkan-loader"}
 LINUX_GLIBC_MAX_VERSION = (2, 35)
 PACKAGE_VERSION_FILENAME = "VERSION"
+# macOS emits `._Name` AppleDouble sidecars when archiving from a non-HFS
+# staging directory. They carry no payload and would otherwise match the same
+# suffix twice during verification.
+APPLEDOUBLE_MARKER = "._"
 PORTABLE_PLUGINS_DIR = "data/plugins"
 
 
@@ -89,11 +93,17 @@ def expected_artifact_names(target: str, version: str) -> set[str]:
 def archive_names(path: Path) -> set[str]:
     if path.suffix == ".zip":
         with zipfile.ZipFile(path) as archive:
-            return set(archive.namelist())
-    if path.name.endswith(".tar.gz"):
+            names = set(archive.namelist())
+    elif path.name.endswith(".tar.gz"):
         with tarfile.open(path, "r:gz") as archive:
-            return set(archive.getnames())
-    raise ValueError(f"unsupported archive: {path}")
+            names = set(archive.getnames())
+    else:
+        raise ValueError(f"unsupported archive: {path}")
+    return without_appledouble(names)
+
+
+def without_appledouble(names: set[str]) -> set[str]:
+    return {name for name in names if Path(name.rstrip("/")).name[:2] != APPLEDOUBLE_MARKER}
 
 
 def require_archive_suffixes(names: set[str], suffixes: set[str], artifact: Path) -> None:
@@ -111,12 +121,14 @@ def archive_entry_bytes(path: Path, suffix: str) -> bytes:
     """Read one archive entry selected by a stable package-relative suffix."""
     if path.suffix == ".zip":
         with zipfile.ZipFile(path) as archive:
-            matches = [name for name in archive.namelist() if name.endswith(suffix)]
+            names = without_appledouble(set(archive.namelist()))
+            matches = [name for name in names if name.endswith(suffix)]
             if len(matches) != 1:
                 raise RuntimeError(f"expected one {suffix} in {path.name}, found {len(matches)}")
             return archive.read(matches[0])
     with tarfile.open(path, "r:gz") as archive:
-        matches = [member for member in archive.getmembers() if member.name.endswith(suffix)]
+        names = without_appledouble({member.name for member in archive.getmembers()})
+        matches = [name for name in names if name.endswith(suffix)]
         if len(matches) != 1:
             raise RuntimeError(f"expected one {suffix} in {path.name}, found {len(matches)}")
         extracted = archive.extractfile(matches[0])

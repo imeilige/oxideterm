@@ -5,7 +5,6 @@ mod dialog_lifecycle;
 mod external;
 mod menus_conflicts;
 mod navigation;
-mod preview_editor;
 mod transfers;
 
 pub(in crate::workspace::sftp) use menus_conflicts::sftp_extract_archive_kind;
