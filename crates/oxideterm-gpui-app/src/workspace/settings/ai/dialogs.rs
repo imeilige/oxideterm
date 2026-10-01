@@ -14,10 +14,6 @@ impl WorkspaceApp {
             .expect("AI text editor entity exists while its dialog is open")
             .clone();
         let (title_key, description_key) = match dialog {
-            AiTextEditorDialog::SystemPrompt => (
-                "settings_view.ai.system_prompt_title",
-                "settings_view.ai.system_prompt_hint",
-            ),
             AiTextEditorDialog::Memory => (
                 "settings_view.ai.memory_title",
                 "settings_view.ai.memory_hint",
@@ -141,82 +137,6 @@ impl WorkspaceApp {
             .into_any_element()
     }
 
-    pub(in crate::workspace) fn open_ai_text_editor(
-        &mut self,
-        dialog: AiTextEditorDialog,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        let value = match dialog {
-            AiTextEditorDialog::SystemPrompt => self
-                .settings_store
-                .settings()
-                .ai
-                .custom_system_prompt
-                .clone(),
-            AiTextEditorDialog::Memory => self
-                .settings_store
-                .settings()
-                .ai
-                .memory
-                .entries
-                .iter()
-                .find(|entry| entry.id == "manual-user-memory")
-                .map(|entry| entry.content.clone())
-                .unwrap_or_else(|| self.settings_store.settings().ai.memory.content.clone()),
-        };
-        self.prepare_modal_interaction_boundary(cx);
-        let tokens = self.tokens;
-        let editor_typography = self.surface_editor_typography();
-        let background_active = self.settings_background_active();
-        let placeholder = self.i18n.t(match dialog {
-            AiTextEditorDialog::SystemPrompt => "settings_view.ai.system_prompt_placeholder",
-            AiTextEditorDialog::Memory => "settings_view.ai.memory_placeholder",
-        });
-        let context_menu_labels = oxideterm_gpui_editor::EditorContextMenuLabels {
-            copy: self.i18n.t("menu.copy"),
-            cut: self.i18n.t("fileManager.cut"),
-            paste: self.i18n.t("menu.paste"),
-            select_all: self.i18n.t("fileManager.selectAll"),
-        };
-        // The workspace owns the dialog editor; saving must not keep it alive.
-        let workspace = cx.weak_entity();
-        let editor = cx.new(|cx| {
-            let mut editor = oxideterm_gpui_editor::TextEditorView::new(value, &tokens, cx);
-            let mut editor_settings = oxideterm_gpui_editor::EditorSettings::default();
-            editor_settings.soft_wrap = true;
-            editor_settings.indentation_markers = false;
-            editor_settings.highlight_special_chars = false;
-            editor_settings.placeholder = Some(placeholder);
-            editor.set_settings(editor_settings, cx);
-            editor.set_context_menu_labels(context_menu_labels);
-            editor.apply_ide_runtime_settings(
-                &tokens,
-                editor_typography.font_family.clone(),
-                editor_typography.font_weight,
-                editor_typography.font_fallback_family.clone(),
-                editor_typography.font_size,
-                editor_typography.line_height,
-                true,
-                background_active,
-                cx,
-            );
-            editor.set_on_save(Box::new(move |text, _window, cx| {
-                let text = text.to_string();
-                let _ = workspace.update(cx, |this, cx| {
-                    this.persist_ai_text_editor(dialog, text, cx);
-                });
-                Ok(())
-            }));
-            editor
-        });
-        let focus_handle = editor.read(cx).focus_handle(cx);
-        self.ai_text_editor_dialog = Some(dialog);
-        self.ai_text_editor = Some(editor);
-        window.focus(&focus_handle, cx);
-        cx.notify();
-    }
-
     pub(in crate::workspace) fn close_ai_text_editor(
         &mut self,
         save: bool,
@@ -243,7 +163,6 @@ impl WorkspaceApp {
         // selected AI document and never mutates the other modal draft.
         self.edit_settings(
             move |settings| match dialog {
-                AiTextEditorDialog::SystemPrompt => settings.ai.custom_system_prompt = text,
                 AiTextEditorDialog::Memory => {
                     let now_ms = std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)

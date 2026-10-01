@@ -528,62 +528,6 @@ impl WorkspaceApp {
         .into_any_element()
     }
 
-    pub(in crate::workspace) fn ai_page_switcher(&self, cx: &mut Context<Self>) -> AnyElement {
-        let pages = AiSettingsPage::all();
-        let route = self.settings_workspace.read(cx).route_snapshot();
-        let active_index = pages
-            .iter()
-            .position(|page| *page == route.ai_page)
-            .unwrap_or(0);
-        let previous_index = pages
-            .iter()
-            .position(|page| *page == route.previous_ai_page)
-            .unwrap_or(active_index);
-        let mut items = Vec::with_capacity(pages.len());
-        for (page_index, page) in pages.iter().enumerate() {
-            let page_id = *page;
-            let active = route.ai_page == page_id;
-            let item = oxideterm_gpui_ui::segmented_control_item(
-                &self.tokens,
-                self.i18n.t(page_id.label_key()),
-                active,
-            )
-            .on_mouse_down(
-                MouseButton::Left,
-                cx.listener(move |this, _event, _window, cx| {
-                    let changed = this
-                        .settings_workspace
-                        .update(cx, |settings, cx| settings.set_ai_page(page_id, cx));
-                    if changed {
-                        this.begin_user_segmented_control_transition(
-                            selection_motion::AI_SETTINGS_SWITCHER_ID,
-                            page_index,
-                            cx,
-                        );
-                    }
-                    cx.notify();
-                }),
-            );
-            items.push(item.into_any_element());
-        }
-        oxideterm_gpui_ui::segmented_control(
-            &self.tokens,
-            selection_motion::AI_SETTINGS_SWITCHER_ID,
-            oxideterm_gpui_ui::SegmentedControlOptions::new(
-                active_index,
-                previous_index,
-                pages.len(),
-            )
-            .user_transition_active(self.segmented_control_user_transition_active(
-                selection_motion::AI_SETTINGS_SWITCHER_ID,
-                active_index,
-            ))
-            .has_background_image(self.settings_background_active()),
-            items,
-        )
-        .into_any_element()
-    }
-
     pub(in crate::workspace) fn update_settings_select_anchor(
         &mut self,
         window_id: gpui::WindowId,

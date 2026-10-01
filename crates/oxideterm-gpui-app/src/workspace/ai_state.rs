@@ -246,7 +246,6 @@ pub(in crate::workspace) enum AiSettingsViewSection {
 
 /// Owns AI-settings-only presentation state and its state transitions.
 struct AiSettingsViewState {
-    new_provider_type: String,
     provider_settings_expanded: bool,
     tool_use_expanded: bool,
     context_windows_expanded: bool,
@@ -257,12 +256,7 @@ struct AiSettingsViewState {
 
 impl Default for AiSettingsViewState {
     fn default() -> Self {
-        // The provider catalog defines the fallback used by provider creation.
-        let new_provider_type = oxideterm_ai::AI_PROVIDER_TEMPLATES[0]
-            .provider_type
-            .to_owned();
         Self {
-            new_provider_type,
             provider_settings_expanded: true,
             tool_use_expanded: true,
             context_windows_expanded: true,
@@ -1186,23 +1180,6 @@ impl AiWorkspaceEntity {
         self.refreshing_models.contains(provider_id)
     }
 
-    pub(in crate::workspace) fn settings_new_provider_type(&self) -> &str {
-        &self.settings_view.new_provider_type
-    }
-
-    pub(in crate::workspace) fn select_settings_provider_type(
-        &mut self,
-        provider_type: &str,
-        cx: &mut Context<Self>,
-    ) {
-        if self.settings_view.new_provider_type == provider_type {
-            return;
-        }
-        self.settings_view.new_provider_type.clear();
-        self.settings_view.new_provider_type.push_str(provider_type);
-        cx.notify();
-    }
-
     pub(in crate::workspace) fn settings_section_expanded(
         &self,
         section: AiSettingsViewSection,
@@ -1337,24 +1314,6 @@ impl AiWorkspaceEntity {
             .remove(provider_id);
         if provider_changed || models_changed || context_changed {
             cx.notify();
-        }
-    }
-
-    pub(in crate::workspace) fn hash_settings_provider_layout(&self, hasher: &mut impl Hasher) {
-        self.settings_view.provider_settings_expanded.hash(hasher);
-        for (provider_id, expanded) in &self.settings_view.expanded_providers {
-            provider_id.hash(hasher);
-            expanded.hash(hasher);
-        }
-        for provider_id in &self.settings_view.expanded_provider_models {
-            provider_id.hash(hasher);
-        }
-    }
-
-    pub(in crate::workspace) fn hash_settings_context_layout(&self, hasher: &mut impl Hasher) {
-        self.settings_view.context_windows_expanded.hash(hasher);
-        for provider_id in &self.settings_view.expanded_context_providers {
-            provider_id.hash(hasher);
         }
     }
 
@@ -2076,32 +2035,6 @@ impl AiWorkspaceEntity {
     ) {
         self.provider_key_status_pending.remove(&provider_id);
         self.provider_key_status.insert(provider_id, has_key);
-    }
-
-    pub(in crate::workspace) fn store_provider_key(
-        &mut self,
-        index: usize,
-        provider_id: String,
-        secret: zeroize::Zeroizing<String>,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        let key_store = self.key_store.clone();
-        let task_runtime = self.task_runtime.clone();
-        let provider_id_for_store = provider_id.clone();
-        let operation = async move {
-            task_runtime
-                .spawn_blocking(move || {
-                    key_store.store_provider_key(&provider_id_for_store, secret)
-                })
-                .await
-                .is_ok_and(|result| result.is_ok())
-        };
-        self.start_provider_key_operation(
-            provider_id,
-            AiProviderKeyOperation::Store { index },
-            operation,
-            cx,
-        )
     }
 
     pub(in crate::workspace) fn remove_provider_key(
@@ -4815,14 +4748,6 @@ pub(super) struct AiChatWorkspaceState {
 
 /// Owns provider and model presentation state inside the AI Entity.
 pub(in crate::workspace) struct AiModelWorkspaceState {
-    pub(super) context_model_list_states: RefCell<HashMap<String, ListState>>,
-    pub(super) context_model_list_caches: RefCell<HashMap<String, VirtualListSignatureCache>>,
-    pub(super) provider_model_chip_list_states: RefCell<HashMap<String, ListState>>,
-    pub(super) provider_model_chip_list_caches: RefCell<HashMap<String, VirtualListSignatureCache>>,
-    pub(super) provider_card_list_state: ListState,
-    pub(super) provider_card_list_cache: RefCell<VirtualListSignatureCache>,
-    pub(super) mcp_server_list_state: ListState,
-    pub(super) mcp_server_list_cache: RefCell<VirtualListSignatureCache>,
     pub(super) selector_open: bool,
     pub(super) selector_scope: Option<AiModelSelectorScope>,
     pub(super) selector_focus_origin: Option<browser_behavior::BrowserFocusOrigin>,
@@ -4887,32 +4812,6 @@ impl AiChatWorkspaceState {
 impl AiModelWorkspaceState {
     fn new() -> Self {
         Self {
-            context_model_list_states: RefCell::new(HashMap::new()),
-            context_model_list_caches: RefCell::new(HashMap::new()),
-            provider_model_chip_list_states: RefCell::new(HashMap::new()),
-            provider_model_chip_list_caches: RefCell::new(HashMap::new()),
-            provider_card_list_state: ListState::new(
-                AI_PROVIDER_CARD_LIST_INITIAL_ITEM_COUNT,
-                ListAlignment::Top,
-                TauriVirtualListSpec::new(
-                    px(AI_PROVIDER_CARD_LIST_ESTIMATED_HEIGHT),
-                    AI_PROVIDER_CARD_LIST_OVERSCAN,
-                )
-                .overdraw(),
-            )
-            .measure_all(),
-            provider_card_list_cache: RefCell::new(VirtualListSignatureCache::default()),
-            mcp_server_list_state: ListState::new(
-                AI_MCP_SERVER_LIST_INITIAL_ITEM_COUNT,
-                ListAlignment::Top,
-                TauriVirtualListSpec::new(
-                    px(AI_MCP_SERVER_LIST_ESTIMATED_HEIGHT),
-                    AI_MCP_SERVER_LIST_OVERSCAN,
-                )
-                .overdraw(),
-            )
-            .measure_all(),
-            mcp_server_list_cache: RefCell::new(VirtualListSignatureCache::default()),
             selector_open: false,
             selector_scope: None,
             selector_focus_origin: None,

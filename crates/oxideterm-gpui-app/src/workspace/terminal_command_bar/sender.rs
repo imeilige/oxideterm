@@ -1232,17 +1232,6 @@ impl WorkspaceApp {
         })
     }
 
-    pub(in crate::workspace) fn ensure_terminal_command_sender_visible(
-        &mut self,
-        cx: &mut Context<Self>,
-    ) {
-        self.terminal_command_sender.update(cx, |sender, cx| {
-            if !sender.is_visible() {
-                sender.toggle_visible(cx);
-            }
-        });
-    }
-
     pub(in crate::workspace) fn replace_terminal_command_sender_text(
         &mut self,
         text: String,

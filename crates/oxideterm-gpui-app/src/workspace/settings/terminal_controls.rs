@@ -250,26 +250,6 @@ impl WorkspaceApp {
         )
     }
 
-    pub(in crate::workspace) fn settings_text_input_control_with_align(
-        &self,
-        input: SettingsInput,
-        value: impl AsRef<str>,
-        placeholder: String,
-        width: f32,
-        align: TextInputContentAlign,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        self.settings_text_input_control_inner(
-            input,
-            value,
-            placeholder,
-            Some(width),
-            align,
-            false,
-            cx,
-        )
-    }
-
     pub(in crate::workspace) fn settings_text_input_control_inner(
         &self,
         input: SettingsInput,

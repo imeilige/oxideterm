@@ -213,96 +213,6 @@ impl WorkspaceApp {
         self.wrap_settings_section_list_item(index, child, cx)
     }
 
-    pub(in crate::workspace) fn render_settings_ai_page_section(
-        &mut self,
-        section_index: usize,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        if section_index == 0 {
-            return self.ai_page_switcher(cx);
-        }
-
-        let page_section_index = section_index - 1;
-        let ai_page = self.settings_workspace.read(cx).route_snapshot().ai_page;
-        match (ai_page, page_section_index) {
-            (AiSettingsPage::General, 0) => {
-                let settings = self.settings_store.settings();
-                self.ai_general_settings_card(settings, cx)
-            }
-            (AiSettingsPage::General, 1) => self.ai_privacy_settings_card(),
-            (AiSettingsPage::Providers, 0) => {
-                let provider_views = self.ai_provider_views_for_settings_render(cx);
-                let settings = self.settings_store.settings();
-                self.ai_disabled_settings_card(
-                    self.ai_provider_settings_section(&provider_views, cx),
-                    settings.ai.enabled,
-                )
-            }
-            (AiSettingsPage::Agents, 0) => {
-                let settings = self.settings_store.settings();
-                self.ai_disabled_settings_card(
-                    self.ai_acp_agents_section(settings, cx),
-                    settings.ai.enabled,
-                )
-            }
-            (AiSettingsPage::Context, 0) => {
-                let settings = self.settings_store.settings();
-                self.ai_disabled_settings_card(
-                    self.ai_context_controls_section(settings, cx),
-                    settings.ai.enabled,
-                )
-            }
-            (AiSettingsPage::Context, 1) => {
-                let settings = self.settings_store.settings();
-                self.ai_disabled_settings_card(
-                    self.ai_system_prompt_section(settings, cx),
-                    settings.ai.enabled,
-                )
-            }
-            (AiSettingsPage::Context, 2) => {
-                let settings = self.settings_store.settings();
-                self.ai_disabled_settings_card(
-                    self.ai_memory_section(settings, cx),
-                    settings.ai.enabled,
-                )
-            }
-            (AiSettingsPage::Context, 3) => {
-                let settings = self.settings_store.settings();
-                let provider_views = ai_provider_views(settings);
-                self.ai_disabled_settings_card(
-                    self.ai_model_context_windows_section(settings, &provider_views, cx),
-                    settings.ai.enabled,
-                )
-            }
-            (AiSettingsPage::Tools, 0) => {
-                let settings = self.settings_store.settings();
-                self.ai_disabled_settings_card(
-                    self.ai_tool_use_section(settings, cx),
-                    settings.ai.enabled,
-                )
-            }
-            (AiSettingsPage::Tools, 1) => self.ai_disabled_settings_card(
-                self.render_ai_agent_settings(cx),
-                self.settings_store.settings().ai.enabled,
-            ),
-            (AiSettingsPage::Tools, 2) => {
-                let settings = self.settings_store.settings();
-                self.ai_disabled_settings_card(
-                    self.ai_skills_section(settings, cx),
-                    settings.ai.enabled,
-                )
-            }
-            (AiSettingsPage::Tools, 3) => {
-                let settings = self.settings_store.settings();
-                self.ai_disabled_settings_card(
-                    self.ai_mcp_servers_section(settings, cx),
-                    settings.ai.enabled,
-                )
-            }
-            _ => div().into_any_element(),
-        }
-    }
-
     pub(in crate::workspace) fn wrap_settings_section_list_item(
         &self,
         index: usize,
@@ -355,15 +265,6 @@ impl WorkspaceApp {
             .child(self.render_settings_page_header(tab, cx))
             .child(separator(&self.tokens, SeparatorOrientation::Horizontal))
             .into_any_element()
-    }
-
-    pub(in crate::workspace) fn ai_provider_views_for_settings_render(
-        &mut self,
-        cx: &mut Context<Self>,
-    ) -> Vec<AiProviderView> {
-        let provider_views = ai_provider_views(self.settings_store.settings());
-        self.ensure_ai_provider_key_statuses_for_views(&provider_views, cx);
-        provider_views
     }
 
     pub(in crate::workspace) fn sync_settings_section_list_state(&mut self, cx: &App) {
@@ -572,17 +473,6 @@ impl WorkspaceApp {
                 })
         })
         .count()
-    }
-
-    pub(in crate::workspace) fn knowledge_has_selected_collection(&self, cx: &App) -> bool {
-        let rag_store = self.ai_entity.read(cx).rag_store();
-        let collections = oxideterm_ai::rag_list_collections(&rag_store, None).unwrap_or_default();
-        self.ai_entity
-            .read(cx)
-            .knowledge_selected_collection_id()
-            .filter(|id| collections.iter().any(|collection| collection.id == *id))
-            .or_else(|| collections.first().map(|collection| collection.id.as_str()))
-            .is_some()
     }
 
     pub(in crate::workspace) fn render_settings_tab_section(

@@ -6,7 +6,6 @@ use oxideterm_terminal_triggers::{
 };
 
 pub(in crate::workspace) const SETTINGS_ROW_LABEL_MIN_WIDTH: f32 = 180.0; // Keep localized labels readable before controls wrap.
-const KNOWLEDGE_SCOPE_SELECT_MAX_HEIGHT: f32 = 320.0;
 
 enum ThemeSelectEntry {
     Group(&'static str),

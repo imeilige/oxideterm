@@ -228,7 +228,6 @@ pub(in crate::workspace) use terminal_triggers::TerminalTriggersSettingsState;
 mod update;
 mod update_ui;
 
-use ai_page::AI_PROVIDER_SELECT_W;
 pub(in crate::workspace) use ai_page::AiTextEditorDialog;
 pub(in crate::workspace) use cli_companion::{
     CLI_COMPANION_COMMAND_NAME, LEGACY_CLI_COMPANION_COMMAND_NAME, cli_install_path,

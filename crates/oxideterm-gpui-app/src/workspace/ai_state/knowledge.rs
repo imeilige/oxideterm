@@ -103,31 +103,6 @@ impl AiWorkspaceEntity {
         self.knowledge_page.selected_collection_id.as_deref()
     }
 
-    pub(in crate::workspace) fn knowledge_document_page_index(&self) -> usize {
-        self.knowledge_page.document_page
-    }
-
-    pub(in crate::workspace) fn set_knowledge_document_page(
-        &mut self,
-        collection_id: String,
-        page: usize,
-    ) {
-        self.knowledge_page.selected_collection_id = Some(collection_id);
-        self.knowledge_page.document_page = page;
-    }
-
-    pub(in crate::workspace) fn knowledge_document_page(
-        &self,
-        collection_id: &str,
-    ) -> Result<(usize, oxideterm_ai::RagPaginatedDocuments), String> {
-        let page = if self.knowledge_selected_collection_id() == Some(collection_id) {
-            self.knowledge_page.document_page
-        } else {
-            0
-        };
-        read_knowledge_document_page(&self.rag_store(), collection_id, page)
-    }
-
     pub(in crate::workspace) fn knowledge_create_dialog_open(&self) -> bool {
         self.knowledge_page.create_dialog_open
     }
@@ -146,10 +121,6 @@ impl AiWorkspaceEntity {
         &self,
     ) -> oxideterm_gpui_ui::motion::ExitPhase {
         self.knowledge_page.document_presence.phase()
-    }
-
-    pub(in crate::workspace) fn knowledge_embedding_config_expanded(&self) -> bool {
-        self.knowledge_page.embedding_config_expanded
     }
 
     pub(in crate::workspace) fn knowledge_new_collection_name(&self) -> &str {
@@ -246,22 +217,6 @@ impl AiWorkspaceEntity {
     pub(in crate::workspace) fn select_knowledge_collection(&mut self, collection_id: String) {
         self.knowledge_page.selected_collection_id = Some(collection_id);
         self.knowledge_page.document_page = 0;
-    }
-
-    pub(in crate::workspace) fn set_knowledge_document_format(&mut self, format: String) {
-        self.knowledge_page.new_document_format = format;
-    }
-
-    pub(in crate::workspace) fn set_knowledge_collection_connection_id(
-        &mut self,
-        connection_id: Option<String>,
-    ) {
-        self.knowledge_page.new_collection_connection_id = connection_id;
-    }
-
-    pub(in crate::workspace) fn toggle_knowledge_embedding_config(&mut self) {
-        self.knowledge_page.embedding_config_expanded =
-            !self.knowledge_page.embedding_config_expanded;
     }
 
     pub(in crate::workspace) fn expand_knowledge_embedding_config(&mut self) {
