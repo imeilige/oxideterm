@@ -805,17 +805,9 @@ impl WorkspaceApp {
                 true
             }
             "escape" => {
-                if matches!(
-                    input,
-                    SettingsInput::AppLockCurrentPassword
-                        | SettingsInput::AppLockNewPassword
-                        | SettingsInput::AppLockConfirmPassword
-                ) {
-                    self.commit_focused_app_lock_input();
-                } else if self.commit_focused_cloud_sync_input(input, cx) {
+                if self.commit_focused_cloud_sync_input(input, cx) {
                     self.focused_settings_input = None;
                 } else {
-                    self.focused_settings_input = None;
                     self.clear_settings_input_draft(input);
                 }
                 self.show_active_input_caret(cx);
@@ -828,15 +820,7 @@ impl WorkspaceApp {
                     self.apply_settings_input_draft(input, cx);
                     return true;
                 }
-                if matches!(
-                    input,
-                    SettingsInput::AppLockCurrentPassword
-                        | SettingsInput::AppLockNewPassword
-                        | SettingsInput::AppLockConfirmPassword
-                ) {
-                    self.commit_focused_app_lock_input();
-                } else if self.commit_focused_cloud_sync_input(input, cx) {
-                    self.focused_settings_input = None;
+                if self.commit_focused_cloud_sync_input(input, cx) {
                 } else {
                     self.focused_settings_input = None;
                     self.clear_settings_input_draft(input);
@@ -886,15 +870,7 @@ impl WorkspaceApp {
             changed = true;
         }
         if let Some(input) = self.focused_settings_input.take() {
-            if matches!(
-                input,
-                SettingsInput::AppLockCurrentPassword
-                    | SettingsInput::AppLockNewPassword
-                    | SettingsInput::AppLockConfirmPassword
-            ) {
-                self.focused_settings_input = Some(input);
-                self.commit_focused_app_lock_input();
-            } else if self.commit_focused_cloud_sync_input(input, cx) {
+            if self.commit_focused_cloud_sync_input(input, cx) {
                 // Cloud Sync fields move out of their Entity while focused, so
                 // every blur boundary must return the owned draft before release.
             } else {
@@ -1162,17 +1138,11 @@ impl WorkspaceApp {
         self.ai_entity.update(cx, |ai, cx| {
             ai.blur_settings_input(cx);
         });
-        let app_lock_input = matches!(
-            input,
-            SettingsInput::AppLockCurrentPassword
-                | SettingsInput::AppLockNewPassword
-                | SettingsInput::AppLockConfirmPassword
-        );
         let cloud_sync_input = {
             let cloud_sync = self.cloud_sync.read(cx);
             cloud_sync_form_input_value_ref(&cloud_sync.view.form, input).is_some()
         };
-        if (app_lock_input || cloud_sync_input) && self.focused_settings_input == Some(input) {
+        if cloud_sync_input && self.focused_settings_input == Some(input) {
             // Repositioning the caret in a manually owned input must preserve
             // the active draft instead of taking the now-empty backing field.
             self.clear_ime_selection();
@@ -1184,14 +1154,7 @@ impl WorkspaceApp {
             .focused_settings_input
             .filter(|previous| *previous != input)
         {
-            if matches!(
-                previous_input,
-                SettingsInput::AppLockCurrentPassword
-                    | SettingsInput::AppLockNewPassword
-                    | SettingsInput::AppLockConfirmPassword
-            ) {
-                self.commit_focused_app_lock_input();
-            } else if self.commit_focused_cloud_sync_input(previous_input, cx) {
+            if self.commit_focused_cloud_sync_input(previous_input, cx) {
                 self.focused_settings_input = None;
             } else {
                 self.clear_settings_input_draft(previous_input);
@@ -1199,10 +1162,7 @@ impl WorkspaceApp {
         }
         self.focused_settings_input = Some(input);
         self.clear_ime_selection();
-        self.settings_input_draft = if app_lock_input {
-            // Move the active secret into the editor so only one owner exists.
-            self.take_app_lock_input_value(input).unwrap_or_default()
-        } else if cloud_sync_input {
+        self.settings_input_draft = if cloud_sync_input {
             // Cloud Sync form values move into the root only while it acts as
             // the focused IME adapter. No second secret buffer is created.
             self.cloud_sync
@@ -1334,9 +1294,6 @@ impl WorkspaceApp {
             SettingsInput::PortableCurrentPassword
             | SettingsInput::PortableNewPassword
             | SettingsInput::PortableConfirmPassword => String::new(),
-            SettingsInput::AppLockCurrentPassword
-            | SettingsInput::AppLockNewPassword
-            | SettingsInput::AppLockConfirmPassword => String::new(),
             SettingsInput::ManagedKeyFilePath
             | SettingsInput::ManagedKeyFileName
             | SettingsInput::ManagedKeyFilePassphrase
@@ -1408,9 +1365,6 @@ impl WorkspaceApp {
             SettingsInput::PortableCurrentPassword
             | SettingsInput::PortableNewPassword
             | SettingsInput::PortableConfirmPassword => {}
-            SettingsInput::AppLockCurrentPassword
-            | SettingsInput::AppLockNewPassword
-            | SettingsInput::AppLockConfirmPassword => {}
             SettingsInput::ManagedKeyFilePath
             | SettingsInput::ManagedKeyFileName
             | SettingsInput::ManagedKeyFilePassphrase

@@ -45,9 +45,6 @@ pub(super) enum SidebarSection {
     Sessions,
     Connections,
     Forwards,
-    Runtime,
-    Terminal,
-    Network,
     HostTools,
     Automation,
     Workspace,
@@ -107,11 +104,12 @@ impl SidebarSection {
             // retired standalone sidebar.
             "sftp" => Self::Sessions,
             "forwards" => Self::Forwards,
-            "runtime" => Self::Runtime,
-            "connection_pool" | "terminal" => Self::Terminal,
+            // The Dashboard, Connection Pool and Topology sections are retired.
+            // Health monitoring already lives in Host Tools, so route their old
+            // persisted keys there instead of reopening a removed panel.
+            "runtime" | "connection_pool" | "terminal" | "network" | "topology" => Self::HostTools,
             // Retired health-page keys now restore the Host Tools replacement.
             "connection_monitor" | "activity" => Self::HostTools,
-            "network" | "topology" => Self::Network,
             "host_tools" => Self::HostTools,
             "automation" => Self::Automation,
             "workspace" => Self::Workspace,
@@ -133,9 +131,6 @@ impl SidebarSection {
             // effective Sessions panel instead of this tab-only entry.
             Self::Connections => "saved",
             Self::Forwards => "forwards",
-            Self::Runtime => "runtime",
-            Self::Terminal => "connection_pool",
-            Self::Network => "topology",
             Self::HostTools => "host_tools",
             Self::Automation => "automation",
             Self::Workspace => "workspace",
@@ -152,9 +147,6 @@ impl WorkspaceApp {
             // Tauri separates activity-bar tab buttons from sidebar sections.
             // Keep tab-only entries from replacing the Sessions sidebar body.
             SidebarSection::Connections
-            | SidebarSection::Terminal
-            | SidebarSection::Runtime
-            | SidebarSection::Network
             | SidebarSection::HostTools
             | SidebarSection::Automation
             | SidebarSection::Workspace
@@ -197,9 +189,6 @@ mod sidebar_persistence_tests {
         let sections = [
             SidebarSection::Sessions,
             SidebarSection::Forwards,
-            SidebarSection::Runtime,
-            SidebarSection::Terminal,
-            SidebarSection::Network,
             SidebarSection::HostTools,
             SidebarSection::Automation,
             SidebarSection::Workspace,

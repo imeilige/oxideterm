@@ -149,9 +149,6 @@ impl Render for DetachedTabWindow {
                         return true;
                     }
                     let window_id = window.window_handle().window_id();
-                    if session.app_lock.locked {
-                        return false;
-                    }
                     if session
                         .tab_host
                         .read(cx)
@@ -179,10 +176,9 @@ impl Render for DetachedTabWindow {
                         }
                         return true;
                     }
-                    if !session.app_lock.locked
-                        && let Some(pane_id) = session
-                            .tab_by_id(detached.tab_id, cx)
-                            .and_then(|tab| tab.active_pane_id)
+                    if let Some(pane_id) = session
+                        .tab_by_id(detached.tab_id, cx)
+                        .and_then(|tab| tab.active_pane_id)
                     {
                         let input = session.active_ime_target_for_window(window_id, cx);
                         if input.is_none_or(|target| {
@@ -232,13 +228,11 @@ impl Render for DetachedTabWindow {
                             }
                         }
                     }
-                    if !session.app_lock.locked
-                        && crate::keybindings::keystroke_matches_action(
-                            &event.keystroke,
-                            "terminal.aiPanel",
-                            &session.settings_store.settings().keybindings.overrides,
-                        )
-                    {
+                    if crate::keybindings::keystroke_matches_action(
+                        &event.keystroke,
+                        "terminal.aiPanel",
+                        &session.settings_store.settings().keybindings.overrides,
+                    ) {
                         session.toggle_terminal_ai_inline_panel(window, cx);
                         return true;
                     }
@@ -355,9 +349,6 @@ impl Render for DetachedTabWindow {
                     return root;
                 }
                 let workspace = self.session.read(cx);
-                if workspace.app_lock.locked {
-                    return root;
-                }
                 let Some(session) = workspace.remote_desktop_session_entity(tab_id, cx) else {
                     return root;
                 };

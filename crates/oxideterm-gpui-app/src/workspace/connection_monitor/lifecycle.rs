@@ -1,12 +1,5 @@
 use super::*;
 
-fn is_host_tools_tab_kind(tab_kind: &TabKind) -> bool {
-    matches!(
-        tab_kind,
-        TabKind::ConnectionPool | TabKind::Topology | TabKind::Runtime
-    )
-}
-
 fn host_tools_visibility(
     main_tab_visible: bool,
     detached_tab_visible: bool,
@@ -178,79 +171,13 @@ impl HostToolsEntity {
 }
 
 impl WorkspaceApp {
-    pub(in crate::workspace) fn host_tools_visibility(&self, cx: &App) -> HostToolsVisibility {
-        let tab_host = self.tab_host.read(cx);
-        let main_tab_visible = self.tabs(cx).iter().any(|tab| {
-            is_host_tools_tab_kind(&tab.kind)
-                && self.active_tab_id(cx) == Some(tab.id)
-                && !tab_host.is_outside_main_window(tab.id)
-        });
-        let detached_tab_visible = self
-            .tabs(cx)
-            .iter()
-            .any(|tab| is_host_tools_tab_kind(&tab.kind) && tab_host.is_detached(tab.id));
+    pub(in crate::workspace) fn host_tools_visibility(&self, _cx: &App) -> HostToolsVisibility {
+        // The Dashboard, Connection Pool and Topology tabs that used to host
+        // Host Tools are gone, so only the activity-bar sidebar can show it.
         let sidebar_visible = self.context_sidebar_visible()
             && self.active_context_sidebar_panel == ContextSidebarPanel::HostTools;
 
-        host_tools_visibility(main_tab_visible, detached_tab_visible, sidebar_visible)
-    }
-
-    pub(in crate::workspace) fn set_connection_runtime_section(
-        &mut self,
-        section: ConnectionRuntimeSection,
-        cx: &mut Context<Self>,
-    ) {
-        self.host_tools.update(cx, |host_tools, _cx| {
-            host_tools.set_runtime_section(section);
-        });
-    }
-
-    pub(in crate::workspace) fn open_connection_runtime_tab(
-        &mut self,
-        section: ConnectionRuntimeSection,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.set_connection_runtime_section(section, cx);
-        let tab_id = if let Some(tab) = self
-            .tabs(cx)
-            .iter()
-            .find(|tab| tab.kind == TabKind::Runtime)
-        {
-            tab.id
-        } else {
-            let tab_id = self.alloc_tab_id(cx);
-            self.insert_tab(
-                Tab {
-                    id: tab_id,
-                    kind: TabKind::Runtime,
-                    title: self.i18n.t("sidebar.panels.runtime"),
-                    title_source: TabTitleSource::I18nKey("sidebar.panels.runtime"),
-                    root_pane: None,
-                    active_pane_id: None,
-                },
-                cx,
-            );
-            tab_id
-        };
-        self.set_active_tab(tab_id, window, cx);
-        self.sync_host_tools_lifecycle(true, cx);
-    }
-
-    pub(in crate::workspace) fn open_connection_pool_tab(
-        &mut self,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.open_connection_runtime_tab(ConnectionRuntimeSection::Overview, window, cx);
-    }
-
-    pub(in crate::workspace) fn open_topology_tab(
-        &mut self,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.open_connection_runtime_tab(ConnectionRuntimeSection::Topology, window, cx);
+        host_tools_visibility(false, false, sidebar_visible)
     }
 
     pub(in crate::workspace) fn sync_host_tools_lifecycle(

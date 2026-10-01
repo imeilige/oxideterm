@@ -79,8 +79,6 @@ enum PaletteAction {
     OpenSftp,
     OpenSavedConnections,
     OpenSessionManager,
-    OpenRuntime(ConnectionRuntimeSection),
-    OpenTopology,
     OpenCloudSync,
     ManageTerminalTriggers,
     ReloadWindow,
@@ -539,10 +537,6 @@ impl WorkspaceApp {
             }
             PaletteAction::OpenSavedConnections => self.open_session_manager_tab(window, cx),
             PaletteAction::OpenSessionManager => self.open_session_manager_tab(window, cx),
-            PaletteAction::OpenRuntime(section) => {
-                self.open_connection_runtime_tab(section, window, cx)
-            }
-            PaletteAction::OpenTopology => self.open_topology_tab(window, cx),
             PaletteAction::OpenCloudSync => self.open_cloud_sync_tab(window, cx),
             PaletteAction::ManageTerminalTriggers => {
                 self.open_terminal_trigger_settings(window, cx)
@@ -1058,9 +1052,6 @@ impl WorkspaceApp {
                     TabKind::MoshTerminal => self.i18n.t("terminal.typeMosh"),
                     TabKind::Settings => self.i18n.t("settings_view.title"),
                     TabKind::SessionManager => self.i18n.t("sidebar.panels.saved_connections"),
-                    TabKind::Runtime => self.i18n.t("sidebar.panels.runtime"),
-                    TabKind::ConnectionPool => self.i18n.t("sidebar.panels.runtime_overview"),
-                    TabKind::Topology => self.i18n.t("topology.title"),
                     TabKind::CloudSync => self.i18n.t("plugin.cloud_sync.panel_title"),
                     TabKind::Knowledge => self.i18n.t("sidebar.panels.knowledge"),
                     TabKind::RemoteDesktop => {
@@ -2175,9 +2166,6 @@ fn tab_kind_icon(kind: &TabKind) -> LucideIcon {
         }
         TabKind::FileManager => LucideIcon::FolderOpen,
         TabKind::Graphics => LucideIcon::AppWindow,
-        TabKind::Runtime => LucideIcon::Gauge,
-        TabKind::ConnectionPool => LucideIcon::Gauge,
-        TabKind::Topology => LucideIcon::Network,
         TabKind::Forwards => LucideIcon::ArrowLeftRight,
         TabKind::Sftp => LucideIcon::HardDrive,
         TabKind::CloudSync => LucideIcon::Cloud,
@@ -2441,13 +2429,6 @@ fn command_palette_specs() -> Vec<CommandSpec> {
             action: PaletteAction::Keybinding("palette.aiSidebar"),
         },
         CommandSpec {
-            id: "cmd:open_runtime",
-            label_key: "command_palette.cmd_open_runtime".into(),
-            icon: LucideIcon::Gauge,
-            shortcut_action: None,
-            action: PaletteAction::OpenRuntime(ConnectionRuntimeSection::Overview),
-        },
-        CommandSpec {
             id: "cmd:disconnect_all",
             label_key: "command_palette.cmd_disconnect_all".into(),
             icon: LucideIcon::Power,
@@ -2534,13 +2515,6 @@ fn command_palette_specs() -> Vec<CommandSpec> {
             icon: LucideIcon::Cloud,
             shortcut_action: None,
             action: PaletteAction::OpenCloudSync,
-        },
-        CommandSpec {
-            id: "cmd:open_topology",
-            label_key: "command_palette.cmd_open_topology".into(),
-            icon: LucideIcon::Network,
-            shortcut_action: None,
-            action: PaletteAction::OpenTopology,
         },
         CommandSpec {
             id: "cmd:reset_settings",

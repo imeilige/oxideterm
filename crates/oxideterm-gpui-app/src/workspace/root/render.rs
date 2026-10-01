@@ -166,12 +166,6 @@ impl WorkspaceApp {
         self.schedule_pending_auto_close_terminal_sessions(window, cx);
         self.sync_ai_workspace_visibility(cx);
         let cloud_sync_confirm_open = self.cloud_sync.read(cx).view.confirm.is_some();
-        if self.app_lock.locked {
-            window.set_window_title(&SharedString::from(
-                self.i18n.t("settings_view.general.app_lock_window_title"),
-            ));
-            return self.render_app_lock_screen(window, cx);
-        }
         // Confirmation snapshots are immutable frame inputs. Sampling each
         // owner once avoids repeatedly cloning typed payloads during render.
         let ai_chat_confirm_snapshot = self.ai_entity.read(cx).chat_confirm_snapshot();
@@ -199,9 +193,6 @@ impl WorkspaceApp {
                         | TabKind::SessionManager
                         | TabKind::FileManager
                         | TabKind::Graphics
-                        | TabKind::Runtime
-                        | TabKind::ConnectionPool
-                        | TabKind::Topology
                         | TabKind::CloudSync
                         | TabKind::Knowledge
                         | TabKind::RemoteDesktop
@@ -224,16 +215,6 @@ impl WorkspaceApp {
                 (TabKind::Settings, _) => self.render_settings_surface(cx),
                 (TabKind::FileManager, _) => self.render_file_manager_surface(window, cx),
                 (TabKind::Graphics, _) => self.render_graphics_surface(window, cx),
-                (TabKind::Runtime, _) => self.render_connection_runtime_surface(cx),
-                (TabKind::ConnectionPool, _) => {
-                    // Old workspaces may restore the retired connection-pool tab.
-                    // Keep it readable by showing the runtime overview instead.
-                    self.host_tools.update(cx, |host_tools, _cx| {
-                        host_tools.reset_runtime_section();
-                    });
-                    self.render_connection_runtime_surface(cx)
-                }
-                (TabKind::Topology, _) => self.render_topology_surface(cx),
                 (TabKind::Sftp, _) => self.render_sftp_surface(window, cx),
                 (TabKind::Forwards, _) => self.render_forwards_surface(window, cx),
                 (TabKind::SessionManager, _) => self.render_session_manager_surface(window, cx),
@@ -1316,9 +1297,6 @@ impl WorkspaceApp {
             )
             .when(self.shortcuts_modal.open, |root| {
                 root.child(self.render_shortcuts_modal(cx))
-            })
-            .when_some(self.render_app_lock_dialog(cx), |root, dialog| {
-                root.child(dialog)
             })
             .when(self.mermaid_zoom.is_some(), |root| {
                 root.child(self.render_mermaid_zoom_modal(window, cx))

@@ -3380,17 +3380,6 @@ impl WorkspaceApp {
                     )
                     .with_optional_target(target)
             }
-            "connection_pool" => {
-                self.open_connection_pool_tab(window, cx);
-                snapshot
-                    .ok(
-                        "Opened runtime overview.",
-                        "Opened runtime overview.",
-                        serde_json::Value::Null,
-                        "write",
-                    )
-                    .with_optional_target(target)
-            }
             "connection_monitor" => {
                 self.open_context_sidebar_panel(ContextSidebarPanel::HostTools, cx);
                 snapshot

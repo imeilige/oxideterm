@@ -1099,13 +1099,6 @@ impl WorkspaceApp {
         )
     }
 
-    pub(in crate::workspace) fn suspend_public_mcp_runtime(&mut self, cx: &mut Context<Self>) {
-        // Locking the workspace invalidates approvals and releases only MCP-owned consumers.
-        for client in self.public_mcp.clients() {
-            self.revoke_public_mcp_client_runtime(&client.client_ref, cx);
-        }
-    }
-
     fn revoke_public_mcp_client_runtime(&mut self, client_ref: &ClientRef, cx: &mut Context<Self>) {
         // Active domain work shares the broker cancellation token used by timeout and disconnect.
         self.public_mcp.state.broker.cancel_client(client_ref);
@@ -1152,10 +1145,6 @@ impl WorkspaceApp {
         let audit_context = request.audit_context.clone();
         oxideterm_audit::AuditContext::with_sync_request(audit_context.as_ref(), || {
             if request.is_cancelled() {
-                return;
-            }
-            if self.app_lock.locked {
-                request.finish(ToolEnvelope::failed("The OxideTerm workspace is locked"));
                 return;
             }
             match &request.call {

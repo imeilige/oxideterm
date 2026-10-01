@@ -2731,12 +2731,7 @@ mod tests {
 
     #[gpui::test]
     fn detached_window_release_closes_only_its_current_tab_mount(cx: &mut TestAppContext) {
-        for kind in [
-            TabKind::LocalTerminal,
-            TabKind::Settings,
-            TabKind::Runtime,
-            TabKind::Sftp,
-        ] {
+        for kind in [TabKind::LocalTerminal, TabKind::Settings, TabKind::Sftp] {
             let tab_host = cx.new(|_| WorkspaceTabHostEntity::new());
             let tab_id = tab_host.update(cx, |tabs, _| {
                 let id = tabs.alloc_tab_id();

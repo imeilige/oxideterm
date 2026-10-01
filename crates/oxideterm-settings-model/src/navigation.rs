@@ -195,11 +195,14 @@ pub fn settings_tab_section_count(
     dynamic: SettingsDynamicSectionCounts,
 ) -> usize {
     match tab {
+        // The application-lock card was retired with the workspace lock. The
+        // General page is now: language, launch at login, window behavior
+        // (desktop only), data directory, CLI companion.
         SettingsTab::General => {
             if cfg!(any(target_os = "windows", target_os = "macos")) {
-                6
-            } else {
                 5
+            } else {
+                4
             }
         }
         SettingsTab::Portable => 1,
@@ -272,6 +275,31 @@ pub struct SettingsDynamicSectionCounts {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn general_section_count_matches_the_cards_that_still_render() {
+        // The application-lock card was retired. The renderer now maps
+        // language, launch-at-login, window behavior (desktop only), data
+        // directory and CLI companion onto consecutive indices, so a stale
+        // count would leave a blank card between two real ones.
+        let desktop = settings_tab_section_count(
+            SettingsTab::General,
+            SettingsDynamicSectionCounts {
+                terminal_page: TerminalSettingsPage::Display,
+                ai_page: AiSettingsPage::General,
+                visible_keybinding_scope_count: 0,
+            },
+        );
+        let expected = if cfg!(any(target_os = "windows", target_os = "macos")) {
+            5
+        } else {
+            4
+        };
+        assert_eq!(
+            desktop, expected,
+            "General must not render an empty section"
+        );
+    }
 
     #[test]
     fn persisted_navigation_layout_ignores_invalid_entries_and_appends_new_tabs() {

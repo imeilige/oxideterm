@@ -1020,22 +1020,6 @@ impl WorkspaceApp {
     }
 
     pub(super) fn active_ime_target(&self, cx: &App) -> Option<WorkspaceImeTarget> {
-        if self.app_lock.locked {
-            return Some(WorkspaceImeTarget::Settings(
-                SettingsInput::AppLockCurrentPassword,
-            ));
-        }
-        if self.app_lock.dialog.is_some()
-            && let Some(input) = self.focused_settings_input
-            && matches!(
-                input,
-                SettingsInput::AppLockCurrentPassword
-                    | SettingsInput::AppLockNewPassword
-                    | SettingsInput::AppLockConfirmPassword
-            )
-        {
-            return Some(WorkspaceImeTarget::Settings(input));
-        }
         if self.knowledge_workspace.read(cx).rename.is_some() {
             return Some(WorkspaceImeTarget::KnowledgeRename);
         }

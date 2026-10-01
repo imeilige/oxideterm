@@ -30,7 +30,7 @@ impl WorkspaceApp {
                 "",
                 vec![self.language_select_row(settings.general.language, cx)],
             ),
-            index if index == 3 + window_behavior_sections => {
+            index if index == 2 + window_behavior_sections => {
                 let data_dir_info = self.settings_data_directory_info();
                 let data_dir = data_dir_info.path.display().to_string();
                 self.settings_card(
@@ -73,7 +73,7 @@ impl WorkspaceApp {
                     ],
                 )
             }
-            index if index == 4 + window_behavior_sections => {
+            index if index == 3 + window_behavior_sections => {
                 let cli = self.settings_workspace.read(cx).cli_companion_snapshot();
                 let cli_status = cli.status.as_ref();
                 let cli_loading = cli.loading;
@@ -355,9 +355,6 @@ impl WorkspaceApp {
                         cx,
                     )],
                 )
-            }
-            index if index == 2 + window_behavior_sections => {
-                self.render_app_lock_settings_card(cx)
             }
             _ => div().into_any_element(),
         }

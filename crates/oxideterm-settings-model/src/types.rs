@@ -259,9 +259,6 @@ pub enum SettingsInput {
     PortableCurrentPassword,
     PortableNewPassword,
     PortableConfirmPassword,
-    AppLockCurrentPassword,
-    AppLockNewPassword,
-    AppLockConfirmPassword,
     NativePluginInstallUrl,
     NativePluginInstallChecksum,
     NativePluginRegistryUrl,
@@ -640,9 +637,6 @@ impl SettingsInput {
             Self::PortableCurrentPassword => 28_000,
             Self::PortableNewPassword => 28_001,
             Self::PortableConfirmPassword => 28_002,
-            Self::AppLockCurrentPassword => 28_100,
-            Self::AppLockNewPassword => 28_101,
-            Self::AppLockConfirmPassword => 28_102,
             Self::NativePluginInstallUrl => PLUGIN_MANAGER_INPUT_ANCHOR_BASE,
             Self::NativePluginInstallChecksum => PLUGIN_MANAGER_INPUT_ANCHOR_BASE + 1,
             Self::NativePluginRegistryUrl => PLUGIN_MANAGER_INPUT_ANCHOR_BASE + 2,
@@ -674,9 +668,6 @@ impl SettingsInput {
                 | Self::PortableCurrentPassword
                 | Self::PortableNewPassword
                 | Self::PortableConfirmPassword
-                | Self::AppLockCurrentPassword
-                | Self::AppLockNewPassword
-                | Self::AppLockConfirmPassword
                 | Self::LocalPrivilegeSecret
                 | Self::ManagedKeyFilePassphrase
                 | Self::ManagedKeyPastePrivateKey
@@ -744,9 +735,6 @@ mod tests {
         assert!(SettingsInput::PortableCurrentPassword.is_secret());
         assert!(SettingsInput::PortableNewPassword.is_secret());
         assert!(SettingsInput::PortableConfirmPassword.is_secret());
-        assert!(SettingsInput::AppLockCurrentPassword.is_secret());
-        assert!(SettingsInput::AppLockNewPassword.is_secret());
-        assert!(SettingsInput::AppLockConfirmPassword.is_secret());
         assert!(SettingsInput::LocalPrivilegeSecret.is_secret());
         assert!(!SettingsInput::TerminalFontSize.is_secret());
     }

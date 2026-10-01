@@ -1,9 +1,7 @@
 use std::time::Duration;
 
-use gpui::{Rgba, rgb, rgba};
 use oxideterm_gpui_ui::motion::ExitPresence;
 use oxideterm_ssh::SshCommandOutput;
-use oxideterm_topology::TopologyViewStatus;
 use zeroize::Zeroize;
 
 use super::*;
@@ -150,71 +148,10 @@ pub(super) const MONITOR_EMERALD_DARK: u32 = 0x10b981;
 pub(super) const MONITOR_AMBER: u32 = 0xf59e0b;
 pub(super) const MONITOR_RED: u32 = 0xef4444;
 pub(super) const MONITOR_BLUE: u32 = 0x3b82f6;
-pub(super) const TOPOLOGY_BG_GRID_STEP: f32 = 40.0;
-pub(super) const TOPOLOGY_BG_GRID_ALPHA: u32 = 0x1a;
-pub(super) const TOPOLOGY_PANEL_BG_ALPHA_20: u32 = 0x33;
-pub(super) const TOPOLOGY_PANEL_BORDER_ALPHA_50: u32 = 0x80;
-pub(super) const TOPOLOGY_MUTED_TEXT_ALPHA_70: u32 = 0xb3;
-pub(super) const TOPOLOGY_INSTRUCTION_ALPHA_60: u32 = 0x99;
-pub(super) const TOPOLOGY_LINE_INACTIVE_ALPHA: u32 = 0x66;
-pub(super) const TOPOLOGY_LINE_GLOW_ALPHA: u32 = 0x26;
-pub(super) const TOPOLOGY_CONNECTED: u32 = 0x22c55e;
-pub(super) const TOPOLOGY_CONNECTING: u32 = 0xeab308;
-pub(super) const TOPOLOGY_FAILED: u32 = 0xef4444;
-pub(super) const TOPOLOGY_DISCONNECTED: u32 = 0x71717a;
-pub(super) const TOPOLOGY_PENDING: u32 = 0xf59e0b;
-pub(super) const TOPOLOGY_ZOOM_INITIAL: f32 = 0.9;
-pub(super) const TOPOLOGY_ZOOM_MIN: f32 = 0.3;
-pub(super) const TOPOLOGY_ZOOM_MAX: f32 = 3.0;
-pub(super) const TOPOLOGY_PAN_INITIAL_X: f32 = 0.0;
-pub(super) const TOPOLOGY_PAN_INITIAL_Y: f32 = 50.0;
-pub(super) const TOPOLOGY_MENU_WIDTH: f32 = 180.0;
-pub(super) const TOPOLOGY_MENU_MAX_HEIGHT: f32 = 250.0;
-
-pub(super) fn connection_monitor_surface_bg(theme_bg: u32, has_background: bool) -> Rgba {
-    if has_background {
-        rgba(0x00000000)
-    } else {
-        rgb(theme_bg)
-    }
-}
-
-#[derive(Clone, Copy)]
-pub(super) struct TopologyTransform {
-    pub(super) x: f32,
-    pub(super) y: f32,
-    pub(super) k: f32,
-}
-
-impl Default for TopologyTransform {
-    fn default() -> Self {
-        Self {
-            x: TOPOLOGY_PAN_INITIAL_X,
-            y: TOPOLOGY_PAN_INITIAL_Y,
-            k: TOPOLOGY_ZOOM_INITIAL,
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
-pub(super) struct TopologyDragState {
-    pub(super) last_x: f32,
-    pub(super) last_y: f32,
-}
 
 #[derive(Clone, Copy)]
 pub(super) struct HostToolsTabScrollbarDragState {
     pub(super) grab_offset_x: f32,
-}
-
-#[derive(Clone)]
-pub(super) struct TopologyNodeMenuState {
-    pub(super) node_id: Option<NodeId>,
-    pub(super) name: String,
-    pub(super) host: String,
-    pub(super) view_status: TopologyViewStatus,
-    pub(super) x: f32,
-    pub(super) y: f32,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -828,12 +765,6 @@ impl HostTmuxState {
             action_running: None,
         }
     }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(in crate::workspace) enum ConnectionRuntimeSection {
-    Overview,
-    Topology,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

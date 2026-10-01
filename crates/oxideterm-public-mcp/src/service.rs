@@ -599,7 +599,7 @@ impl ServerHandler for PublicMcpService {
                     "approval_policy": approval_policy,
                     "enabled_tool_groups": client.tool_groups,
                     "available_tool_groups": ToolGroup::selectable(),
-                    "security": "Bearer authentication, per-client tool groups, app-lock enforcement, secret hard boundaries, and audit remain active in every mode",
+                    "security": "Bearer authentication, per-client tool groups, secret hard boundaries, and audit remain active in every mode",
                 }))
             }
             "mcp_catalog" => {

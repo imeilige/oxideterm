@@ -124,7 +124,6 @@ pub(in crate::workspace) enum ActiveWindowModalOwner {
         phase: oxideterm_gpui_ui::motion::ExitPhase,
     },
     Shortcuts,
-    AppLockDialog,
     MermaidZoom,
 }
 
@@ -175,7 +174,6 @@ impl ActiveWindowModalOwner {
             Self::LegalNotice { .. } => 42,
             Self::NativeUpdateReleaseNotes { .. } => 43,
             Self::Shortcuts => 44,
-            Self::AppLockDialog => 45,
             Self::MermaidZoom => 46,
         }
     }
@@ -224,7 +222,6 @@ impl ActiveWindowModalOwner {
             | Self::VersionMigration
             | Self::Onboarding
             | Self::Shortcuts
-            | Self::AppLockDialog
             | Self::MermaidZoom => oxideterm_gpui_ui::motion::ExitPhase::Visible,
         }
     }
@@ -249,7 +246,6 @@ impl ActiveWindowModalOwner {
                 | Self::OxideImport { .. }
                 | Self::OxideExport { .. }
                 | Self::CommandPalette
-                | Self::AppLockDialog
         )
     }
 
@@ -323,7 +319,6 @@ pub(in crate::workspace) struct ActiveWindowModalProjection {
     pub(in crate::workspace) version_migration_open: bool,
     pub(in crate::workspace) onboarding_open: bool,
     pub(in crate::workspace) shortcuts_open: bool,
-    pub(in crate::workspace) app_lock_dialog_open: bool,
     pub(in crate::workspace) mermaid_zoom_open: bool,
     pub(in crate::workspace) native_update_toast_visible: bool,
 }
@@ -474,9 +469,6 @@ impl ActiveWindowModalProjection {
         let shortcuts_owner = self
             .shortcuts_open
             .then_some(ActiveWindowModalOwner::Shortcuts);
-        let app_lock_owner = self
-            .app_lock_dialog_open
-            .then_some(ActiveWindowModalOwner::AppLockDialog);
         let mermaid_owner = self
             .mermaid_zoom_open
             .then_some(ActiveWindowModalOwner::MermaidZoom);
@@ -517,7 +509,6 @@ impl ActiveWindowModalProjection {
             version_migration_owner,
             onboarding_owner,
             shortcuts_owner,
-            app_lock_owner,
             mermaid_owner,
         ]
         .into_iter()
@@ -661,7 +652,6 @@ impl WorkspaceApp {
             version_migration_open: self.version_migration.open,
             onboarding_open: self.onboarding.open,
             shortcuts_open: self.shortcuts_modal.open,
-            app_lock_dialog_open: self.app_lock.dialog.is_some(),
             mermaid_zoom_open: self.mermaid_zoom.as_ref().is_some_and(|state| {
                 self.window_registry
                     .handle_for_role(window_registry::WindowRole::Main)
@@ -1057,9 +1047,6 @@ impl WorkspaceApp {
             }
             ActiveWindowModalOwner::Shortcuts => {
                 self.handle_shortcuts_modal_key(event, cx);
-            }
-            ActiveWindowModalOwner::AppLockDialog => {
-                let _ = self.handle_app_lock_dialog_key(event, cx);
             }
             ActiveWindowModalOwner::MermaidZoom => {
                 if event.keystroke.key.as_str() == "escape" {

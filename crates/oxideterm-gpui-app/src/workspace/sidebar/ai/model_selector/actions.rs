@@ -239,7 +239,7 @@ impl WorkspaceApp {
         });
         let settings_surface = false;
         let visibility = AiWorkspaceVisibility {
-            model_selector_surface: !self.app_lock.locked && model_selector_surface,
+            model_selector_surface,
             settings_surface,
         };
         let changed = self

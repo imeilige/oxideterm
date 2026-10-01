@@ -425,7 +425,6 @@ impl WorkspaceApp {
         settings_workspace.update(cx, |settings, _cx| {
             settings.initialize_background_gallery(background_images);
         });
-        let app_lock = app_lock::AppLockState::load(oxideterm_app_lock::AppLockStore::new());
         let ai_key_store = oxideterm_ai::AiProviderKeyStore::new();
         let ai_entity = cx.new(|cx| {
             let mut entity =
@@ -764,7 +763,6 @@ impl WorkspaceApp {
             // The native window shell applies the selected mode before the
             // first workspace render and replaces this neutral diagnostic.
             vibrancy_support: VibrancySupport::Supported,
-            app_lock,
             settings_store,
             pending_window_ui_state: None,
             window_state_save_task: None,

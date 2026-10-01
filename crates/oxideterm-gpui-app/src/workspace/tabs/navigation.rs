@@ -250,15 +250,6 @@ impl WorkspaceApp {
                 self.active_surface = ActiveSurface::Terminal;
                 self.active_sidebar_section = SidebarSection::Connections;
             }
-            Some(TabKind::Runtime) => {
-                self.active_surface = ActiveSurface::Terminal;
-            }
-            Some(TabKind::ConnectionPool) => {
-                self.active_surface = ActiveSurface::Terminal;
-            }
-            Some(TabKind::Topology) => {
-                self.active_surface = ActiveSurface::Terminal;
-            }
             Some(TabKind::CloudSync) => {
                 self.active_surface = ActiveSurface::Terminal;
             }

@@ -10,7 +10,6 @@ impl WorkspaceApp {
         let top_items = [
             (SidebarSection::Sessions, LucideIcon::Link2),
             (SidebarSection::Connections, LucideIcon::LayoutList),
-            (SidebarSection::Runtime, LucideIcon::Gauge),
             (SidebarSection::HostTools, LucideIcon::Wrench),
         ];
         let bottom_items = [
@@ -104,17 +103,6 @@ impl WorkspaceApp {
         for (section, icon) in top_items {
             primary_items = primary_items.child(self.render_activity_icon(section, icon, cx));
         }
-        // The sessions footer owns the lock action while visible. Keep the rail
-        // entry reachable when that footer is hidden or another panel is selected.
-        if self.settings_store.settings().sidebar_ui.show_app_lock_icon
-            && (self.sidebar_collapsed
-                || self.effective_sidebar_panel_section() != SidebarSection::Sessions)
-        {
-            primary_items =
-                primary_items.child(div().mb(px(self.tokens.metrics.activity_icon_gap)).child(
-                    self.render_app_lock_button(self.tokens.metrics.activity_icon_size, cx),
-                ));
-        }
 
         let mut bottom = div().relative().flex().flex_col().items_center().child(
             div()
@@ -157,16 +145,6 @@ impl WorkspaceApp {
     ) -> AnyElement {
         let theme = self.tokens.ui;
         let active = match section {
-            SidebarSection::Terminal => false,
-            SidebarSection::Runtime => self
-                .active_tab(cx)
-                .is_some_and(|tab| tab.kind == TabKind::Runtime),
-            SidebarSection::Network => {
-                self.active_tab(cx)
-                    .is_some_and(|tab| tab.kind == TabKind::Runtime)
-                    && self.host_tools.read(cx).active_runtime_section
-                        == ConnectionRuntimeSection::Topology
-            }
             SidebarSection::Files => self
                 .active_tab(cx)
                 .is_some_and(|tab| tab.kind == TabKind::FileManager),
@@ -282,20 +260,6 @@ impl WorkspaceApp {
                         this.open_settings(window, cx);
                     } else if section == SidebarSection::Connections {
                         this.open_session_manager_tab(window, cx);
-                    } else if section == SidebarSection::Terminal {
-                        this.open_connection_runtime_tab(
-                            ConnectionRuntimeSection::Overview,
-                            window,
-                            cx,
-                        );
-                    } else if section == SidebarSection::Runtime {
-                        this.open_connection_runtime_tab(
-                            ConnectionRuntimeSection::Overview,
-                            window,
-                            cx,
-                        );
-                    } else if section == SidebarSection::Network {
-                        this.open_topology_tab(window, cx);
                     } else if section == SidebarSection::Workspace {
                         // Tauri treats the bottom square as a local-terminal action.
                         if !this.detached_local_terminals.is_empty() {
@@ -324,9 +288,6 @@ impl WorkspaceApp {
             SidebarSection::Sessions => self.i18n.t("sidebar.panels.sessions"),
             SidebarSection::Connections => self.i18n.t("sidebar.panels.open_session_manager"),
             SidebarSection::Forwards => self.i18n.t("forwards.table.title"),
-            SidebarSection::Terminal => self.i18n.t("sidebar.panels.runtime_overview"),
-            SidebarSection::Runtime => self.i18n.t("sidebar.panels.runtime"),
-            SidebarSection::Network => self.i18n.t("sidebar.panels.connection_matrix"),
             SidebarSection::HostTools => self.i18n.t("sidebar.panels.host_tools"),
             SidebarSection::Automation => self.i18n.t("sidebar.panels.activity"),
             SidebarSection::Workspace => self.i18n.t("sidebar.actions.new_local_terminal"),

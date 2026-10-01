@@ -9,9 +9,6 @@ pub(in crate::workspace) fn tab_background_key(kind: &TabKind) -> &'static str {
         TabKind::MoshTerminal => "terminal",
         TabKind::FileManager => "file_manager",
         TabKind::Graphics => "graphics",
-        TabKind::Runtime => "runtime",
-        TabKind::ConnectionPool => "runtime",
-        TabKind::Topology => "topology",
         TabKind::Sftp => "sftp",
         TabKind::Forwards => "forwards",
         TabKind::SessionManager => "session_manager",
@@ -869,12 +866,6 @@ impl WorkspaceApp {
         // Radix ContextMenu uses one close policy for outside pointer and Esc.
         // Keep all native context-menu owners here so feature handlers do not
         // each mutate their own menu state differently.
-        if self
-            .host_tools
-            .update(cx, |host_tools, cx| host_tools.dismiss_topology_menu(cx))
-        {
-            changed = true;
-        }
         if self.close_session_row_menus(cx) {
             changed = true;
         }

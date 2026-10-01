@@ -68,13 +68,13 @@ fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
         ),
         settings_search_entry(
             SettingsTab::General,
-            3 + window_behavior_sections,
+            2 + window_behavior_sections,
             "settings_view.general.data_directory",
             &["settings_view.general.data_directory_hint"],
         ),
         settings_search_entry(
             SettingsTab::General,
-            4 + window_behavior_sections,
+            3 + window_behavior_sections,
             "settings_view.general.cli_companion",
             &[
                 "settings_view.general.cli_tool",
@@ -595,15 +595,6 @@ fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
         2,
         "settings_view.general.window_behavior",
         &["settings_view.general.window_behavior_hint"],
-    ));
-    specs.push(settings_search_entry(
-        SettingsTab::General,
-        2 + window_behavior_sections,
-        "settings_view.general.app_lock_title",
-        &[
-            "settings_view.general.app_lock_description",
-            "settings_view.general.app_lock_show_sidebar_icon",
-        ],
     ));
     #[cfg(not(target_os = "macos"))]
     specs.push(terminal_search_entry(

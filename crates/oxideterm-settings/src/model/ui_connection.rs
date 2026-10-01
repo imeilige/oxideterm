@@ -130,10 +130,6 @@ pub const AI_SIDEBAR_ABSOLUTE_MIN_WIDTH: f32 = 280.0;
 pub const AI_SIDEBAR_ABSOLUTE_MAX_WIDTH: f32 = 500.0;
 pub const AI_SIDEBAR_DEFAULT_WIDTH: i64 = 340;
 
-fn default_show_app_lock_icon() -> bool {
-    true
-}
-
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SessionSortOrder {
@@ -159,8 +155,6 @@ pub struct SidebarUiState {
     pub ai_sidebar_collapsed: bool,
     pub ai_sidebar_width: i64,
     pub zen_mode: bool,
-    #[serde(default = "default_show_app_lock_icon")]
-    pub show_app_lock_icon: bool,
     #[serde(flatten)]
     pub extra: ExtraFields,
 }
@@ -177,7 +171,6 @@ impl Default for SidebarUiState {
             ai_sidebar_collapsed: true,
             ai_sidebar_width: AI_SIDEBAR_DEFAULT_WIDTH,
             zen_mode: false,
-            show_app_lock_icon: true,
             extra: ExtraFields::new(),
         }
     }

@@ -1535,16 +1535,6 @@ impl WorkspaceApp {
         self.workspace_input.update(cx, |input, cx| {
             input.sync_active_target(active_ime_target, cx);
         });
-        if self.app_lock.locked {
-            window.set_window_title(&SharedString::from(
-                self.i18n.t("settings_view.general.app_lock_window_title"),
-            ));
-            return self.render_detached_tab_message(
-                "OxideTerm",
-                "settings_view.general.app_lock_detached_description",
-                cx,
-            );
-        }
         // Release TabHost's read guard before rendering without cloning the
         // complete Tab; the pane tree is bounded to four panes.
         let Some((title, tab_kind, root_pane)) = self.tab_by_id(tab_id, cx).map(|tab| {
@@ -1682,16 +1672,6 @@ impl WorkspaceApp {
         match (kind, root_pane) {
             (TabKind::FileManager, _) => self.render_file_manager_surface(window, cx),
             (TabKind::Graphics, _) => self.render_graphics_surface(window, cx),
-            (TabKind::Runtime, _) => self.render_connection_runtime_surface(cx),
-            (TabKind::ConnectionPool, _) => {
-                // Detached windows can outlive the UI route that created them.
-                // Preserve compatibility by rendering the runtime overview.
-                self.host_tools.update(cx, |host_tools, _cx| {
-                    host_tools.reset_runtime_section();
-                });
-                self.render_connection_runtime_surface(cx)
-            }
-            (TabKind::Topology, _) => self.render_topology_surface(cx),
             (TabKind::SessionManager, _) => self.render_session_manager_surface(window, cx),
             (TabKind::CloudSync, _) => self.render_cloud_sync_surface(cx),
             (TabKind::RemoteDesktop, _) => self.render_remote_desktop_surface(tab_id, window, cx),

@@ -3,7 +3,6 @@ use super::*;
 use gpui::Task;
 use oxideterm_connection_monitor::ResourceSampler;
 use oxideterm_editor_core::utf16::replace_utf16;
-use oxideterm_topology::ConnectionTopologySnapshot;
 
 fn finish_host_query_audit(
     audit: oxideterm_audit::AuditOperation,
@@ -71,8 +70,6 @@ pub(in crate::workspace) struct HostToolsEntity {
     pub(super) host_filesystems: HostFilesystemsState,
     pub(super) host_packages: HostPackagesState,
     pub(super) host_schedules: HostSchedulesState,
-    pub(in crate::workspace) active_runtime_section: ConnectionRuntimeSection,
-    pub(in crate::workspace) previous_runtime_section: ConnectionRuntimeSection,
     selected_connection_id: Option<String>,
     selector_open: bool,
     selector_highlighted_index: Option<usize>,
@@ -99,15 +96,8 @@ pub(in crate::workspace) struct HostToolsEntity {
     test_resource_sampler: Option<Arc<dyn ResourceSampler>>,
     #[cfg(test)]
     test_snapshot_dispatches: Option<Vec<ContextSidebarTool>>,
-    pool_stats: Option<ConnectionPoolMonitorStats>,
     pool_summaries: Vec<ConnectionPoolEntrySummary>,
-    topology_snapshot: Option<ConnectionTopologySnapshot>,
     last_pool_refresh: Option<Instant>,
-    // Topology interactions belong to the shared Host Tools surface, not to
-    // the workspace window that happens to render the graph.
-    pub(super) topology_transform: TopologyTransform,
-    pub(super) topology_drag: Option<TopologyDragState>,
-    pub(super) topology_menu: Option<TopologyNodeMenuState>,
     compact_monitor_list_state: ListState,
     compact_monitor_list_cache: RefCell<VirtualListSignatureCache>,
 }
@@ -602,8 +592,6 @@ impl HostToolsEntity {
             host_filesystems: HostFilesystemsState::new(),
             host_packages: HostPackagesState::new(),
             host_schedules: HostSchedulesState::new(),
-            active_runtime_section: ConnectionRuntimeSection::Overview,
-            previous_runtime_section: ConnectionRuntimeSection::Overview,
             selected_connection_id: None,
             selector_open: false,
             selector_highlighted_index: None,
@@ -622,13 +610,8 @@ impl HostToolsEntity {
             test_resource_sampler: None,
             #[cfg(test)]
             test_snapshot_dispatches: None,
-            pool_stats: None,
             pool_summaries: Vec::new(),
-            topology_snapshot: None,
             last_pool_refresh: None,
-            topology_transform: TopologyTransform::default(),
-            topology_drag: None,
-            topology_menu: None,
             compact_monitor_list_state: tauri_virtual_list_state(
                 0,
                 ListAlignment::Top,
@@ -700,9 +683,7 @@ impl HostToolsEntity {
     }
 
     pub(in crate::workspace) fn refresh_pool_snapshot(&mut self, cx: &mut Context<Self>) {
-        self.pool_stats = Some(self.ssh_registry.monitor_stats());
         self.pool_summaries = self.ssh_registry.list_connection_summaries();
-        self.topology_snapshot = Some(self.ssh_registry.connection_topology_snapshot());
         self.last_pool_refresh = Some(Instant::now());
         cx.notify();
     }
@@ -711,21 +692,6 @@ impl HostToolsEntity {
         self.last_pool_refresh
             .is_none_or(|last_refresh| last_refresh.elapsed() >= interval)
     }
-
-    pub(super) fn pool_stats_snapshot(&self) -> Option<ConnectionPoolMonitorStats> {
-        self.pool_stats.clone()
-    }
-
-    pub(super) fn pool_summaries_snapshot(&self) -> Vec<ConnectionPoolEntrySummary> {
-        // Runtime views receive an immutable projection instead of borrowing
-        // the registry-owned cache across GPUI rendering callbacks.
-        self.pool_summaries.clone()
-    }
-
-    pub(super) fn topology_snapshot(&self) -> Option<ConnectionTopologySnapshot> {
-        self.topology_snapshot.clone()
-    }
-
     pub(super) fn monitor_connections(&self) -> Vec<MonitorConnectionOption> {
         if !self.pool_summaries.is_empty() {
             return self
@@ -1489,20 +1455,6 @@ impl HostToolsEntity {
             return;
         };
         self.start_profiler(connection_id, self.sampling_config, runtime, cx);
-    }
-
-    pub(super) fn set_runtime_section(&mut self, section: ConnectionRuntimeSection) -> bool {
-        if self.active_runtime_section == section {
-            return false;
-        }
-        self.previous_runtime_section = self.active_runtime_section;
-        self.active_runtime_section = section;
-        true
-    }
-
-    pub(in crate::workspace) fn reset_runtime_section(&mut self) {
-        self.active_runtime_section = ConnectionRuntimeSection::Overview;
-        self.previous_runtime_section = ConnectionRuntimeSection::Overview;
     }
 
     pub(in crate::workspace) fn selected_connection_id(&self) -> Option<&str> {

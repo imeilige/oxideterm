@@ -4,7 +4,6 @@ mod ai_background_tasks;
 mod ai_lazy;
 mod ai_runtime_context;
 mod ai_state;
-mod app_lock;
 mod audit_runtime;
 mod breadcrumb_scroll;
 mod browser_behavior;
@@ -108,26 +107,26 @@ use gpui::{
     prelude::*, px, relative, rgb, rgba, svg,
 };
 use oxideterm_connection_monitor::{
-    CompactMonitorRow, ConnectionPoolEntryState, ConnectionPoolEntrySummary,
-    ConnectionPoolMonitorStats, DockerActionKind, FilesystemCommandCapability,
-    FilesystemEntrySeverity, FilesystemFilter, GpuDevice, GpuProvider, GpuSamplingTask,
-    GpuSnapshot, GpuSnapshotStatus, GpuUpdate, LogCommandCapability, LogPreset, MetricsSource,
-    MonitorMetricKind, MonitorSectionKind, MonitorValueLevel, PackageCommandCapability,
-    PackageFilter, PortCommandCapability, PortFilter, ProcessActionKind, ProcessCommandCapability,
-    ProcessFilter, ProcessSort, ProfilerRegistry, ResourceDockerContainer, ResourceDockerStatus,
-    ResourceFilesystemEntry, ResourceFilesystemSnapshot, ResourceFilesystemStatus,
-    ResourceLogEntry, ResourceLogSnapshot, ResourceLogStatus, ResourceMetrics,
-    ResourcePackageEntry, ResourcePackageSnapshot, ResourcePackageStatus, ResourcePortEntry,
-    ResourcePortSnapshot, ResourcePortStatus, ResourceScheduledTask, ResourceScheduledTaskSnapshot,
-    ResourceScheduledTaskStatus, ResourceService, ResourceServiceStatus, ResourceTmuxPane,
-    ResourceTmuxSession, ResourceTmuxSnapshot, ResourceTmuxStatus, ResourceTmuxWindow,
-    ResourceTopProcess, ScheduledTaskActionKind, ScheduledTaskCapability, ScheduledTaskFilter,
-    ServiceActionKind, ServiceCommandCapability, TmuxActionKind, TmuxCommandCapability,
-    build_docker_action_command, build_docker_exec_shell_command, build_docker_follow_logs_command,
-    build_docker_logs_command, build_filesystem_diagnostic_command,
-    build_filesystem_snapshot_command, build_log_follow_command, build_log_snapshot_command,
-    build_package_inspect_command, build_package_snapshot_command, build_port_diagnostic_command,
-    build_port_snapshot_command, build_process_action_command, build_scheduled_task_action_command,
+    CompactMonitorRow, ConnectionPoolEntryState, ConnectionPoolEntrySummary, DockerActionKind,
+    FilesystemCommandCapability, FilesystemEntrySeverity, FilesystemFilter, GpuDevice, GpuProvider,
+    GpuSamplingTask, GpuSnapshot, GpuSnapshotStatus, GpuUpdate, LogCommandCapability, LogPreset,
+    MetricsSource, MonitorMetricKind, MonitorSectionKind, MonitorValueLevel,
+    PackageCommandCapability, PackageFilter, PortCommandCapability, PortFilter, ProcessActionKind,
+    ProcessCommandCapability, ProcessFilter, ProcessSort, ProfilerRegistry,
+    ResourceDockerContainer, ResourceDockerStatus, ResourceFilesystemEntry,
+    ResourceFilesystemSnapshot, ResourceFilesystemStatus, ResourceLogEntry, ResourceLogSnapshot,
+    ResourceLogStatus, ResourceMetrics, ResourcePackageEntry, ResourcePackageSnapshot,
+    ResourcePackageStatus, ResourcePortEntry, ResourcePortSnapshot, ResourcePortStatus,
+    ResourceScheduledTask, ResourceScheduledTaskSnapshot, ResourceScheduledTaskStatus,
+    ResourceService, ResourceServiceStatus, ResourceTmuxPane, ResourceTmuxSession,
+    ResourceTmuxSnapshot, ResourceTmuxStatus, ResourceTmuxWindow, ResourceTopProcess,
+    ScheduledTaskActionKind, ScheduledTaskCapability, ScheduledTaskFilter, ServiceActionKind,
+    ServiceCommandCapability, TmuxActionKind, TmuxCommandCapability, build_docker_action_command,
+    build_docker_exec_shell_command, build_docker_follow_logs_command, build_docker_logs_command,
+    build_filesystem_diagnostic_command, build_filesystem_snapshot_command,
+    build_log_follow_command, build_log_snapshot_command, build_package_inspect_command,
+    build_package_snapshot_command, build_port_diagnostic_command, build_port_snapshot_command,
+    build_process_action_command, build_scheduled_task_action_command,
     build_scheduled_task_diagnostic_command, build_scheduled_task_logs_command,
     build_scheduled_task_snapshot_command, build_service_action_command,
     build_service_follow_logs_command, build_service_logs_command, build_tmux_action_command,
@@ -251,8 +250,8 @@ use oxideterm_workspace::{
 };
 
 use self::connection_monitor::{
-    ConnectionRuntimeSection, HostToolsEntity, HostToolsEvent, HostToolsMessages,
-    HostToolsWindowIntent, HostToolsWindowRequest,
+    HostToolsEntity, HostToolsEvent, HostToolsMessages, HostToolsWindowIntent,
+    HostToolsWindowRequest,
 };
 use self::file_manager::{FileManagerState, FileManagerWorkspaceEvent};
 use self::graphics::GraphicsWorkspaceEntity;
@@ -925,7 +924,6 @@ pub(crate) struct WorkspaceApp {
     render_profile_override: Option<RenderProfile>,
     render_policy: EffectiveRenderPolicy,
     vibrancy_support: VibrancySupport,
-    app_lock: app_lock::AppLockState,
     settings_store: SettingsStore,
     pending_window_ui_state: Option<oxideterm_settings::WindowUiState>,
     window_state_save_task: Option<Task<()>>,

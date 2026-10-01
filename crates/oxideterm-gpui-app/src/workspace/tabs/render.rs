@@ -23,8 +23,6 @@ fn tab_kind_icon(kind: &TabKind) -> LucideIcon {
         TabKind::MoshTerminal => LucideIcon::Terminal,
         TabKind::FileManager => LucideIcon::FolderOpen,
         TabKind::Graphics | TabKind::RemoteDesktop => LucideIcon::Monitor,
-        TabKind::Runtime | TabKind::ConnectionPool => LucideIcon::Gauge,
-        TabKind::Topology => LucideIcon::Network,
         TabKind::Sftp => LucideIcon::FolderInput,
         TabKind::Forwards => LucideIcon::ArrowLeftRight,
         TabKind::SessionManager => LucideIcon::LayoutList,

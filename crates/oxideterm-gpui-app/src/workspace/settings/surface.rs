@@ -423,17 +423,6 @@ impl WorkspaceApp {
                 cli.loading.hash(&mut hasher);
                 cli.error.is_some().hash(&mut hasher);
                 cli.status.hash(&mut hasher);
-                let app_lock_section_index =
-                    2 + usize::from(cfg!(any(target_os = "windows", target_os = "macos")));
-                if index
-                    == oxideterm_settings_model::SETTINGS_SECTION_HEADER_ITEM_COUNT
-                        + app_lock_section_index
-                {
-                    // Only the application-lock card changes height when its
-                    // configured action set switches between one and two buttons.
-                    self.app_lock.configured.hash(&mut hasher);
-                    settings.sidebar_ui.show_app_lock_icon.hash(&mut hasher);
-                }
             }
             SettingsTab::Terminal => {
                 format!("{:?}", route.terminal_page).hash(&mut hasher);
