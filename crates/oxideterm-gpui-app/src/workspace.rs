@@ -19,7 +19,6 @@ mod graphics_vnc;
 mod history_quit;
 pub(crate) use history_quit::request_app_quit;
 mod ime;
-mod knowledge;
 mod local_sessions;
 mod local_shell_launcher;
 mod local_terminal_background;
@@ -86,7 +85,6 @@ use std::{
 use self::{
     ai_lazy::LazyAiRagStore,
     breadcrumb_scroll::scroll_breadcrumb_by_wheel,
-    knowledge::KnowledgeWorkspaceLayout,
     path_completion::{
         PathCompletionCandidate, PathCompletionOwner, PathCompletionState,
         local_path_completion_request, remote_path_completion_request,
@@ -253,10 +251,6 @@ use self::ime::{
     HostToolsPlainTextImeFrame, TextInputAnchorStore, WorkspaceImeDragSelection,
     WorkspaceImeElement, WorkspaceImeSelection, WorkspaceImeTarget,
     active_ime_should_defer_input_key, workspace_ime_target_for_plain_host_tools_input,
-};
-use self::knowledge::{
-    KNOWLEDGE_WORKSPACE_SECTION_COUNT, KNOWLEDGE_WORKSPACE_SECTION_ESTIMATED_HEIGHT,
-    KNOWLEDGE_WORKSPACE_SECTION_OVERSCAN,
 };
 use self::new_connection::{
     ConnectionFlowEntity, ConnectionFlowEvent, NativeSshPromptHandler, NewConnectionField,
@@ -789,7 +783,6 @@ pub(crate) struct WorkspaceApp {
     active_session_sidebar_focused_node_id: Option<NodeId>,
     active_session_sidebar_list_state: ListState,
     active_session_sidebar_list_cache: RefCell<VirtualListSignatureCache>,
-    knowledge_workspace_list_state: ListState,
     open_settings_select: Option<SettingsSelect>,
     settings_theme_preview: Option<String>,
     settings_theme_scroll: ScrollHandle,
@@ -872,7 +865,6 @@ pub(crate) struct WorkspaceApp {
     embedded_sftp_node_id: Option<NodeId>,
     embedded_sftp_pinned: bool,
     sftp_presentation_request: Option<sftp::SftpPresentationRequest>,
-    knowledge_workspace: Entity<knowledge::KnowledgeWorkspaceEntity>,
     sftp_view: Entity<sftp::SftpWorkspaceEntity>,
     sftp_pages: HashMap<TabId, sftp::views::SftpPage>,
     sftp_dispatch_surface: Rc<Cell<Option<sftp::SftpSurfaceId>>>,

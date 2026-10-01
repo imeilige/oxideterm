@@ -962,9 +962,7 @@
     "cloud_sync": "Cloud sync and rollback",
     "cloud_sync_desc": "Push, pull, preview, resolve conflicts, and restore rollback backups across S3, WebDAV, or Git backends.",
     "quick_commands": "Quick commands",
-    "quick_commands_desc": "Save reusable commands by group, search them quickly, and run them from the terminal command bar.",
-    "knowledge_base": "Knowledge base and memory",
-    "knowledge_base_desc": "Index Markdown or text collections for semantic search, embeddings, and OxideSens context."
+    "quick_commands_desc": "Save reusable commands by group, search them quickly, and run them from the terminal command bar."
   },
   "zen_mode": {
     "hint": "Zen Mode — Press ⌘⇧Z to exit",

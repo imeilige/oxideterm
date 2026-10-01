@@ -871,9 +871,7 @@
     "cloud_sync": "Đồng bộ đám mây và rollback",
     "cloud_sync_desc": "Đẩy, kéo, xem trước, xử lý xung đột và khôi phục bản rollback qua backend S3, WebDAV hoặc Git.",
     "quick_commands": "Lệnh nhanh",
-    "quick_commands_desc": "Lưu lệnh dùng lại theo nhóm, tìm nhanh và chạy từ thanh lệnh terminal.",
-    "knowledge_base": "Kho tri thức và bộ nhớ",
-    "knowledge_base_desc": "Lập chỉ mục bộ sưu tập Markdown hoặc văn bản cho tìm kiếm ngữ nghĩa, embedding và ngữ cảnh OxideSens."
+    "quick_commands_desc": "Lưu lệnh dùng lại theo nhóm, tìm nhanh và chạy từ thanh lệnh terminal."
   },
   "migration": {
     "backup_notice": "OxideTerm đã tạo một bản chụp duy nhất cho dữ liệu trước phiên bản 2.0 của bạn. Đây là bản sao phục hồi, không phải cơ chế tự động quay lại phiên bản cũ.",

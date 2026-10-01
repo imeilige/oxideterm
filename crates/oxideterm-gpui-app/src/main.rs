@@ -337,15 +337,11 @@ fn open_main_workspace_window(
             {
                 eprintln!("failed to open native connection launch: {error}");
             }
-            let close_session = session.clone();
+            let _close_session = session.clone();
             oxideterm_desktop_presence::install_main_window_close_guard(
                 window,
                 cx,
-                move |_window, cx| {
-                    close_session.update(cx, |workspace, cx| {
-                        !workspace.guard_dirty_knowledge_app_quit(cx)
-                    })
-                },
+                move |_window, _cx| true,
             );
             cx.new(|cx| WorkspaceWindowShell::new(session, window, cx))
         },

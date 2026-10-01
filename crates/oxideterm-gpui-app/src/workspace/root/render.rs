@@ -26,27 +26,12 @@ impl WorkspaceApp {
         }
 
         let window_id = window.window_handle().window_id();
-        let document_dialog_owned_by_window = self
-            .ai_entity
-            .read(cx)
-            .knowledge_document_dialog_owned_by(window_id);
         match tab_kind {
             TabKind::Settings => {
                 if let Some(modal) = self.render_settings_navigation_editor(cx) {
                     modals.push(modal);
                 }
                 if let Some(modal) = self.render_ai_mcp_add_server_dialog(cx) {
-                    modals.push(modal);
-                }
-                if let Some(modal) = self.render_knowledge_create_collection_dialog(cx) {
-                    modals.push(modal);
-                }
-                if document_dialog_owned_by_window
-                    && let Some(modal) = self.render_knowledge_new_document_dialog(cx)
-                {
-                    modals.push(modal);
-                }
-                if let Some(modal) = self.render_knowledge_delete_confirm_dialog(cx) {
                     modals.push(modal);
                 }
                 if self
@@ -58,19 +43,6 @@ impl WorkspaceApp {
                     modals.push(self.render_keybinding_reset_all_confirm_dialog(cx));
                 }
                 if let Some(modal) = self.render_settings_managed_key_dialog(cx) {
-                    modals.push(modal);
-                }
-            }
-            TabKind::Knowledge => {
-                if let Some(modal) = self.render_knowledge_create_collection_dialog(cx) {
-                    modals.push(modal);
-                }
-                if document_dialog_owned_by_window
-                    && let Some(modal) = self.render_knowledge_new_document_dialog(cx)
-                {
-                    modals.push(modal);
-                }
-                if let Some(modal) = self.render_knowledge_delete_confirm_dialog(cx) {
                     modals.push(modal);
                 }
             }
@@ -186,7 +158,6 @@ impl WorkspaceApp {
                         | TabKind::FileManager
                         | TabKind::Graphics
                         | TabKind::CloudSync
-                        | TabKind::Knowledge
                         | TabKind::RemoteDesktop
                 )
             })
@@ -211,11 +182,6 @@ impl WorkspaceApp {
                 (TabKind::Forwards, _) => self.render_forwards_surface(window, cx),
                 (TabKind::SessionManager, _) => self.render_session_manager_surface(window, cx),
                 (TabKind::CloudSync, _) => self.render_cloud_sync_surface(cx),
-                (TabKind::Knowledge, _) => self.render_knowledge_workspace_surface(
-                    KnowledgeWorkspaceLayout::MainWindow,
-                    window,
-                    cx,
-                ),
                 (TabKind::RemoteDesktop, _) => {
                     self.render_remote_desktop_surface(*tab_id, window, cx)
                 }
@@ -297,16 +263,10 @@ impl WorkspaceApp {
                     cx.stop_propagation();
                 }),
             )
-            .on_action(cx.listener(|this, _: &Quit, _window, cx| {
-                if this.guard_dirty_knowledge_app_quit(cx) {
-                    // The global listener terminates the process, so retain this action until the
-                    // user has explicitly saved or discarded the Knowledge draft.
-                    cx.stop_propagation();
-                } else {
-                    // GPUI actions stop during the bubble phase by default. A clean workspace must
-                    // explicitly continue to the application-level quit handler.
-                    cx.propagate();
-                }
+            .on_action(cx.listener(|_this, _: &Quit, _window, cx| {
+                // GPUI actions stop during the bubble phase by default, so a clean
+                // workspace must explicitly continue to the application quit handler.
+                cx.propagate();
             }))
             .on_mouse_down(
                 MouseButton::Left,
@@ -324,7 +284,6 @@ impl WorkspaceApp {
                 let owns_selection = matches!(
                     target,
                     ime::WorkspaceImeTarget::ActiveSessionSearch
-                        | ime::WorkspaceImeTarget::KnowledgeSearch
                 );
                 if owns_selection
                     && this
@@ -506,12 +465,6 @@ impl WorkspaceApp {
                 {
                     // The editor owns its complete key model, including Tab and
                     // navigation keys that otherwise fall through to the pane.
-                } else if this.handle_knowledge_workspace_key(event, window, cx) {
-                    window.prevent_default();
-                    cx.stop_propagation();
-                } else if this.knowledge_text_editor_focused(window, cx) {
-                    // Notes editors and menus own their keys instead of falling through
-                    // to terminal shortcuts.
                 } else if this.forward_remote_desktop_key_from_capture(event, cx) {
                     window.prevent_default();
                     cx.stop_propagation();
@@ -625,7 +578,6 @@ impl WorkspaceApp {
             ))
             .on_mouse_move(cx.listener(|this, event: &MouseMoveEvent, window, cx| {
                 this.update_sidebar_resize(event, window, cx);
-                this.update_knowledge_resize(event, window, cx);
                 this.update_embedded_sftp_sidebar_resize(event, window, cx);
                 this.update_ai_sidebar_resize(event, window, cx);
                 this.update_sftp_pane_resize(event, window, cx);
@@ -1302,7 +1254,6 @@ impl WorkspaceApp {
                 this.update_tab_drag(event, window, cx);
                 this.update_sidebar_resize(event, window, cx);
                 this.update_embedded_sftp_sidebar_resize(event, window, cx);
-                this.update_knowledge_resize(event, window, cx);
                 this.update_ai_sidebar_resize(event, window, cx);
                 this.update_sftp_pane_resize(event, window, cx);
                 this.update_sftp_queue_resize(event, window, cx);
@@ -1329,7 +1280,6 @@ impl WorkspaceApp {
         let capture_owner = self.browser_pointer_capture_owner(cx);
         let was_read_only_dragging = self.read_only_selection_drag_active();
         self.finish_sidebar_resize(cx);
-        self.finish_knowledge_resize(cx);
         self.finish_embedded_sftp_sidebar_resize(cx);
         self.finish_ai_sidebar_resize(cx);
         self.finish_sftp_pane_resize(cx);

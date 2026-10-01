@@ -962,9 +962,7 @@
     "cloud_sync": "云同步与回滚",
     "cloud_sync_desc": "通过 S3、WebDAV 或 Git 后端上传、拉取、预览、解决冲突并恢复回滚备份。",
     "quick_commands": "快捷命令",
-    "quick_commands_desc": "按分组保存常用命令，快速搜索，并从终端命令栏运行。",
-    "knowledge_base": "知识库与记忆",
-    "knowledge_base_desc": "索引 Markdown 或文本集合，用于语义检索、嵌入向量和 OxideSens 上下文。"
+    "quick_commands_desc": "按分组保存常用命令，快速搜索，并从终端命令栏运行。"
   },
   "zen_mode": {
     "hint": "Zen 模式 — 按 ⌘⇧Z 退出",

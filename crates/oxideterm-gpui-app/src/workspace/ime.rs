@@ -115,8 +115,6 @@ pub(super) enum WorkspaceImeTarget {
     CommandPalette,
     ShortcutsModalSearch,
     ActiveSessionSearch,
-    KnowledgeSearch,
-    KnowledgeRename,
     Search(PaneId),
     TerminalCommandSenderCompact,
     TerminalCwdSearch,
@@ -488,8 +486,6 @@ impl WorkspaceImeTarget {
             Self::CommandPalette => 4,
             Self::ShortcutsModalSearch => 5,
             Self::ActiveSessionSearch => 22,
-            Self::KnowledgeSearch => 23,
-            Self::KnowledgeRename => 24,
             Self::Search(pane_id) => (1_u64 << 63) | pane_id.0,
             Self::TerminalCommandSenderCompact => 2,
             Self::TerminalCwdSearch => 18,
@@ -1020,9 +1016,6 @@ impl WorkspaceApp {
     }
 
     pub(super) fn active_ime_target(&self, cx: &App) -> Option<WorkspaceImeTarget> {
-        if self.knowledge_workspace.read(cx).rename.is_some() {
-            return Some(WorkspaceImeTarget::KnowledgeRename);
-        }
         if self.tab_rename_dialog.is_some() {
             // The blocking rename dialog owns text input ahead of background surfaces.
             return Some(WorkspaceImeTarget::TabRename);
@@ -1068,28 +1061,6 @@ impl WorkspaceApp {
             if let Some(input) = self.ai_entity.read(cx).focused_settings_input() {
                 return Some(WorkspaceImeTarget::Settings(input));
             }
-        }
-
-        if (self.selected_ime_target == Some(WorkspaceImeTarget::KnowledgeSearch)
-            || self
-                .selected_ime_range
-                .as_ref()
-                .is_some_and(|selection| selection.target == WorkspaceImeTarget::KnowledgeSearch))
-            && self
-                .knowledge_workspace
-                .read(cx)
-                .navigator_search_window
-                .is_some_and(|owner| {
-                    let main = self
-                        .window_registry
-                        .handle_for_role(super::window_registry::WindowRole::Main);
-                    !main.is_some_and(|handle| handle.window_id() == owner)
-                        || self
-                            .active_tab(cx)
-                            .is_some_and(|tab| tab.kind == oxideterm_workspace::TabKind::Knowledge)
-                })
-        {
-            return Some(WorkspaceImeTarget::KnowledgeSearch);
         }
 
         if self.session_search_open
@@ -1290,7 +1261,6 @@ impl WorkspaceApp {
                 return None;
             }
         }
-        let knowledge = self.knowledge_workspace.read(cx);
         let owner = match target {
             WorkspaceImeTarget::Search(pane_id) => self
                 .tabs(cx)
@@ -1310,10 +1280,6 @@ impl WorkspaceApp {
                         })
                 })
                 .map(|handle| handle.window_id()),
-            WorkspaceImeTarget::KnowledgeSearch => knowledge.navigator_search_window,
-            WorkspaceImeTarget::KnowledgeRename => {
-                knowledge.rename.as_ref().map(|rename| rename.window_id)
-            }
             _ => None,
         };
         if target == WorkspaceImeTarget::AiInlinePrompt
@@ -1322,34 +1288,6 @@ impl WorkspaceApp {
             return None;
         }
         if matches!(target, WorkspaceImeTarget::Search(_)) && owner != Some(window_id) {
-            return None;
-        }
-        if matches!(
-            target,
-            WorkspaceImeTarget::KnowledgeSearch | WorkspaceImeTarget::KnowledgeRename
-        ) {
-            if owner != Some(window_id) {
-                return None;
-            }
-            let main_window = self
-                .window_registry
-                .handle_for_role(super::window_registry::WindowRole::Main);
-            if main_window.is_some_and(|handle| handle.window_id() == window_id)
-                && !self
-                    .active_tab(cx)
-                    .is_some_and(|tab| tab.kind == oxideterm_workspace::TabKind::Knowledge)
-            {
-                return None;
-            }
-        }
-        if matches!(
-            target,
-            WorkspaceImeTarget::Settings(SettingsInput::KnowledgeDocumentTitle)
-        ) && !self
-            .ai_entity
-            .read(cx)
-            .knowledge_document_dialog_owned_by(window_id)
-        {
             return None;
         }
         Some(target)
@@ -1846,7 +1784,6 @@ impl WorkspaceApp {
         match target {
             WorkspaceImeTarget::AiChatInput
             | WorkspaceImeTarget::AiConversationRename
-            | WorkspaceImeTarget::KnowledgeSearch
             | WorkspaceImeTarget::AiMessageEdit
             | WorkspaceImeTarget::Sftp(_, _)
             | WorkspaceImeTarget::ReadOnlyText(_) => {
@@ -2070,18 +2007,6 @@ impl WorkspaceApp {
             }
             WorkspaceImeTarget::ShortcutsModalSearch => Some(self.shortcuts_modal.query.clone()),
             WorkspaceImeTarget::ActiveSessionSearch => Some(self.session_search_query.clone()),
-            WorkspaceImeTarget::KnowledgeSearch => Some(
-                self.knowledge_workspace
-                    .read(cx)
-                    .navigator_query
-                    .to_string(),
-            ),
-            WorkspaceImeTarget::KnowledgeRename => self
-                .knowledge_workspace
-                .read(cx)
-                .rename
-                .as_ref()
-                .map(|rename| rename.name.clone()),
             WorkspaceImeTarget::Search(pane_id) => self
                 .search
                 .panes
@@ -2897,32 +2822,6 @@ impl WorkspaceApp {
                 self.show_active_input_caret(cx);
                 cx.notify();
             }
-            WorkspaceImeTarget::KnowledgeSearch => {
-                self.knowledge_workspace.update(cx, |state, _| {
-                    let mut query = state.navigator_query.to_string();
-                    replace_utf16(&mut query, replacement_range, text);
-                    state.navigator_query = query.into();
-                });
-                self.queue_knowledge_search(cx);
-                self.show_active_input_caret(cx);
-                cx.notify();
-            }
-            WorkspaceImeTarget::KnowledgeRename => {
-                self.knowledge_workspace.update(cx, |state, _| {
-                    if state.metadata_task.is_none()
-                        && let Some(rename) = state.rename.as_mut()
-                    {
-                        replace_utf16(&mut rename.name, replacement_range, text);
-                    }
-                });
-                self.show_active_input_caret(cx);
-                cx.notify();
-            }
-            WorkspaceImeTarget::ActiveSessionSearch => {
-                replace_utf16(&mut self.session_search_query, replacement_range, text);
-                self.show_active_input_caret(cx);
-                cx.notify();
-            }
             WorkspaceImeTarget::ShortcutsModalSearch => {
                 if self.shortcuts_modal.presence.phase()
                     == oxideterm_gpui_ui::motion::ExitPhase::Exiting
@@ -2931,6 +2830,11 @@ impl WorkspaceApp {
                 }
                 replace_utf16(&mut self.shortcuts_modal.query, replacement_range, text);
                 self.shortcuts_modal.scroll_handle = gpui::UniformListScrollHandle::new();
+                self.show_active_input_caret(cx);
+                cx.notify();
+            }
+            WorkspaceImeTarget::ActiveSessionSearch => {
+                replace_utf16(&mut self.session_search_query, replacement_range, text);
                 self.show_active_input_caret(cx);
                 cx.notify();
             }

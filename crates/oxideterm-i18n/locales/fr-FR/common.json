@@ -962,9 +962,7 @@
     "cloud_sync": "Synchronisation cloud et restauration",
     "cloud_sync_desc": "Poussez, tirez, prévisualisez, résolvez les conflits et restaurez des sauvegardes via S3, WebDAV ou Git.",
     "quick_commands": "Commandes rapides",
-    "quick_commands_desc": "Enregistrez des commandes réutilisables par groupe, recherchez-les vite et lancez-les depuis la barre de commande du terminal.",
-    "knowledge_base": "Base de connaissances et mémoire",
-    "knowledge_base_desc": "Indexez des collections Markdown ou texte pour la recherche sémantique, les embeddings et le contexte OxideSens."
+    "quick_commands_desc": "Enregistrez des commandes réutilisables par groupe, recherchez-les vite et lancez-les depuis la barre de commande du terminal."
   },
   "zen_mode": {
     "hint": "Mode Zen — Appuyez sur ⌘⇧Z pour quitter",

@@ -871,9 +871,7 @@
     "cloud_sync": "Sincronização em nuvem e reversão",
     "cloud_sync_desc": "Envie, baixe, pré-visualize, resolva conflitos e restaure backups de reversão usando S3, WebDAV ou Git.",
     "quick_commands": "Comandos rápidos",
-    "quick_commands_desc": "Salve comandos reutilizáveis por grupo, pesquise rapidamente e execute pela barra de comandos do terminal.",
-    "knowledge_base": "Base de conhecimento e memória",
-    "knowledge_base_desc": "Indexe coleções Markdown ou texto para busca semântica, embeddings e contexto do OxideSens."
+    "quick_commands_desc": "Salve comandos reutilizáveis por grupo, pesquise rapidamente e execute pela barra de comandos do terminal."
   },
   "migration": {
     "backup_notice": "O OxideTerm criou uma captura única dos seus dados anteriores à versão 2.0. Ela é uma cópia de recuperação, não uma reversão automática.",

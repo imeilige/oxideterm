@@ -962,9 +962,7 @@
     "cloud_sync": "Sincronizzazione cloud e rollback",
     "cloud_sync_desc": "Push, pull, anteprima, risoluzione conflitti e ripristino rollback tramite backend S3, WebDAV o Git.",
     "quick_commands": "Comandi rapidi",
-    "quick_commands_desc": "Salva comandi riutilizzabili per gruppo, cercali rapidamente ed eseguili dalla barra comandi del terminale.",
-    "knowledge_base": "Base di conoscenza e memoria",
-    "knowledge_base_desc": "Indicizza raccolte Markdown o testo per ricerca semantica, embedding e contesto OxideSens."
+    "quick_commands_desc": "Salva comandi riutilizzabili per gruppo, cercali rapidamente ed eseguili dalla barra comandi del terminale."
   },
   "zen_mode": {
     "hint": "Modalità Zen — Premi ⌘⇧Z per uscire",

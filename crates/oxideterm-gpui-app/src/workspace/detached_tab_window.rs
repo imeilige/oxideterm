@@ -25,12 +25,7 @@ impl DetachedTabWindow {
     ) -> Self {
         let focus_handle = cx.focus_handle();
         let session_observation = window_shell::observe_window_session(&session, cx);
-        let session_on_close = session.clone();
-        window.on_window_should_close(cx, move |window, cx| {
-            session_on_close.update(cx, |session, cx| {
-                !session.guard_detached_knowledge_window_close(tab_id, window, cx)
-            })
-        });
+        window.on_window_should_close(cx, move |_window, _cx| true);
         let session_on_close = session.clone();
         cx.on_next_frame(window, |detached, _window, cx| {
             detached.ready = true;
@@ -236,47 +231,6 @@ impl Render for DetachedTabWindow {
                         }
                         return session.handle_ai_inline_panel_key(event, window, cx);
                     }
-                    if matches!(
-                        session.active_ime_target_for_window(window_id, cx),
-                        Some(
-                            super::ime::WorkspaceImeTarget::KnowledgeSearch
-                                | super::ime::WorkspaceImeTarget::KnowledgeRename
-                                | super::ime::WorkspaceImeTarget::ReadOnlyText(_)
-                        )
-                    ) {
-                        if session.defer_active_ime_key(&event.keystroke, window, cx) {
-                            return false;
-                        }
-                        if session.handle_active_text_input_edit_shortcut(&event.keystroke, cx)
-                            || session
-                                .handle_active_text_input_delete_selection(&event.keystroke, cx)
-                            || session.handle_active_text_input_newline(&event.keystroke, cx)
-                            || session.handle_active_text_input_transpose(&event.keystroke, cx)
-                            || session.handle_active_text_input_navigation(&event.keystroke, cx)
-                        {
-                            return true;
-                        }
-                        return session.handle_knowledge_input_key(event, window, cx);
-                    }
-                    if session
-                        .ai_entity
-                        .read(cx)
-                        .knowledge_document_dialog_owned_by(window_id)
-                    {
-                        if session.defer_active_ime_key(&event.keystroke, window, cx) {
-                            return false;
-                        }
-                        if session.handle_active_text_input_edit_shortcut(&event.keystroke, cx)
-                            || session
-                                .handle_active_text_input_delete_selection(&event.keystroke, cx)
-                            || session.handle_active_text_input_newline(&event.keystroke, cx)
-                            || session.handle_active_text_input_transpose(&event.keystroke, cx)
-                            || session.handle_active_text_input_navigation(&event.keystroke, cx)
-                        {
-                            return true;
-                        }
-                        return session.handle_knowledge_document_dialog_key(event, cx);
-                    }
                     if matches!(kind, Some(TabKind::Sftp | TabKind::Forwards)) {
                         if session.defer_active_ime_key(&event.keystroke, window, cx) {
                             return false;
@@ -299,32 +253,17 @@ impl Render for DetachedTabWindow {
                         }
                         return session.handle_forwards_key(event, cx);
                     }
-                    let is_knowledge_window = session
-                        .tabs(cx)
-                        .iter()
-                        .any(|tab| tab.id == detached.tab_id && tab.kind == TabKind::Knowledge);
-                    if is_knowledge_window && session.knowledge_leave_confirmation_open(cx) {
-                        session.handle_knowledge_leave_confirmation_key(event, window, cx)
-                    } else {
-                        false
-                    }
+                    false
                 });
                 if handled {
                     window.prevent_default();
                     cx.stop_propagation();
                 }
             }))
-            .on_action(cx.listener(|detached, _: &Quit, _window, cx| {
-                let intercepted = detached
-                    .session
-                    .update(cx, |session, cx| session.guard_dirty_knowledge_app_quit(cx));
-                if intercepted {
-                    cx.stop_propagation();
-                } else {
-                    // Detached roots also stop actions during bubbling, so clean exits must reach
-                    // the application-level handler explicitly.
-                    cx.propagate();
-                }
+            .on_action(cx.listener(|_detached, _: &Quit, _window, cx| {
+                // Detached roots also stop actions during bubbling, so clean exits must reach
+                // the application-level handler explicitly.
+                cx.propagate();
             }))
             .map(|root| {
                 // Window creation can paint this root while its Workspace is leased.

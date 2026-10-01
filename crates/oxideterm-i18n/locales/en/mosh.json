@@ -1,6 +1,12 @@
 {
-  "terminal": { "typeMosh": "Mosh" },
-  "modals": { "new_connection": { "transport_mosh": "Mosh" } },
+  "terminal": {
+    "typeMosh": "Mosh"
+  },
+  "modals": {
+    "new_connection": {
+      "transport_mosh": "Mosh"
+    }
+  },
   "mosh": {
     "form": {
       "title": "New Mosh Connection",

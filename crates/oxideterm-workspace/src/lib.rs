@@ -36,7 +36,6 @@ pub enum TabKind {
     Forwards,
     SessionManager,
     CloudSync,
-    Knowledge,
     RemoteDesktop,
     Settings,
 }

@@ -7,11 +7,6 @@ use super::super::*;
 pub(in crate::workspace) enum ActiveTabWindowModalKind {
     SettingsNavigationEditor,
     AiMcpServer,
-    KnowledgeLeaveConfirmation,
-    KnowledgeRename,
-    KnowledgeCollectionCreate,
-    KnowledgeDocumentCreate,
-    KnowledgeDelete,
     KeybindingReset,
     ManagedKey,
     SessionManagerGroupManager,
@@ -667,49 +662,8 @@ impl WorkspaceApp {
         }
         let active_tab = self.active_content_tab(cx)?;
         match active_tab.kind {
-            TabKind::Knowledge => {
-                if self.knowledge_workspace.read(cx).rename.is_some() {
-                    return Some(ActiveTabWindowModalSnapshot {
-                        kind: ActiveTabWindowModalKind::KnowledgeRename,
-                        phase: visible,
-                    });
-                }
-                if self.knowledge_leave_confirmation_open(cx) {
-                    return Some(ActiveTabWindowModalSnapshot {
-                        kind: ActiveTabWindowModalKind::KnowledgeLeaveConfirmation,
-                        phase: visible,
-                    });
-                }
-                let ai = self.ai_entity.read(cx);
-                if ai.knowledge_delete_confirm().is_some() {
-                    return Some(ActiveTabWindowModalSnapshot {
-                        kind: ActiveTabWindowModalKind::KnowledgeDelete,
-                        phase: visible,
-                    });
-                }
-                let main_window_id = self
-                    .window_registry
-                    .handle_for_role(window_registry::WindowRole::Main)
-                    .map(|handle| handle.window_id());
-                if main_window_id
-                    .is_some_and(|window_id| ai.knowledge_document_dialog_owned_by(window_id))
-                {
-                    return Some(ActiveTabWindowModalSnapshot {
-                        kind: ActiveTabWindowModalKind::KnowledgeDocumentCreate,
-                        phase: ai.knowledge_document_dialog_phase(),
-                    });
-                }
-                if ai.knowledge_create_dialog_open() {
-                    return Some(ActiveTabWindowModalSnapshot {
-                        kind: ActiveTabWindowModalKind::KnowledgeCollectionCreate,
-                        phase: ai.knowledge_create_dialog_phase(),
-                    });
-                }
-                None
-            }
             TabKind::Settings => {
                 let settings = self.settings_workspace.read(cx);
-                let ai = self.ai_entity.read(cx);
                 if settings.managed_key_dialog_open() {
                     Some(ActiveTabWindowModalSnapshot {
                         kind: ActiveTabWindowModalKind::ManagedKey,
@@ -719,35 +673,6 @@ impl WorkspaceApp {
                     Some(ActiveTabWindowModalSnapshot {
                         kind: ActiveTabWindowModalKind::KeybindingReset,
                         phase: snapshot.phase,
-                    })
-                } else if ai.knowledge_delete_confirm().is_some() {
-                    Some(ActiveTabWindowModalSnapshot {
-                        kind: ActiveTabWindowModalKind::KnowledgeDelete,
-                        phase: visible,
-                    })
-                } else if self
-                    .window_registry
-                    .handle_for_role(window_registry::WindowRole::Main)
-                    .is_some_and(|handle| ai.knowledge_document_dialog_owned_by(handle.window_id()))
-                {
-                    Some(ActiveTabWindowModalSnapshot {
-                        kind: ActiveTabWindowModalKind::KnowledgeDocumentCreate,
-                        phase: ai.knowledge_document_dialog_phase(),
-                    })
-                } else if ai.knowledge_create_dialog_open() {
-                    Some(ActiveTabWindowModalSnapshot {
-                        kind: ActiveTabWindowModalKind::KnowledgeCollectionCreate,
-                        phase: ai.knowledge_create_dialog_phase(),
-                    })
-                } else if ai.mcp_dialog_is_open() {
-                    Some(ActiveTabWindowModalSnapshot {
-                        kind: ActiveTabWindowModalKind::AiMcpServer,
-                        phase: ai.mcp_dialog_presence().phase(),
-                    })
-                } else if settings.navigation_editor_open() {
-                    Some(ActiveTabWindowModalSnapshot {
-                        kind: ActiveTabWindowModalKind::SettingsNavigationEditor,
-                        phase: visible,
                     })
                 } else {
                     None
@@ -1034,12 +959,6 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) -> bool {
         match kind {
-            ActiveTabWindowModalKind::KnowledgeRename => {
-                self.handle_knowledge_input_key(event, window, cx)
-            }
-            ActiveTabWindowModalKind::KnowledgeLeaveConfirmation => {
-                self.handle_knowledge_leave_confirmation_key(event, window, cx)
-            }
             ActiveTabWindowModalKind::ManagedKey => {
                 if event.keystroke.key.as_str() == "escape" {
                     self.close_managed_key_dialog(cx);
@@ -1048,15 +967,6 @@ impl WorkspaceApp {
             }
             ActiveTabWindowModalKind::KeybindingReset => {
                 self.handle_keybinding_reset_confirm_key(event, cx)
-            }
-            ActiveTabWindowModalKind::KnowledgeDelete => {
-                self.handle_knowledge_delete_confirm_key(event, cx)
-            }
-            ActiveTabWindowModalKind::KnowledgeDocumentCreate => {
-                self.handle_knowledge_document_dialog_key(event, cx)
-            }
-            ActiveTabWindowModalKind::KnowledgeCollectionCreate => {
-                self.handle_knowledge_collection_dialog_key(event, cx)
             }
             ActiveTabWindowModalKind::AiMcpServer => self.handle_ai_mcp_add_dialog_key(event, cx),
             ActiveTabWindowModalKind::SettingsNavigationEditor => {

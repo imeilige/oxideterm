@@ -48,7 +48,6 @@ pub(in crate::workspace) fn tab_surface_kind(kind: &TabKind) -> &'static str {
         TabKind::Forwards => "forwards",
         TabKind::SessionManager => "session_manager",
         TabKind::CloudSync => "cloud_sync",
-        TabKind::Knowledge => "knowledge",
         TabKind::RemoteDesktop => "remote_desktop",
         TabKind::Settings => "settings",
     }

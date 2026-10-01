@@ -456,9 +456,6 @@ impl WorkspaceApp {
         });
         let terminal_command_sender_observation =
             cx.observe(&terminal_command_sender, |_, _, cx| cx.notify());
-        // The Knowledge workspace is tab-owned so its navigator and editor survive activity-bar
-        // navigation without occupying the global context sidebar.
-        let knowledge_workspace = cx.new(|_| knowledge::KnowledgeWorkspaceEntity::default());
         let mut workspace = Self {
             focus_handle,
             main_window_tabs: WorkspaceWindowTabState::new(),
@@ -599,18 +596,6 @@ impl WorkspaceApp {
             )
             .measure_all(),
             active_session_sidebar_list_cache: RefCell::new(VirtualListSignatureCache::default()),
-            // Collections and documents scroll independently so an empty document result can own
-            // the full remaining navigator region instead of becoming one short list row.
-            knowledge_workspace_list_state: ListState::new(
-                KNOWLEDGE_WORKSPACE_SECTION_COUNT,
-                ListAlignment::Top,
-                TauriVirtualListSpec::new(
-                    px(KNOWLEDGE_WORKSPACE_SECTION_ESTIMATED_HEIGHT),
-                    KNOWLEDGE_WORKSPACE_SECTION_OVERSCAN,
-                )
-                .overdraw(),
-            )
-            .measure_all(),
             open_settings_select: None,
             settings_theme_preview: None,
             settings_theme_scroll: ScrollHandle::new(),
@@ -702,7 +687,6 @@ impl WorkspaceApp {
             embedded_sftp_node_id: None,
             embedded_sftp_pinned: false,
             sftp_presentation_request: None,
-            knowledge_workspace,
             sftp_view,
             sftp_pages: HashMap::new(),
             sftp_dispatch_surface: Rc::new(Cell::new(None)),
@@ -743,18 +727,10 @@ impl WorkspaceApp {
             overlay,
             _overlay_observation: overlay_observation,
         };
-        let workspace_window_bounds = cx.observe_window_bounds(window, |this, window, cx| {
+        let _workspace_window_bounds = cx.observe_window_bounds(window, |this, window, cx| {
             this.clamp_sidebar_widths_to_viewport(current_window_size(window).0, cx);
             this.update_ai_sidebar_overlay_for_window_bounds(window, cx);
             this.capture_main_window_state(window, cx);
-        });
-        let ai_knowledge_activation = cx.observe_window_activation(window, |this, window, cx| {
-            if window.is_window_active() {
-                this.knowledge_sync_external_edit(false, cx);
-            }
-        });
-        workspace.ai_entity.update(cx, |ai, _cx| {
-            ai.retain_window_observers(workspace_window_bounds, ai_knowledge_activation);
         });
         workspace.sync_ai_workspace_visibility(cx);
         if workspace.ai_sidebar_visible() {

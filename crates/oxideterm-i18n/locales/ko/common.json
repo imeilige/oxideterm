@@ -962,9 +962,7 @@
     "cloud_sync": "클라우드 동기화와 롤백",
     "cloud_sync_desc": "S3, WebDAV, Git 백엔드에서 푸시, 풀, 미리보기, 충돌 해결, 롤백 복원을 수행합니다.",
     "quick_commands": "빠른 명령",
-    "quick_commands_desc": "재사용할 명령을 그룹별로 저장하고 빠르게 검색해 터미널 명령 표시줄에서 실행합니다.",
-    "knowledge_base": "지식 베이스와 메모리",
-    "knowledge_base_desc": "Markdown 또는 텍스트 컬렉션을 색인화해 의미 검색, 임베딩, OxideSens 컨텍스트에 사용합니다."
+    "quick_commands_desc": "재사용할 명령을 그룹별로 저장하고 빠르게 검색해 터미널 명령 표시줄에서 실행합니다."
   },
   "zen_mode": {
     "hint": "Zen 모드 — ⌘⇧Z를 눌러 종료",

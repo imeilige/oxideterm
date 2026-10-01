@@ -9,7 +9,7 @@ use oxideterm_settings::{
     create_default_highlight_rule, reindex_highlight_rules, sanitize_highlight_rule_sets,
 };
 use oxideterm_settings_model::{
-    AiSettingsPage, CUSTOM_SEMANTIC_SCHEME_PREFIX, CliCompanionStatus, KnowledgeDeleteTarget,
+    AiSettingsPage, CUSTOM_SEMANTIC_SCHEME_PREFIX, CliCompanionStatus,
     MAX_SEMANTIC_RULES, SEMANTIC_CLASSES, SETTINGS_SECTION_HEADER_ITEM_COUNT, SemanticClass,
     SemanticRuleContext, SemanticRuleDefinition, SemanticSchemeDocument,
     SettingsDynamicSectionCounts, SettingsInputDraftApply, TERMINAL_THEME_COLOR_FIELDS,

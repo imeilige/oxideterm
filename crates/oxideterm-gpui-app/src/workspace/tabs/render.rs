@@ -26,7 +26,6 @@ fn tab_kind_icon(kind: &TabKind) -> LucideIcon {
         TabKind::Forwards => LucideIcon::ArrowLeftRight,
         TabKind::SessionManager => LucideIcon::LayoutList,
         TabKind::CloudSync => LucideIcon::Cloud,
-        TabKind::Knowledge => LucideIcon::BookOpen,
         TabKind::Settings => LucideIcon::Settings,
     }
 }

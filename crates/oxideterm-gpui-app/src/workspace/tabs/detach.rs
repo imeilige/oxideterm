@@ -103,7 +103,6 @@ enum DetachedTabSurfaceRoute {
     Settings,
     Sftp(TabId),
     Forwards(TabId),
-    Knowledge(TabId),
     Other,
 }
 
@@ -114,7 +113,6 @@ fn detached_tab_surface_route(tab_id: TabId, kind: &TabKind) -> DetachedTabSurfa
         TabKind::Settings => DetachedTabSurfaceRoute::Settings,
         TabKind::Sftp => DetachedTabSurfaceRoute::Sftp(tab_id),
         TabKind::Forwards => DetachedTabSurfaceRoute::Forwards(tab_id),
-        TabKind::Knowledge => DetachedTabSurfaceRoute::Knowledge(tab_id),
         _ => DetachedTabSurfaceRoute::Other,
     }
 }
@@ -667,21 +665,12 @@ impl WorkspaceApp {
         current_window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let source_window_id = current_window.window_handle().window_id();
+        let _source_window_id = current_window.window_handle().window_id();
         let main_window_id = self
             .window_registry
             .handle_for_role(window_registry::WindowRole::Main)
             .map(|handle| handle.window_id());
-        if let Some(main_window_id) = main_window_id {
-            let transferred = self.ai_entity.update(cx, |ai, cx| {
-                ai.transfer_knowledge_document_dialog_owner(source_window_id, main_window_id, cx)
-            });
-            if transferred {
-                // A native composition cannot move between windows safely.
-                self.ime_marked_text = None;
-                self.clear_ime_selection();
-            }
-        }
+        let _ = main_window_id;
         let transition = self.tab_host.update(cx, |tab_host, _cx| {
             tab_host.return_to_main_and_select(tab_id, tabs::TabMountCloseReason::ReturnToMain)
         });
@@ -709,13 +698,6 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) {
         self.release_settings_select_window(window_id);
-        let dismissed_document_dialog = self.ai_entity.update(cx, |ai, cx| {
-            ai.dismiss_knowledge_document_dialog_for_window(window_id, cx)
-        });
-        if dismissed_document_dialog {
-            self.ime_marked_text = None;
-            self.clear_ime_selection();
-        }
         self.release_workspace_window(window_registration, window_id, cx);
         let transition = self.tab_host.update(cx, |tab_host, _cx| {
             tab_host.remove_tab_for_detached_window_release(tab_id, mount_id, window_id)
@@ -1627,13 +1609,6 @@ impl WorkspaceApp {
             }
             DetachedTabSurfaceRoute::Forwards(tab_id) => {
                 return self.render_forwards_surface_for_tab(tab_id, window, cx);
-            }
-            DetachedTabSurfaceRoute::Knowledge(_tab_id) => {
-                return self.render_knowledge_workspace_surface(
-                    KnowledgeWorkspaceLayout::DetachedWindow,
-                    window,
-                    cx,
-                );
             }
             DetachedTabSurfaceRoute::Other => {}
         }

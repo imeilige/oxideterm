@@ -962,9 +962,7 @@
     "cloud_sync": "クラウド同期とロールバック",
     "cloud_sync_desc": "S3、WebDAV、Git バックエンドでプッシュ、プル、プレビュー、競合解決、ロールバック復元を行います。",
     "quick_commands": "クイックコマンド",
-    "quick_commands_desc": "再利用するコマンドをグループ別に保存し、すばやく検索して端末コマンドバーから実行します。",
-    "knowledge_base": "ナレッジベースとメモリ",
-    "knowledge_base_desc": "Markdown またはテキスト集合を索引化し、セマンティック検索、埋め込み、OxideSens コンテキストに使います。"
+    "quick_commands_desc": "再利用するコマンドをグループ別に保存し、すばやく検索して端末コマンドバーから実行します。"
   },
   "zen_mode": {
     "hint": "Zen モード — ⌘⇧Z で終了",

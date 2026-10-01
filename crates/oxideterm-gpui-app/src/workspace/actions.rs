@@ -851,11 +851,6 @@ impl WorkspaceApp {
             return;
         }
 
-        if self.handle_knowledge_input_key(event, window, cx) {
-            cx.stop_propagation();
-            return;
-        }
-
         if self.active_ime_target(cx) == Some(ime::WorkspaceImeTarget::ActiveSessionSearch) {
             if event.keystroke.key == "escape" {
                 self.session_search_query.clear();
@@ -1226,12 +1221,6 @@ impl WorkspaceApp {
             true
         } else if self.handle_keybinding_reset_confirm_key(event, cx) {
             true
-        } else if self.handle_knowledge_delete_confirm_key(event, cx) {
-            true
-        } else if self.handle_knowledge_document_dialog_key(event, cx) {
-            true
-        } else if self.handle_knowledge_collection_dialog_key(event, cx) {
-            true
         } else {
             self.handle_settings_data_directory_confirm_key(event, cx)
         }
@@ -1301,109 +1290,8 @@ impl WorkspaceApp {
         }
     }
 
-    pub(super) fn handle_knowledge_collection_dialog_key(
-        &mut self,
-        event: &KeyDownEvent,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        if !self.ai_entity.read(cx).knowledge_create_dialog_open() {
-            return false;
-        }
-        match self.handle_standard_confirm_key(event, cx) {
-            Some(ConfirmKeyboardAction::Cancel) => {
-                self.ai_entity.update(cx, |entity, cx| {
-                    entity.close_knowledge_create_dialog(Duration::ZERO, cx);
-                });
-                true
-            }
-            Some(ConfirmKeyboardAction::Confirm) => {
-                if self
-                    .ai_entity
-                    .read(cx)
-                    .knowledge_new_collection_name()
-                    .trim()
-                    .is_empty()
-                {
-                    // Disabled primary buttons retain ownership inside the dialog.
-                    self.reset_standard_confirm_focus();
-                    cx.notify();
-                } else {
-                    self.knowledge_create_collection(cx);
-                    self.ai_entity.update(cx, |entity, cx| {
-                        entity.close_knowledge_create_dialog(Duration::ZERO, cx);
-                    });
-                }
-                true
-            }
-            Some(ConfirmKeyboardAction::Handled) => true,
-            None => false,
-        }
-    }
 
-    pub(super) fn handle_knowledge_document_dialog_key(
-        &mut self,
-        event: &KeyDownEvent,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        if !self.ai_entity.read(cx).knowledge_document_dialog_open() {
-            return false;
-        }
-        match self.handle_standard_confirm_key(event, cx) {
-            Some(ConfirmKeyboardAction::Cancel) => {
-                self.ai_entity.update(cx, |entity, cx| {
-                    entity.close_knowledge_document_dialog(Duration::ZERO, cx);
-                });
-                true
-            }
-            Some(ConfirmKeyboardAction::Confirm) => {
-                if self
-                    .ai_entity
-                    .read(cx)
-                    .knowledge_new_document_title()
-                    .trim()
-                    .is_empty()
-                {
-                    // Disabled primary buttons retain ownership inside the dialog.
-                    self.reset_standard_confirm_focus();
-                    cx.notify();
-                } else {
-                    if self.knowledge_create_blank_document(cx) {
-                        self.ai_entity.update(cx, |entity, cx| {
-                            entity.close_knowledge_document_dialog(Duration::ZERO, cx);
-                        });
-                    }
-                }
-                true
-            }
-            Some(ConfirmKeyboardAction::Handled) => true,
-            None => false,
-        }
-    }
 
-    pub(super) fn handle_knowledge_delete_confirm_key(
-        &mut self,
-        event: &KeyDownEvent,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        if self.ai_entity.read(cx).knowledge_delete_confirm().is_none() {
-            return false;
-        }
-        match self.handle_standard_confirm_key(event, cx) {
-            Some(ConfirmKeyboardAction::Cancel) => {
-                self.ai_entity.update(cx, |entity, cx| {
-                    entity.clear_knowledge_delete_confirm();
-                    cx.notify();
-                });
-                true
-            }
-            Some(ConfirmKeyboardAction::Confirm) => {
-                self.knowledge_confirm_delete(cx);
-                true
-            }
-            Some(ConfirmKeyboardAction::Handled) => true,
-            None => false,
-        }
-    }
 
     pub(super) fn handle_settings_reset_confirm_key(
         &mut self,

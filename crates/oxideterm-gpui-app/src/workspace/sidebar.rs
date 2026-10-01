@@ -160,7 +160,6 @@ mod activity;
 mod ai;
 mod helpers;
 mod region;
-pub(in crate::workspace) use region::sidebar_resize_hotzone_chrome;
 mod sessions;
 mod state;
 mod titlebar;

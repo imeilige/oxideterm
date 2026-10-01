@@ -1,6 +1,12 @@
 {
-  "terminal": { "typeMosh": "Mosh" },
-  "modals": { "new_connection": { "transport_mosh": "Mosh" } },
+  "terminal": {
+    "typeMosh": "Mosh"
+  },
+  "modals": {
+    "new_connection": {
+      "transport_mosh": "Mosh"
+    }
+  },
   "mosh": {
     "form": {
       "title": "Neue Mosh-Verbindung",
@@ -30,10 +36,12 @@
       "missing_credentials": "Mosh-Anmeldedaten fehlen"
     }
   },
-  "sessionManager": { "mosh_profiles": {
-    "delete": "Löschen",
-    "delete_failed": "Mosh-Profil konnte nicht gelöscht werden",
-    "confirm_delete": "Mosh-Profil \"{{name}}\" löschen?",
-    "missing_credentials": "Dieses Mosh-Profil enthält keine gespeicherten Anmeldedaten"
-  } }
+  "sessionManager": {
+    "mosh_profiles": {
+      "delete": "Löschen",
+      "delete_failed": "Mosh-Profil konnte nicht gelöscht werden",
+      "confirm_delete": "Mosh-Profil \"{{name}}\" löschen?",
+      "missing_credentials": "Dieses Mosh-Profil enthält keine gespeicherten Anmeldedaten"
+    }
+  }
 }

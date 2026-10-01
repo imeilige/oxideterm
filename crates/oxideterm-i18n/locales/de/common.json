@@ -962,9 +962,7 @@
     "cloud_sync": "Cloud-Sync und Rollback",
     "cloud_sync_desc": "Push, Pull, Vorschau, Konfliktlösung und Rollback-Wiederherstellung über S3-, WebDAV- oder Git-Backends.",
     "quick_commands": "Schnellbefehle",
-    "quick_commands_desc": "Speichern Sie wiederverwendbare Befehle nach Gruppen, suchen Sie sie schnell und starten Sie sie aus der Terminal-Befehlsleiste.",
-    "knowledge_base": "Wissensbasis und Speicher",
-    "knowledge_base_desc": "Indexieren Sie Markdown- oder Textsammlungen für semantische Suche, Embeddings und OxideSens-Kontext."
+    "quick_commands_desc": "Speichern Sie wiederverwendbare Befehle nach Gruppen, suchen Sie sie schnell und starten Sie sie aus der Terminal-Befehlsleiste."
   },
   "zen_mode": {
     "hint": "Zen-Modus — Drücken Sie ⌘⇧Z zum Beenden",
