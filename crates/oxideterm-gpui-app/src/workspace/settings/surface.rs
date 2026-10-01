@@ -1112,13 +1112,6 @@ impl WorkspaceApp {
                 "failed to load selected bundled terminal font; falling back to system fonts: {error}"
             );
         }
-        if let Err(error) =
-            bundled_fonts::load_terminal_font_explicit_secondary_faces(settings, &cx.text_system())
-        {
-            eprintln!(
-                "failed to load selected secondary bundled terminal fonts; falling back to system fonts: {error}"
-            );
-        }
         self.i18n
             .set_locale(locale_from_settings(settings.general.language));
         if previous_settings.general.language != settings.general.language {

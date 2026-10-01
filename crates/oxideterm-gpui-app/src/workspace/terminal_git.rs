@@ -774,7 +774,6 @@ impl WorkspaceApp {
         self.dismiss_terminal_highlight_popover();
         self.close_terminal_cwd_picker(cx);
         self.close_terminal_project_panel(cx);
-        self.blur_terminal_quick_commands_input(cx);
         self.ime_marked_text = None;
         self.clear_ime_selection();
 

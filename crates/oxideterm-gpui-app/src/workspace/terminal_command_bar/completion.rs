@@ -12,13 +12,12 @@ mod fig_provider;
 mod fig_specs;
 mod history_provider;
 mod path_provider;
-mod quick_command_provider;
 mod render;
 mod types;
 
 pub(self) use common::{
-    normalize_terminal_command_suggestions, put_terminal_history_entry,
-    terminal_command_risk_score_penalty,
+    infer_terminal_ssh_identity_from_buffer, normalize_terminal_command_suggestions,
+    put_terminal_history_entry, terminal_command_risk_score_penalty, terminal_cwd_looks_remote,
 };
 pub(self) use fig_provider::{active_fig_arg_type, terminal_command_fig_suggestions};
 pub(self) use fig_specs::{
@@ -29,9 +28,6 @@ pub(self) use oxideterm_terminal::{
     escape_terminal_path_for_shell, load_local_shell_history_commands,
     normalize_terminal_autosuggest_command, terminal_autosuggest_fuzzy_score,
     tokenize_terminal_command_line,
-};
-pub(self) use quick_command_provider::{
-    infer_terminal_ssh_identity_from_buffer, terminal_cwd_looks_remote,
 };
 pub(self) use types::{
     TerminalCommandContext, TerminalCommandContextType, TerminalFigArgType, TerminalFigOptionSpec,

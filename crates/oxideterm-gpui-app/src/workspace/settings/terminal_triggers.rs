@@ -542,19 +542,6 @@ impl WorkspaceApp {
         }
     }
 
-    pub(in crate::workspace) fn select_terminal_trigger_quick_command(
-        &mut self,
-        quick_command_id: String,
-    ) {
-        if let Some(trigger) = self.terminal_triggers.editor.as_mut()
-            && let TerminalTriggerAction::RunQuickCommand {
-                quick_command_id: selected_id,
-            } = &mut trigger.action
-        {
-            *selected_id = quick_command_id;
-        }
-    }
-
     pub(in crate::workspace) fn select_terminal_trigger_timing(
         &mut self,
         dispatch: TerminalTriggerDispatch,
@@ -1590,28 +1577,14 @@ impl WorkspaceApp {
     }
 
     fn terminal_trigger_quick_command_option(&self, cx: &mut Context<Self>) -> AnyElement {
-        let quick_commands = &self.terminal.read(cx).quick_commands.store.commands;
-        let selected_id = self
-            .terminal_triggers
-            .editor
-            .as_ref()
-            .and_then(|trigger| match &trigger.action {
-                TerminalTriggerAction::RunQuickCommand { quick_command_id } => {
-                    Some(quick_command_id.as_str())
-                }
-                _ => None,
-            })
-            .unwrap_or_default();
-        let selected_label = quick_commands
-            .iter()
-            .find(|command| command.id == selected_id)
-            .map(|command| command.name.clone())
-            .unwrap_or_else(|| self.i18n.t("settings_view.terminal.triggers.quick_command"));
+        // The quick command store is gone, so a legacy RunQuickCommand trigger can
+        // only show the generic label and offers nothing to select.
+        let label = self.i18n.t("settings_view.terminal.triggers.quick_command");
         self.terminal_trigger_compact_field(
             TERMINAL_TRIGGER_FIELD_BASIS,
             self.terminal_trigger_select_field(
-                self.i18n.t("settings_view.terminal.triggers.quick_command"),
-                selected_label,
+                label.clone(),
+                label,
                 SettingsSelect::TerminalTriggerQuickCommand,
                 cx,
             ),

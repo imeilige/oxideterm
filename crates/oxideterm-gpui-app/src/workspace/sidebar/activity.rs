@@ -16,7 +16,6 @@ impl WorkspaceApp {
         let bottom_items = [
             (SidebarSection::Workspace, LucideIcon::Square),
             (SidebarSection::Files, LucideIcon::FolderOpen),
-            (SidebarSection::Notifications, LucideIcon::Bell),
             (SidebarSection::Settings, LucideIcon::Settings),
         ];
         let mut bar = div()
@@ -171,9 +170,6 @@ impl WorkspaceApp {
             SidebarSection::Files => self
                 .active_tab(cx)
                 .is_some_and(|tab| tab.kind == TabKind::FileManager),
-            SidebarSection::Notifications => self
-                .active_tab(cx)
-                .is_some_and(|tab| tab.kind == TabKind::NotificationCenter),
             SidebarSection::Settings => self
                 .active_tab(cx)
                 .is_some_and(|tab| tab.kind == TabKind::Settings),
@@ -186,31 +182,19 @@ impl WorkspaceApp {
         let tooltip = self.activity_icon_tooltip(section);
         let tooltip_id = format!("activity-icon-{}", section.as_settings_key());
         let tooltip_id_for_move = tooltip_id.clone();
-        let badge_count = if section == SidebarSection::Notifications {
-            let notification_count = if self.notification_center.notifications.dnd_enabled {
-                0
-            } else {
-                self.notification_center.notifications.unread_count
-            };
-            notification_count
-        } else if section == SidebarSection::Workspace {
+        let badge_count = if section == SidebarSection::Workspace {
             self.visible_local_terminal_session_count(cx)
                 .saturating_add(self.detached_local_terminals.len())
                 .min(u32::MAX as usize) as u32
         } else {
             0
         };
-        let badge_is_error = section == SidebarSection::Notifications
-            && !self.notification_center.notifications.dnd_enabled
-            && self.notification_center.notifications.unread_critical_count > 0;
-        let badge_color = if badge_is_error {
-            theme.error
-        } else if section == SidebarSection::Workspace && !self.detached_local_terminals.is_empty()
-        {
-            theme.warning
-        } else {
-            theme.accent
-        };
+        let badge_color =
+            if section == SidebarSection::Workspace && !self.detached_local_terminals.is_empty() {
+                theme.warning
+            } else {
+                theme.accent
+            };
         let badge_text_color = if badge_color == theme.accent {
             theme.accent_text
         } else {
@@ -323,8 +307,6 @@ impl WorkspaceApp {
                         }
                     } else if section == SidebarSection::Files {
                         this.open_file_manager_tab(window, cx);
-                    } else if section == SidebarSection::Notifications {
-                        this.open_notification_center_tab(window, cx);
                     } else if section == SidebarSection::HostTools {
                         let _ =
                             this.toggle_context_sidebar_panel(ContextSidebarPanel::HostTools, cx);
@@ -349,7 +331,6 @@ impl WorkspaceApp {
             SidebarSection::Automation => self.i18n.t("sidebar.panels.activity"),
             SidebarSection::Workspace => self.i18n.t("sidebar.actions.new_local_terminal"),
             SidebarSection::Files => self.i18n.t("sidebar.panels.files"),
-            SidebarSection::Notifications => self.i18n.t("sidebar.panels.notifications"),
             SidebarSection::Settings => self.i18n.t("sidebar.tooltips.settings"),
         }
     }

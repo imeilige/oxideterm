@@ -81,12 +81,7 @@
       "node_connecting_title": "Já conectando"
     },
     "reconnect": {
-      "cancelled": "Reconexão cancelada",
-      "completed": "Conexão restaurada, {{count}} serviço(s) recuperado(s)",
-      "failed": "Falha na reconexão: {{error}}",
-      "recovered": "Conexão recuperada — sessão preservada",
-      "ssh_restored": "Conexão SSH restaurada",
-      "starting": "{{name}} está reconectando..."
+      "ssh_restored": "Conexão SSH restaurada"
     },
     "toast": {
       "proxy_chain_desc": "Profundidade da cadeia {{depth}}. Topologia sincronizada.",

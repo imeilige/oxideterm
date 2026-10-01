@@ -13,7 +13,6 @@ use oxideterm_environment::{
 };
 use std::{
     ops::Range,
-    path::Path,
     sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
@@ -83,7 +82,6 @@ pub(in crate::workspace) struct WorkspaceTerminalEntity {
     pub(super) cast_tick_generation: u64,
     pub(super) cast_tick_scheduled: bool,
     pub(super) cast_tick_task: Option<Task<()>>,
-    pub(super) quick_commands: quick_commands::TerminalQuickCommandsState,
     broadcast: TerminalBroadcastState,
     pub(super) node_router: NodeRouter,
     pub(super) runtime: Arc<tokio::runtime::Runtime>,
@@ -93,7 +91,6 @@ impl WorkspaceTerminalEntity {
     pub(in crate::workspace) fn new(
         runtime: Arc<tokio::runtime::Runtime>,
         node_router: NodeRouter,
-        settings_path: &Path,
         cx: &mut Context<Self>,
     ) -> Self {
         let delivery_wake = delivery::ActiveDeliveryWake::default();
@@ -162,7 +159,6 @@ impl WorkspaceTerminalEntity {
             cast_tick_generation: 0,
             cast_tick_scheduled: false,
             cast_tick_task: None,
-            quick_commands: quick_commands::TerminalQuickCommandsState::load(settings_path),
             broadcast: TerminalBroadcastState::default(),
             node_router,
             runtime,
@@ -829,10 +825,7 @@ pub(super) mod tests {
     use super::*;
     use gpui::TestAppContext;
     use oxideterm_environment::{GitBranchListOutcome, GitBranchReference};
-    use std::sync::atomic::{AtomicU64, Ordering};
     use terminal_git::TerminalGitPanelSection;
-
-    static NEXT_TERMINAL_TEST_SETTINGS_ID: AtomicU64 = AtomicU64::new(1);
 
     struct TerminalEventRecorder {
         git_metadata_changes: usize,
@@ -851,12 +844,7 @@ pub(super) mod tests {
         );
         let registry = SshConnectionRegistry::new(ConnectionPoolConfig::default());
         let node_router = NodeRouter::new(registry);
-        let settings_path = std::env::temp_dir().join(format!(
-            "oxideterm-terminal-entity-tests-{}-{}.json",
-            std::process::id(),
-            NEXT_TERMINAL_TEST_SETTINGS_ID.fetch_add(1, Ordering::Relaxed)
-        ));
-        cx.new(|cx| WorkspaceTerminalEntity::new(runtime, node_router, &settings_path, cx))
+        cx.new(|cx| WorkspaceTerminalEntity::new(runtime, node_router, cx))
     }
 
     #[gpui::test]

@@ -58,8 +58,7 @@
       "failed_state": "失敗",
       "cancelled": "キャンセル済み",
       "completed": "バックグラウンドタスクが完了しました",
-      "failed": "バックグラウンドタスクが失敗しました",
-      "notification_body": "{{count}} 回の実行後に終了しました。"
+      "failed": "バックグラウンドタスクが失敗しました"
     },
     "chat": {
       "back_to_question": "質問に戻る",

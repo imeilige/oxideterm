@@ -32,16 +32,14 @@ pub use calls::{
     CredentialStatusArgs, DesktopButtonState, DesktopClipboardImageFormat, DesktopClipboardKind,
     DesktopClipboardPayload, DesktopFrameArgs, DesktopHandleArgs, DesktopInputArgs,
     DesktopInputEvent, ForgetCredentialArgs, ForwardKind, HostToolLogPreset, HostToolOperation,
-    HostToolResource, OpenDesktopArgs, PreparedQuickCommandRunArgs, PublicConnectionAuth,
-    PublicCredentialSlot, PublicDesktopMouseButton, PublicMoshIpFamily, PublicMoshPredictionMode,
-    PublicMoshUdpPortSelection, PublicQuickCommandConfirmationPolicy, PublicQuickCommandParameter,
-    PublicQuickCommandParameterKind, PublicQuickCommandTargetProtocol, PublicRdpNetworkProfile,
-    PublicRemoteDesktopOptions, PublicRemoteDesktopProfile, PublicSavedConnectionProfile,
-    PublicSerialFlowControl, PublicSerialParity, PublicSshChannelStrategy,
-    PublicSyncConflictStrategy, PublicSyncSection, PublicTelnetControl,
-    PublicTerminalBackspaceSequence, PublicTerminalDeleteSequence, PublicTerminalEncoding,
-    PublicTerminalOptions, PublicTerminalSessionLogPolicy, PublicToolCall, PublicUpstreamProxy,
-    PublicUpstreamProxyProtocol, PublicVncCompression, PublicVncImageQuality,
+    HostToolResource, OpenDesktopArgs, PublicConnectionAuth, PublicCredentialSlot,
+    PublicDesktopMouseButton, PublicMoshIpFamily, PublicMoshPredictionMode,
+    PublicMoshUdpPortSelection, PublicRdpNetworkProfile, PublicRemoteDesktopOptions,
+    PublicRemoteDesktopProfile, PublicSavedConnectionProfile, PublicSerialFlowControl,
+    PublicSerialParity, PublicSshChannelStrategy, PublicSyncConflictStrategy, PublicSyncSection,
+    PublicTelnetControl, PublicTerminalBackspaceSequence, PublicTerminalDeleteSequence,
+    PublicTerminalEncoding, PublicTerminalOptions, PublicTerminalSessionLogPolicy, PublicToolCall,
+    PublicUpstreamProxy, PublicUpstreamProxyProtocol, PublicVncCompression, PublicVncImageQuality,
     PublicVncSecurityPolicy, PublicVncSessionMode, PublicX11ForwardingMode,
     ReadDesktopClipboardArgs, RecordingExportFormat, RecordingStatusTarget, RecordingsControlArgs,
     RecordingsExportArgs, RecordingsSearchArgs, RecordingsStatusArgs, RemovePublicConnectionArgs,
@@ -52,8 +50,8 @@ pub use calls::{
 };
 pub use handles::{
     ApprovalRef, ArtifactRef, AuditRef, ClientRef, CommandRef, ConnectionRef, DesktopRef,
-    FileSessionRef, ForwardRef, HandleParseError, NodeRef, OperationRef, QuickCommandRef,
-    RecordingRef, SyncPlanRef, TerminalRef, TransferRef, UndoRef,
+    FileSessionRef, ForwardRef, HandleParseError, NodeRef, OperationRef, RecordingRef, SyncPlanRef,
+    TerminalRef, TransferRef, UndoRef,
 };
 pub use runtime::{PublicMcpHttpServer, start_http_server};
 pub use service::{PublicMcpService, PublicMcpState};

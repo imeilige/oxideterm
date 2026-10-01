@@ -138,10 +138,7 @@ mod tests {
             terminal_settings_page_from_ai_section("local_terminal"),
             Some(TerminalSettingsPage::Local)
         );
-        assert_eq!(
-            settings_tab_from_ai_section("assistant"),
-            None
-        );
+        assert_eq!(settings_tab_from_ai_section("assistant"), None);
         assert_eq!(
             settings_tab_from_ai_section("keyboard"),
             Some(SettingsTab::Keybindings)

@@ -58,8 +58,7 @@
       "failed_state": "Thất bại",
       "cancelled": "Đã hủy",
       "completed": "Tác vụ nền đã hoàn tất",
-      "failed": "Tác vụ nền thất bại",
-      "notification_body": "Đã kết thúc sau {{count}} lần chạy."
+      "failed": "Tác vụ nền thất bại"
     },
     "chat": {
       "back_to_question": "Quay lại câu hỏi",

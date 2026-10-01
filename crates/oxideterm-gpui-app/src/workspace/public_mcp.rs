@@ -13,9 +13,9 @@ use oxideterm_public_mcp::{
     ApprovalRef, ApprovalStatus, ArtifactRef, AuditQuery, ClientApprovalMode, ClientCredential,
     ClientProjection, ClientRef, ClientRegistry, CommandRef, ConnectionRef, DesktopRef,
     DomainBroker, DomainMessage, DomainRequest, DomainRequestReceiver, FileSessionRef, ForwardRef,
-    NodeRef, OperationRef, PublicMcpHttpServer, PublicMcpState, PublicToolCall, QuickCommandRef,
-    RecordingRef, SyncPlanRef, SyncRestoreArgs, TerminalRef, ToolEnvelope, ToolGroup, ToolOutcome,
-    TransferRef, UndoRef, start_http_server,
+    NodeRef, OperationRef, PublicMcpHttpServer, PublicMcpState, PublicToolCall, RecordingRef,
+    SyncPlanRef, SyncRestoreArgs, TerminalRef, ToolEnvelope, ToolGroup, ToolOutcome, TransferRef,
+    UndoRef, start_http_server,
 };
 use oxideterm_session_adapter::ssh_config_from_saved_connection;
 use oxideterm_ssh::{ConnectionConsumer, NodeId, NodeRouter, SshTransportError};
@@ -33,7 +33,6 @@ pub(in crate::workspace) mod desktops;
 mod files;
 mod forwards;
 mod host_tools;
-mod quick_commands;
 mod recordings;
 pub(in crate::workspace) mod terminals;
 mod transfers;
@@ -76,8 +75,6 @@ pub(in crate::workspace) struct PublicMcpWorkspaceBridge {
     // Public connection references are client-scoped and never encode saved connection IDs.
     connection_refs: HashMap<(ClientRef, String), ConnectionRef>,
     connection_ids: HashMap<ConnectionRef, (ClientRef, String)>,
-    quick_command_refs: HashMap<(ClientRef, String), QuickCommandRef>,
-    quick_command_ids: HashMap<QuickCommandRef, (ClientRef, String)>,
     sync_plans: HashMap<SyncPlanRef, cloud_sync::PublicMcpSyncPlan>,
     sync_undos: HashMap<UndoRef, cloud_sync::PublicMcpSyncUndo>,
     terminals: HashMap<TerminalRef, PublicMcpTerminalRecord>,
@@ -360,8 +357,6 @@ impl PublicMcpWorkspaceBridge {
             revealed_credential: None,
             connection_refs: HashMap::new(),
             connection_ids: HashMap::new(),
-            quick_command_refs: HashMap::new(),
-            quick_command_ids: HashMap::new(),
             sync_plans: HashMap::new(),
             sync_undos: HashMap::new(),
             terminals: HashMap::new(),
@@ -754,16 +749,6 @@ impl PublicMcpWorkspaceBridge {
             .retain(|connection_ref, _| !removed_refs.contains(connection_ref));
     }
 
-    fn remove_client_quick_command_refs(&mut self, client_ref: &ClientRef) {
-        let removed_refs = self
-            .quick_command_refs
-            .extract_if(|(owner, _), _| owner == client_ref)
-            .map(|(_, quickcommand_ref)| quickcommand_ref)
-            .collect::<HashSet<_>>();
-        self.quick_command_ids
-            .retain(|quickcommand_ref, _| !removed_refs.contains(quickcommand_ref));
-    }
-
     fn target_label(
         &self,
         client_ref: &ClientRef,
@@ -772,21 +757,6 @@ impl PublicMcpWorkspaceBridge {
         node_router: &NodeRouter,
         forwarding_service: &super::forwards::ForwardingRuntimeService,
     ) -> String {
-        if let Some(quickcommand_ref) = target
-            .split_whitespace()
-            .next()
-            .and_then(|value| value.parse::<QuickCommandRef>().ok())
-            && let Some((owner, command_id)) = self.quick_command_ids.get(&quickcommand_ref)
-            && owner == client_ref
-            && let Ok(snapshot) = oxideterm_quick_commands::load_snapshot(&self.settings_path)
-            && let Some(command) = snapshot
-                .commands
-                .into_iter()
-                .find(|command| &command.id == command_id)
-        {
-            // The frozen expanded command, when present, is rendered by ApprovalReview.
-            return command.name;
-        }
         let connection_target = target.split_whitespace().next().unwrap_or(target);
         if let Ok(connection_ref) = connection_target.parse::<ConnectionRef>()
             && let Some((owner, connection_key)) = self.connection_ids.get(&connection_ref)
@@ -1001,7 +971,6 @@ impl WorkspaceApp {
         if !enabled {
             self.revoke_public_mcp_client_runtime(client_ref, cx);
             self.public_mcp.remove_client_connection_refs(client_ref);
-            self.public_mcp.remove_client_quick_command_refs(client_ref);
         }
         Ok(())
     }
@@ -1082,9 +1051,6 @@ impl WorkspaceApp {
                 self.revoke_public_mcp_client_desktop_clipboard_content(client_ref, cx)
             }
             ToolGroup::CommandExecute => self.public_mcp.revoke_client_commands(client_ref),
-            ToolGroup::QuickCommandExecute => self
-                .public_mcp
-                .revoke_client_commands_for_group(client_ref, ToolGroup::QuickCommandExecute),
             ToolGroup::ArtifactTransfer => {
                 self.revoke_public_mcp_client_transfers(client_ref);
                 self.public_mcp.state.artifacts.revoke_client(client_ref)
@@ -1104,9 +1070,6 @@ impl WorkspaceApp {
             | ToolGroup::AuditRead
             | ToolGroup::HostToolsObserve
             | ToolGroup::HostToolsOperate
-            | ToolGroup::QuickCommandRead
-            | ToolGroup::QuickCommandContentRead
-            | ToolGroup::QuickCommandManage
             | ToolGroup::ForwardRead => {}
         }
     }
@@ -1119,7 +1082,6 @@ impl WorkspaceApp {
         self.public_mcp.remove_client(client_ref)?;
         self.revoke_public_mcp_client_runtime(client_ref, cx);
         self.public_mcp.remove_client_connection_refs(client_ref);
-        self.public_mcp.remove_client_quick_command_refs(client_ref);
         Ok(())
     }
 
@@ -1327,24 +1289,6 @@ impl WorkspaceApp {
                 }
                 PublicToolCall::HostToolsOperate(_) => {
                     self.handle_public_mcp_host_tools_operate(request)
-                }
-                PublicToolCall::QuickCommandsList(_) => {
-                    self.handle_public_mcp_quick_commands_list(request)
-                }
-                PublicToolCall::QuickCommandsDescribe(_) => {
-                    self.handle_public_mcp_quick_commands_describe(request)
-                }
-                PublicToolCall::QuickCommandsSave(_) => {
-                    self.handle_public_mcp_quick_commands_save(request, cx)
-                }
-                PublicToolCall::QuickCommandsRemove(_) => {
-                    self.handle_public_mcp_quick_commands_remove(request, cx)
-                }
-                PublicToolCall::QuickCommandsRun(_) => {
-                    self.handle_public_mcp_quick_commands_run(request)
-                }
-                PublicToolCall::PreparedQuickCommandRun(_) => {
-                    self.handle_public_mcp_prepared_quick_command_run(request)
                 }
                 PublicToolCall::ForwardsList(_) => self.handle_public_mcp_forwards_list(request),
                 PublicToolCall::ForwardsOpen(_) => {

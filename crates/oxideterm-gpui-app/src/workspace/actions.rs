@@ -3,60 +3,14 @@ use super::tabs::TabCloseConfirmKeyAction;
 use super::*;
 use oxideterm_gpui_ui::text_input::{text_caret, text_input_value_segments_with_color};
 use oxideterm_quick_commands::{
-    PreparedQuickCommand, QuickCommand, QuickCommandContextValues, QuickCommandRisk,
-    QuickCommandTargetContext, QuickCommandTargetProtocol,
-    classify_command_risk as classify_quick_command_risk, prepare_quick_command,
+    QuickCommandRisk, classify_command_risk as classify_quick_command_risk,
 };
-use oxideterm_terminal::TerminalSessionKind;
 use zeroize::Zeroizing;
 
 const TERMINAL_FONT_SIZE_MIN: i64 = 8;
 const TERMINAL_FONT_SIZE_MAX: i64 = 32;
 const TERMINAL_FONT_SIZE_DEFAULT: i64 = 14;
 const TERMINAL_FONT_SIZE_HUD_DURATION: Duration = Duration::from_millis(1200);
-
-fn dispatch_quick_command_batch(
-    command_id: &str,
-    targets: impl IntoIterator<Item = (PaneId, Zeroizing<String>)>,
-    target_count: usize,
-    active_pane_id: Option<PaneId>,
-    mut send: impl FnMut(PaneId, &str, TerminalCommandMarkDetectionSource, Option<&str>) -> bool,
-) -> usize {
-    let mut batch = oxideterm_audit::AuditOperation::begin(
-        oxideterm_audit::AuditCategory::Automation,
-        "quick_command_batch",
-        None,
-        Some(command_id),
-    );
-    let parent_id = batch.id().map(str::to_string);
-    let mut sent_count = 0usize;
-    for (pane_id, command) in targets {
-        let source = if Some(pane_id) == active_pane_id {
-            TerminalCommandMarkDetectionSource::QuickCommand
-        } else {
-            TerminalCommandMarkDetectionSource::Broadcast
-        };
-        if send(pane_id, &command, source, parent_id.as_deref()) {
-            sent_count += 1;
-        }
-    }
-    batch.summary(&format!(
-        "config={command_id}; targets={target_count}; sent={sent_count}"
-    ));
-    batch.finish(
-        if sent_count == target_count && target_count > 0 {
-            oxideterm_audit::AuditOutcome::Sent
-        } else if sent_count > 0 {
-            oxideterm_audit::AuditOutcome::Partial
-        } else {
-            oxideterm_audit::AuditOutcome::Failed
-        },
-        oxideterm_audit::AuditEvidence::Dispatch,
-        None,
-        None,
-    );
-    sent_count
-}
 
 fn adjusted_terminal_font_size(current: i64, delta: i64) -> Option<i64> {
     let next = (current + delta).clamp(TERMINAL_FONT_SIZE_MIN, TERMINAL_FONT_SIZE_MAX);
@@ -258,14 +212,11 @@ mod terminal_search_tests {
     }
 }
 
-fn terminal_tab_capture_blocked_by_workspace_ui(
-    active_ime_target: bool,
-    quick_commands_focused: bool,
-) -> bool {
-    // Text inputs, command palettes, and quick commands own Tab semantics while
-    // they are active. The terminal fallback only handles the platform
-    // focus-traversal path that would otherwise swallow a real terminal Tab.
-    active_ime_target || quick_commands_focused
+fn terminal_tab_capture_blocked_by_workspace_ui(active_ime_target: bool) -> bool {
+    // Text inputs and command palettes own Tab semantics while they are active.
+    // The terminal fallback only handles the platform focus-traversal path that
+    // would otherwise swallow a real terminal Tab.
+    active_ime_target
 }
 
 impl WorkspaceApp {
@@ -417,7 +368,6 @@ impl WorkspaceApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.blur_terminal_quick_commands_input(cx);
         self.focus_search_pane(pane_id, cx);
         self.search.open(pane_id);
         window.focus(&self.focus_handle, cx);
@@ -696,13 +646,6 @@ impl WorkspaceApp {
             "split.closePane" => self.close_active_pane(window, cx),
             "split.navLeft" => self.focus_adjacent_pane(false, window, cx),
             "split.navRight" => self.focus_adjacent_pane(true, window, cx),
-            "palette.eventLog" => {
-                // Tauri switches the Activity panel to the event log before
-                // opening it, so the palette shortcut must not land on
-                // Notifications when the previous activity view was different.
-                self.notification_center.active_view = WorkspaceActivityView::EventLog;
-                self.open_notification_center_tab(window, cx);
-            }
             "palette.aiSidebar" => {
                 let _ = self.toggle_ai_sidebar(cx);
             }
@@ -793,7 +736,6 @@ impl WorkspaceApp {
     pub(super) fn handle_terminal_command_overlay_escape(
         &mut self,
         event: &KeyDownEvent,
-        window: &mut Window,
         cx: &mut Context<Self>,
     ) -> bool {
         if event.keystroke.key.as_str() != "escape" || event.keystroke.modifiers.platform {
@@ -801,13 +743,6 @@ impl WorkspaceApp {
         }
 
         if self.close_terminal_command_overlays(cx) {
-            return true;
-        }
-        // A dock must not consume Escape from a focused shell or terminal application.
-        if self.focus_handle.is_focused(window) && self.terminal.read(cx).quick_commands.is_open() {
-            self.close_terminal_quick_commands_panel(cx);
-            self.focus_active_pane(window, cx);
-            cx.notify();
             return true;
         }
         false
@@ -875,7 +810,6 @@ impl WorkspaceApp {
         let should_open = !self.terminal.read(cx).broadcast_menu_open();
         self.dismiss_terminal_broadcast_menu(cx);
         if should_open {
-            self.blur_terminal_quick_commands_input(cx);
             self.dismiss_terminal_recording_menu();
             self.dismiss_terminal_highlight_popover();
             self.close_terminal_cwd_picker(cx);
@@ -893,29 +827,6 @@ impl WorkspaceApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if matches!(
-            self.active_ime_target_for_window(window.window_handle().window_id(), cx),
-            Some(WorkspaceImeTarget::AuditPolicy(_))
-        ) && self.ime_marked_text.is_none()
-            && event.keystroke.key == "enter"
-        {
-            self.apply_audit_policy_inputs(cx);
-            cx.stop_propagation();
-            return;
-        }
-        if self.active_ime_target_for_window(window.window_handle().window_id(), cx)
-            == Some(WorkspaceImeTarget::AuditSearch)
-            && self.ime_marked_text.is_none()
-            && event.keystroke.key == "enter"
-        {
-            self.apply_audit_search(cx);
-            cx.stop_propagation();
-            return;
-        }
-        if self.handle_audit_filter_key(&event.keystroke.key, cx) {
-            cx.stop_propagation();
-            return;
-        }
         if self.session_sort_menu_open {
             if event.keystroke.key == "escape" {
                 self.session_sort_menu_open = false;
@@ -925,9 +836,7 @@ impl WorkspaceApp {
             return;
         }
 
-        if self.terminal_command_sender_editor_focused(window, cx)
-            || self.quick_command_text_editor_focused(window, cx)
-        {
+        if self.terminal_command_sender_editor_focused(window, cx) {
             // Child editor handlers own the bubble path while focused.
             return;
         }
@@ -1095,15 +1004,6 @@ impl WorkspaceApp {
             return;
         }
 
-        let quick_commands_focused = {
-            let quick_commands = &self.terminal.read(cx).quick_commands;
-            quick_commands.is_open() && quick_commands.focused_input().is_some()
-        };
-        if quick_commands_focused {
-            self.handle_quick_commands_key(event, window, cx);
-            return;
-        }
-
         if self.handle_terminal_cwd_picker_key(event, window, cx) {
             return;
         }
@@ -1116,7 +1016,7 @@ impl WorkspaceApp {
             return;
         }
 
-        if self.handle_terminal_command_overlay_escape(event, window, cx) {
+        if self.handle_terminal_command_overlay_escape(event, cx) {
             return;
         }
 
@@ -1210,14 +1110,7 @@ impl WorkspaceApp {
             return false;
         }
 
-        if terminal_tab_capture_blocked_by_workspace_ui(
-            self.active_ime_target(cx).is_some(),
-            self.terminal
-                .read(cx)
-                .quick_commands
-                .focused_input()
-                .is_some(),
-        ) {
+        if terminal_tab_capture_blocked_by_workspace_ui(self.active_ime_target(cx).is_some()) {
             return false;
         }
 
@@ -1947,305 +1840,6 @@ impl WorkspaceApp {
             }
             _ => {}
         }
-    }
-
-    pub(super) fn run_quick_command_model(
-        &mut self,
-        command: &QuickCommand,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.retain_live_terminal_broadcast_targets(cx);
-        let parameter_values = command
-            .parameters
-            .iter()
-            .filter_map(|parameter| {
-                parameter
-                    .default_value
-                    .clone()
-                    .map(|value| (parameter.name.clone(), Zeroizing::new(value)))
-            })
-            .collect::<std::collections::BTreeMap<_, _>>();
-        let target_contexts = self.quick_command_target_contexts(cx);
-        let contexts = target_contexts
-            .iter()
-            .map(|(_, context)| context.clone())
-            .collect::<Vec<_>>();
-        let prepared = prepare_quick_command(command, &contexts, &parameter_values);
-        let global_confirmation = self
-            .settings_store
-            .settings()
-            .terminal
-            .command_bar
-            .quick_commands_confirm_before_run;
-        let needs_dialog = !command.parameters.is_empty()
-            || command.command.contains("{{")
-            || target_contexts.len() > 1
-            || global_confirmation
-            || prepared.as_ref().is_ok_and(|prepared| {
-                prepared.confirmation_required
-                    || prepared.targets.is_empty()
-                    || !prepared.unavailable_targets.is_empty()
-            });
-        if needs_dialog || prepared.is_err() {
-            self.prepare_terminal_quick_commands_panel(window, cx);
-            self.terminal.update(cx, |terminal, _cx| {
-                terminal.quick_commands.request_execution(command.clone())
-            });
-            cx.notify();
-            return;
-        }
-        if let Ok(prepared) = prepared {
-            self.execute_prepared_quick_command(prepared, &target_contexts, window, cx);
-        }
-    }
-
-    pub(super) fn quick_command_target_contexts(
-        &self,
-        cx: &mut Context<Self>,
-    ) -> Vec<(PaneId, QuickCommandTargetContext)> {
-        let Some(active_pane_id) = self.active_pane_id(cx) else {
-            return Vec::new();
-        };
-        let mut pane_ids = vec![active_pane_id];
-        pane_ids.extend(self.terminal_broadcast_target_panes(active_pane_id, cx));
-        pane_ids
-            .into_iter()
-            .filter_map(|pane_id| {
-                self.quick_command_context_for_pane(pane_id, cx)
-                    .map(|context| (pane_id, context))
-            })
-            .collect()
-    }
-
-    pub(super) fn quick_command_context_for_pane(
-        &self,
-        pane_id: PaneId,
-        cx: &mut Context<Self>,
-    ) -> Option<QuickCommandTargetContext> {
-        // Context uses user-visible metadata and the explicit terminal selection;
-        // protected connection credentials are never read into this path.
-        let pane_entity = self.tab_host.read(cx).panes().get(&pane_id).cloned()?;
-        let pane = pane_entity.read(cx);
-        let entry = self
-            .terminal_broadcast_entries(cx)
-            .into_iter()
-            .find(|entry| entry.pane_id == pane_id);
-        let selected_group_name = self
-            .terminal
-            .read(cx)
-            .sync_groups()
-            .member(pane_id)
-            .and_then(|member| member.group)
-            .and_then(|group_id| {
-                self.settings_store
-                    .settings()
-                    .terminal
-                    .broadcast_groups
-                    .iter()
-                    .find(|group| group.id == group_id)
-                    .map(|group| group.name.clone())
-            });
-        let mut values = QuickCommandContextValues {
-            cwd: pane.current_working_directory().map(Zeroizing::new),
-            host: pane.current_working_directory_host().map(Zeroizing::new),
-            connection: Some(Zeroizing::new(pane.title().to_string())),
-            group: selected_group_name.map(Zeroizing::new),
-            selection: pane.selected_text_snapshot().map(Zeroizing::new),
-            ..QuickCommandContextValues::default()
-        };
-        let mut protocol = match pane.session_kind() {
-            TerminalSessionKind::LocalPty => QuickCommandTargetProtocol::Local,
-            TerminalSessionKind::SshPty => QuickCommandTargetProtocol::Ssh,
-            TerminalSessionKind::Telnet => QuickCommandTargetProtocol::Telnet,
-            TerminalSessionKind::Mosh => QuickCommandTargetProtocol::Mosh,
-            TerminalSessionKind::Serial => QuickCommandTargetProtocol::Serial,
-        };
-        if pane.is_tmux_control_mode() {
-            protocol = QuickCommandTargetProtocol::Tmux;
-        }
-        if let Some(saved) = entry
-            .as_ref()
-            .and_then(|entry| entry.saved_connection.as_ref())
-        {
-            self.apply_saved_quick_command_context(saved, &mut values);
-        }
-        Some(QuickCommandTargetContext {
-            target_id: pane_id.to_string(),
-            label: entry
-                .map(|entry| entry.label)
-                .unwrap_or_else(|| pane.title().to_string()),
-            protocol,
-            values,
-        })
-    }
-
-    fn apply_saved_quick_command_context(
-        &self,
-        saved: &oxideterm_settings::TerminalBroadcastTargetRef,
-        values: &mut QuickCommandContextValues,
-    ) {
-        use oxideterm_settings::TerminalBroadcastTargetKind;
-        match saved.kind {
-            TerminalBroadcastTargetKind::Ssh => {
-                if let Some(connection) = self.connection_store.get(&saved.saved_connection_id) {
-                    values.host = Some(Zeroizing::new(connection.host.clone()));
-                    values.username = Some(Zeroizing::new(connection.username.clone()));
-                    values.port = Some(connection.port);
-                    values.connection = Some(Zeroizing::new(connection.name.clone()));
-                    values.group = connection
-                        .group
-                        .clone()
-                        .map(Zeroizing::new)
-                        .or_else(|| values.group.clone());
-                }
-            }
-            TerminalBroadcastTargetKind::Mosh => {
-                if let Some(profile) = self
-                    .connection_store
-                    .get_mosh_profile(&saved.saved_connection_id)
-                {
-                    values.host = Some(Zeroizing::new(profile.host.clone()));
-                    values.username = Some(Zeroizing::new(profile.username.clone()));
-                    values.port = Some(profile.ssh_port);
-                    values.connection = Some(Zeroizing::new(profile.name.clone()));
-                    values.group = profile
-                        .group
-                        .clone()
-                        .map(Zeroizing::new)
-                        .or_else(|| values.group.clone());
-                }
-            }
-            TerminalBroadcastTargetKind::Telnet => {
-                if let Some(profile) = self
-                    .connection_store
-                    .telnet_profiles()
-                    .iter()
-                    .find(|profile| profile.id == saved.saved_connection_id)
-                {
-                    values.host = Some(Zeroizing::new(profile.host.clone()));
-                    values.port = Some(profile.port);
-                    values.connection = Some(Zeroizing::new(profile.name.clone()));
-                    values.group = profile
-                        .group
-                        .clone()
-                        .map(Zeroizing::new)
-                        .or_else(|| values.group.clone());
-                }
-            }
-            TerminalBroadcastTargetKind::Serial => {
-                if let Some(profile) = self
-                    .connection_store
-                    .serial_profiles()
-                    .iter()
-                    .find(|profile| profile.id == saved.saved_connection_id)
-                {
-                    values.host = Some(Zeroizing::new(profile.port_path.clone()));
-                    values.connection = Some(Zeroizing::new(profile.name.clone()));
-                    values.group = profile
-                        .group
-                        .clone()
-                        .map(Zeroizing::new)
-                        .or_else(|| values.group.clone());
-                }
-            }
-        }
-    }
-
-    pub(super) fn confirm_quick_command_execution(
-        &mut self,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        let Some(execution) = self
-            .terminal
-            .read(cx)
-            .quick_commands
-            .pending_execution
-            .clone()
-        else {
-            return;
-        };
-        let parameter_values = execution
-            .command
-            .parameters
-            .iter()
-            .zip(execution.parameter_values)
-            .map(|(parameter, value)| (parameter.name.clone(), value))
-            .collect::<std::collections::BTreeMap<_, _>>();
-        let target_contexts = self.quick_command_target_contexts(cx);
-        let contexts = target_contexts
-            .iter()
-            .map(|(_, context)| context.clone())
-            .collect::<Vec<_>>();
-        if let Ok(prepared) =
-            prepare_quick_command(&execution.command, &contexts, &parameter_values)
-        {
-            self.execute_prepared_quick_command(prepared, &target_contexts, window, cx);
-        }
-    }
-
-    fn execute_prepared_quick_command(
-        &mut self,
-        prepared: PreparedQuickCommand,
-        target_contexts: &[(PaneId, QuickCommandTargetContext)],
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        let target_count = prepared.targets.len();
-        // Expansion is target-specific, so broadcast delivery cannot reuse the
-        // old single-string path without losing per-pane context semantics.
-        let active_pane_id = self.active_pane_id(cx);
-        let focus_command = prepared
-            .targets
-            .first()
-            .map(|target| target.command.clone());
-        let targets = prepared.targets.into_iter().filter_map(|target| {
-            target_contexts
-                .iter()
-                .find(|(_, context)| context.target_id == target.target_id)
-                .map(|(pane_id, _)| (*pane_id, target.command))
-        });
-        let sent_count = dispatch_quick_command_batch(
-            &prepared.command_id,
-            targets,
-            target_count,
-            active_pane_id,
-            |pane_id, command, source, parent_id| {
-                self.send_terminal_command_to_pane(pane_id, command, source, parent_id, cx)
-            },
-        );
-        if sent_count > 0 {
-            if focus_command
-                .as_deref()
-                .is_some_and(|command| self.terminal_command_should_handoff_focus(command))
-            {
-                self.focus_active_pane(window, cx);
-            }
-            if self
-                .settings_store
-                .settings()
-                .terminal
-                .command_bar
-                .quick_commands_show_toast
-            {
-                self.push_workspace_notice(
-                    TerminalNotice {
-                        title: self.i18n.t("terminal.quick_commands.toast_executed"),
-                        // The preview is the only UI boundary allowed to display
-                        // expanded commands; notifications retain no command text.
-                        description: None,
-                        status_text: None,
-                        progress: None,
-                        variant: TerminalNoticeVariant::Success,
-                    },
-                    cx,
-                );
-            }
-        }
-        self.finish_terminal_quick_command_execution(cx);
-        self.ime_marked_text = None;
-        cx.notify();
     }
 
     pub(super) fn active_terminal_recording_status(&self, cx: &App) -> TerminalRecordingStatus {
@@ -3280,9 +2874,8 @@ mod terminal_command_bar_behavior_tests {
 
     #[test]
     fn terminal_tab_capture_defers_to_workspace_text_ui() {
-        assert!(!terminal_tab_capture_blocked_by_workspace_ui(false, false));
-        assert!(terminal_tab_capture_blocked_by_workspace_ui(true, false));
-        assert!(terminal_tab_capture_blocked_by_workspace_ui(false, true));
+        assert!(!terminal_tab_capture_blocked_by_workspace_ui(false));
+        assert!(terminal_tab_capture_blocked_by_workspace_ui(true));
     }
 
     #[test]
@@ -3431,9 +3024,8 @@ mod keybinding_update_tests {
         }
     }
 }
-
 #[cfg(all(test, unix))]
-mod quick_command_audit_tests {
+mod terminal_command_dispatch_audit_tests {
     use super::*;
     use gpui::{AppContext, IntoElement, Render, TestAppContext, div};
     use oxideterm_audit::{AuditContext, AuditOutcome, AuditQuery, AuditService, AuditSource};
@@ -3455,10 +3047,10 @@ mod quick_command_audit_tests {
         }
     }
 
+    /// A pane that refuses input must record a failed dispatch rather than a sent
+    /// one, and every record must be attributed to its own terminal session.
     #[gpui::test]
-    fn quick_command_three_target_dispatch_records_partial_and_target_results(
-        cx: &mut TestAppContext,
-    ) {
+    fn locked_pane_records_a_failed_command_dispatch(cx: &mut TestAppContext) {
         cx.executor().allow_parking();
         let directory = tempfile::tempdir().unwrap();
         oxideterm_audit::AuditStore::open(&directory.path().join("audit.db"), &Keys)
@@ -3504,29 +3096,16 @@ mod quick_command_audit_tests {
             .collect::<Vec<_>>();
         assert_eq!(sessions.iter().collect::<HashSet<_>>().len(), 3);
         panes[2].update(cx, |pane, cx| pane.set_input_locked(true, cx));
-        let targets = vec![
-            (PaneId(10), Zeroizing::new("one".to_string())),
-            (PaneId(20), Zeroizing::new("two".to_string())),
-            (PaneId(30), Zeroizing::new("three".to_string())),
-        ];
-        let sent = dispatch_quick_command_batch(
-            "config-three",
-            targets,
-            3,
-            Some(PaneId(10)),
-            |pane_id, command, source, parent_id| {
-                let index = match pane_id {
-                    PaneId(10) => 0,
-                    PaneId(20) => 1,
-                    PaneId(30) => 2,
-                    _ => unreachable!(),
-                };
-                panes[index].update(cx, |pane, cx| {
-                    pane.send_command_line_with_mark(command, source, parent_id, cx)
-                })
-            },
-        );
-        assert_eq!(sent, 2);
+        for (pane, command) in panes.iter().zip(["one", "two", "three"]) {
+            pane.update(cx, |pane, cx| {
+                pane.send_command_line_with_mark(
+                    command,
+                    TerminalCommandMarkDetectionSource::UserInputObserved,
+                    None,
+                    cx,
+                )
+            });
+        }
 
         let page = tokio::runtime::Runtime::new()
             .unwrap()
@@ -3535,27 +3114,10 @@ mod quick_command_audit_tests {
                 ..Default::default()
             }))
             .unwrap();
-        let operations = page
+        let dispatches = page
             .records
             .iter()
             .filter_map(|record| record.details.operation.as_ref())
-            .collect::<Vec<_>>();
-        let batch = operations
-            .iter()
-            .find(|operation| {
-                operation.action == "quick_command_batch"
-                    && operation.outcome == AuditOutcome::Partial
-            })
-            .unwrap();
-        let commands = operations
-            .iter()
-            .filter(|operation| {
-                operation.action == "command_execute"
-                    && operation.parent_id.as_deref() == Some(batch.id.as_str())
-            })
-            .collect::<Vec<_>>();
-        let dispatches = operations
-            .iter()
             .filter(|operation| {
                 operation.action == "command_dispatch"
                     && operation.phase == Some(oxideterm_audit::AuditPhase::Result)
@@ -3572,12 +3134,6 @@ mod quick_command_audit_tests {
                 .find(|operation| operation.session_id.as_deref() == Some(session.as_str()))
                 .unwrap();
             assert_eq!(dispatch.outcome, expected);
-            assert!(
-                dispatch.parent_id.as_deref() == Some(batch.id.as_str())
-                    || commands
-                        .iter()
-                        .any(|command| command.id == *dispatch.parent_id.as_ref().unwrap())
-            );
         }
     }
 }

@@ -30,7 +30,9 @@ impl WorkspaceApp {
         }
         let version_migration = VersionMigrationState::from_settings_path(settings_store.path())?;
         let connection_store = ConnectionStore::load(default_connections_path())?;
-        let audit = audit::AuditState::new(settings_store.path().with_file_name("audit.sqlite3"));
+        let audit = audit_runtime::AuditRuntime::start(
+            settings_store.path().with_file_name("audit.sqlite3"),
+        );
         let settings = settings_store.settings().clone();
         let i18n = I18n::new(locale_from_settings(settings.general.language));
         // Shell history is already the user's persistence boundary; OxideTerm keeps only a
@@ -283,12 +285,7 @@ impl WorkspaceApp {
             },
         );
         let terminal = cx.new(|cx| {
-            WorkspaceTerminalEntity::new(
-                forwarding_runtime.clone(),
-                node_router.clone(),
-                settings_store.path(),
-                cx,
-            )
+            WorkspaceTerminalEntity::new(forwarding_runtime.clone(), node_router.clone(), cx)
         });
         let terminal_subscription = cx.subscribe(
             &terminal,
@@ -720,17 +717,7 @@ impl WorkspaceApp {
             sftp_transfer_manager,
             sftp_progress_store,
             node_router,
-            notification_center: NotificationCenterState::default(),
             audit,
-            notification_sidebar_list_state: tauri_virtual_list_state(
-                0,
-                ListAlignment::Top,
-                TauriVirtualListSpec::new(
-                    px(NOTIFICATION_SIDEBAR_ROW_HEIGHT_ESTIMATE),
-                    NOTIFICATION_SIDEBAR_VIRTUAL_OVERSCAN,
-                ),
-            ),
-            notification_sidebar_list_cache: RefCell::new(VirtualListSignatureCache::default()),
             ssh_nodes: HashMap::new(),
             saved_ssh_nodes: HashMap::new(),
             expanded_ssh_nodes: HashSet::new(),
@@ -820,7 +807,6 @@ impl WorkspaceApp {
         workspace.bootstrap_cloud_sync_controller(cx);
         workspace.start_public_mcp_delivery(cx);
         workspace.sync_ssh_config_sync_service();
-        workspace.start_audit_delivery(cx);
         workspace.restore_session_tree_snapshot();
         workspace.standalone_connections =
             standalone_connections::StandaloneConnectionRegistry::restore(

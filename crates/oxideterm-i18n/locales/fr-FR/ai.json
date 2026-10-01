@@ -58,8 +58,7 @@
       "failed_state": "Échec",
       "cancelled": "Annulée",
       "completed": "Tâche en arrière-plan terminée",
-      "failed": "Échec de la tâche en arrière-plan",
-      "notification_body": "Terminée après {{count}} exécutions."
+      "failed": "Échec de la tâche en arrière-plan"
     },
     "chat": {
       "back_to_question": "Revenir à la question",

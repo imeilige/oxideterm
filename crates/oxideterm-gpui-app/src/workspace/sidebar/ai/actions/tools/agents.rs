@@ -318,59 +318,6 @@ async fn execute_ai_agent_coordination(
 }
 
 impl WorkspaceApp {
-    fn notify_ai_agent_attention(
-        &mut self,
-        conversation_id: &str,
-        message_id: &str,
-        label: &str,
-        cx: &mut Context<Self>,
-    ) {
-        let ai = self.ai_entity.read(cx);
-        let record = ai
-            .agents
-            .message_runs
-            .get(message_id)
-            .and_then(|id| ai.agents.records.get(id));
-        if ai.conversation_state().active_conversation_id.as_deref() == Some(conversation_id)
-            && record
-                .is_none_or(|record| ai.agents.detail.as_ref() == Some(&record.snapshot.run.run_id))
-        {
-            return;
-        }
-        let conversation = ai
-            .conversation_state()
-            .conversations
-            .iter()
-            .find(|conversation| conversation.id == conversation_id)
-            .map(|conversation| conversation.title.clone())
-            .unwrap_or_default();
-        let task = record
-            .map(|record| {
-                format!(
-                    "{} · {}",
-                    record.snapshot.title.as_str(),
-                    record
-                        .target_labels
-                        .iter()
-                        .map(AgentText::as_str)
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                )
-            })
-            .unwrap_or_default();
-        self.push_notification_entry(
-            WorkspaceNotificationKind::Agent,
-            WorkspaceNotificationSeverity::Warning,
-            self.i18n.t(label),
-            Some(oxideterm_ai::sanitize_for_persistence(&format!(
-                "{conversation} · {task}"
-            ))),
-            WorkspaceNotificationScope::Global,
-            Some(format!(
-                "agent-attention:{conversation_id}:{message_id}:{label}"
-            )),
-        );
-    }
     fn start_ai_agent_group(
         &mut self,
         generation: u64,

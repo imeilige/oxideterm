@@ -10,7 +10,6 @@ use crate::workspace::new_connection::{
     NewConnectionProxyHop, NewConnectionUpstreamProxyAuth, NewConnectionUpstreamProxyPolicy,
     identity_agent_from_form, identity_agent_selector, ssh_auth_tab_from_saved_auth,
 };
-use crate::workspace::quick_commands::QuickCommandImportStrategy;
 use crate::workspace::session_icons;
 use chrono::{DateTime, Datelike, Local, Utc};
 use gpui::{Div, EventEmitter, Pixels, Point, Rgba, Task, prelude::*, rgba};
@@ -48,6 +47,7 @@ use oxideterm_gpui_ui::{
         text_caret, text_input_secret_mask, text_input_value_segments, text_input_visual_range,
     },
 };
+use oxideterm_quick_commands::QuickCommandImportStrategy;
 use oxideterm_session_adapter::upstream_proxy_config_from_saved_policy;
 use oxideterm_settings::{
     ALL_OXIDE_SETTINGS_SECTIONS, DEFAULT_OXIDE_SETTINGS_SECTIONS, PersistedSettings,

@@ -1401,7 +1401,6 @@ impl WorkspaceApp {
                 envelope.quick_commands_json.as_deref(),
                 options.import_quick_commands,
                 options.quick_command_strategy,
-                cx,
             );
 
         let (imported_plugin_settings, plugin_settings_failed) = match self
@@ -2012,11 +2011,10 @@ impl WorkspaceApp {
 
     #[allow(dead_code)]
     pub(in crate::workspace) fn apply_oxide_import_quick_commands(
-        &mut self,
+        &self,
         quick_commands_json: Option<&str>,
         should_import: bool,
         strategy: QuickCommandImportStrategy,
-        cx: &mut Context<Self>,
     ) -> (usize, bool, Vec<String>) {
         let Some(snapshot) = quick_commands_json else {
             return (0, false, Vec::new());
@@ -2025,12 +2023,11 @@ impl WorkspaceApp {
             return (0, true, Vec::new());
         }
 
-        let result = self.terminal.update(cx, |terminal, _cx| {
-            terminal
-                .quick_commands
-                .store
-                .apply_snapshot_json(snapshot, strategy)
-        });
+        let result = oxideterm_quick_commands::apply_snapshot_json(
+            self.settings_store.path(),
+            snapshot,
+            strategy,
+        );
         (result.imported, !result.errors.is_empty(), result.errors)
     }
 

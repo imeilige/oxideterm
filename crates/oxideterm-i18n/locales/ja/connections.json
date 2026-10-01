@@ -81,12 +81,7 @@
       "node_connecting_title": "接続中です"
     },
     "reconnect": {
-      "cancelled": "再接続がキャンセルされました",
-      "completed": "接続が復元されました。{{count}} 個のサービスが回復しました",
-      "failed": "再接続に失敗しました: {{error}}",
-      "recovered": "接続が回復しました — セッション保持",
-      "ssh_restored": "SSH 接続が復元されました",
-      "starting": "{{name}} を再接続中..."
+      "ssh_restored": "SSH 接続が復元されました"
     },
     "toast": {
       "proxy_chain_desc": "チェーン深度{{depth}}。トポロジが同期されました。",

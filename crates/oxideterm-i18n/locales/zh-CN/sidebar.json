@@ -55,7 +55,6 @@
       "open_session_manager": "打开会话管理器",
       "activity": "活动",
       "event_log": "审计",
-      "notifications": "通知与审计",
       "saved_connections": "保存的连接",
       "forwarding": "端口转发",
       "ports": "端口",

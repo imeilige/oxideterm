@@ -185,13 +185,6 @@ impl WorkspaceApp {
         let ghost_text = (focused && !suggestions_open)
             .then(|| self.terminal_command_sender_compact_ghost_text(snapshot, &draft, cx))
             .flatten();
-        let quick_commands_enabled = self
-            .settings_store
-            .settings()
-            .terminal
-            .command_bar
-            .quick_commands_enabled;
-        let quick_commands_open = self.terminal.read(cx).quick_commands.is_open();
         let background = if self.window_background_preferences().is_some() {
             self.workspace_chrome_background(theme.bg)
         } else {
@@ -227,7 +220,6 @@ impl WorkspaceApp {
             .on_mouse_down(
                 MouseButton::Left,
                 cx.listener(move |this, event: &MouseDownEvent, window, cx| {
-                    this.blur_terminal_quick_commands_input(cx);
                     this.terminal_command_sender.update(cx, |sender, cx| {
                         sender.set_compact_focused(true, cx);
                     });
@@ -313,41 +305,6 @@ impl WorkspaceApp {
                             .child(compact_input),
                     ),
             )
-            .when(quick_commands_enabled, |row| {
-                row.child(
-                    div()
-                        .id("terminal-command-quick-commands-compact")
-                        .flex_none()
-                        .size(px(TERMINAL_SENDER_COMPACT_EDITOR_HEIGHT))
-                        .flex()
-                        .items_center()
-                        .justify_center()
-                        .rounded(px(self.tokens.radii.md))
-                        .cursor_pointer()
-                        .bg(if quick_commands_open {
-                            rgba((theme.accent << 8) | 0x1a)
-                        } else {
-                            rgba(0x00000000)
-                        })
-                        .hover(move |style| style.bg(rgb(theme.bg_hover)))
-                        .on_mouse_down(
-                            MouseButton::Left,
-                            cx.listener(|this, _event, window, cx| {
-                                this.toggle_terminal_quick_commands_panel(window, cx);
-                                cx.stop_propagation();
-                            }),
-                        )
-                        .child(Self::render_lucide_icon(
-                            LucideIcon::Zap,
-                            14.0,
-                            if quick_commands_open {
-                                rgb(theme.accent)
-                            } else {
-                                rgb(theme.text_muted)
-                            },
-                        )),
-                )
-            })
             .into_any_element()
     }
 
@@ -1338,7 +1295,6 @@ impl WorkspaceApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.blur_terminal_quick_commands_input(cx);
         let expanded = self.terminal_command_sender.read(cx).is_expanded();
         if expanded {
             self.focus_terminal_command_sender_editor(sender_id, window, cx);
@@ -1542,7 +1498,6 @@ impl WorkspaceApp {
     ) {
         let terminal_settings = &self.settings_store.settings().terminal;
         let command_bar_enabled = terminal_settings.command_bar.enabled;
-        let quick_commands_enabled = terminal_settings.command_bar.quick_commands_enabled;
         let font_family = settings_mono_font_family(self.settings_store.settings()).to_string();
         let font_size = terminal_settings.font_size as f32;
         let line_height = terminal_settings.line_height as f32;
@@ -1564,105 +1519,5 @@ impl WorkspaceApp {
                 sender.stop_all(cx);
             }
         });
-        if !command_bar_enabled || !quick_commands_enabled {
-            // Removing the dock's owning surface also releases any parameter draft and IME target.
-            self.close_terminal_quick_commands_panel(cx);
-        }
-    }
-
-    pub(in crate::workspace) fn render_terminal_quick_bar(
-        &self,
-        _window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let target_fields = self.terminal_command_context(cx).target_fields();
-        let protocol = self
-            .active_pane_id(cx)
-            .and_then(|pane_id| self.quick_command_context_for_pane(pane_id, cx))
-            .map(|context| context.protocol);
-        let (categories, commands) = self
-            .terminal
-            .read(cx)
-            .quick_commands
-            .quick_bar_snapshot(&target_fields, protocol);
-        if commands.is_empty() {
-            return div().into_any_element();
-        }
-
-        let mut content_row = div()
-            .h_full()
-            .px(px(8.0))
-            .flex()
-            .items_center()
-            .gap(px(5.0));
-        for category in categories {
-            let category_icon = terminal_quick_bar_icon(category.icon);
-            let category_commands = commands
-                .iter()
-                .filter(|command| command.category == category.id)
-                .cloned()
-                .collect::<Vec<_>>();
-            if category_commands.is_empty() {
-                continue;
-            }
-            content_row = content_row.child(
-                div()
-                    .flex_none()
-                    .flex()
-                    .items_center()
-                    .gap(px(3.0))
-                    .text_size(px(10.0))
-                    .text_color(rgb(self.tokens.ui.text_muted))
-                    .child(Self::render_lucide_icon(
-                        category_icon,
-                        11.0,
-                        rgb(self.tokens.ui.text_muted),
-                    ))
-                    .child(category.name),
-            );
-            for command in category_commands {
-                let command_for_run = command.clone();
-                content_row = content_row.child(
-                    action_chip(
-                        &self.tokens,
-                        command.name,
-                        Some(Self::render_lucide_icon(
-                            category_icon,
-                            11.0,
-                            rgb(self.tokens.ui.text_muted),
-                        )),
-                        ActionChipOptions::new().idle_text_tone(ActionChipTextTone::Muted),
-                    )
-                    .on_mouse_down(
-                        MouseButton::Left,
-                        cx.listener(move |this, _event, window, cx| {
-                            this.run_quick_command_model(&command_for_run, window, cx);
-                            cx.stop_propagation();
-                        }),
-                    ),
-                );
-            }
-        }
-        // Scrollable transfers the viewport style to its outer wrapper, so the
-        // content row must remain a child to preserve horizontal flex layout.
-        div()
-            .flex_none()
-            .h(px(34.0))
-            .overflow_x_scrollbar()
-            .border_t_1()
-            .border_color(rgb(self.tokens.ui.border))
-            .bg(rgb(self.tokens.ui.bg))
-            .child(content_row)
-            .into_any_element()
-    }
-}
-
-fn terminal_quick_bar_icon(icon: crate::workspace::quick_commands::QuickCommandIcon) -> LucideIcon {
-    match icon {
-        crate::workspace::quick_commands::QuickCommandIcon::Terminal => LucideIcon::Terminal,
-        crate::workspace::quick_commands::QuickCommandIcon::Server => LucideIcon::Server,
-        crate::workspace::quick_commands::QuickCommandIcon::Folder => LucideIcon::Folder,
-        crate::workspace::quick_commands::QuickCommandIcon::Docker => LucideIcon::Server,
-        crate::workspace::quick_commands::QuickCommandIcon::Zap => LucideIcon::Zap,
     }
 }

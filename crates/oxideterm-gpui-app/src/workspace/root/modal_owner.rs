@@ -66,7 +66,6 @@ pub(in crate::workspace) enum ActiveWindowModalOwner {
         phase: oxideterm_gpui_ui::motion::ExitPhase,
     },
     RemoteShellIntegration,
-    TerminalTriggerQuickCommand,
     CloudSync {
         phase: oxideterm_gpui_ui::motion::ExitPhase,
     },
@@ -108,7 +107,6 @@ pub(in crate::workspace) enum ActiveWindowModalOwner {
         phase: oxideterm_gpui_ui::motion::ExitPhase,
     },
     TerminalCommandSpecsEditor,
-    QuickCommandsManager,
     AiTextEditor,
     OxideImport {
         phase: oxideterm_gpui_ui::motion::ExitPhase,
@@ -150,7 +148,6 @@ impl ActiveWindowModalOwner {
             Self::SettingsReset { .. } => 12,
             Self::SettingsDataDirectory { .. } => 13,
             Self::RemoteShellIntegration => 14,
-            Self::TerminalTriggerQuickCommand => 15,
             Self::CloudSync { .. } => 16,
             Self::NodeDisconnect { .. } => 17,
             Self::TabClose { .. } => 18,
@@ -169,7 +166,6 @@ impl ActiveWindowModalOwner {
             Self::ThemeEditor { .. } => 32,
             Self::SettingsSshConfigImport { .. } => 33,
             Self::TerminalCommandSpecsEditor => 34,
-            Self::QuickCommandsManager => 35,
             Self::AiTextEditor => 36,
             Self::OxideImport { .. } => 37,
             Self::OxideExport { .. } => 38,
@@ -216,7 +212,6 @@ impl ActiveWindowModalOwner {
             | Self::HostKeyChallenge
             | Self::KeyboardInteractiveChallenge
             | Self::RemoteShellIntegration
-            | Self::TerminalTriggerQuickCommand
             | Self::HostDockerLogs
             | Self::HostServiceLogs
             | Self::HostTmuxInput
@@ -224,7 +219,6 @@ impl ActiveWindowModalOwner {
             | Self::TabRename
             | Self::TerminalCastPlayer
             | Self::TerminalCommandSpecsEditor
-            | Self::QuickCommandsManager
             | Self::AiTextEditor
             | Self::CommandPalette
             | Self::VersionMigration
@@ -251,7 +245,6 @@ impl ActiveWindowModalOwner {
                 | Self::ThemeEditor { .. }
                 | Self::SettingsSshConfigImport { .. }
                 | Self::TerminalCommandSpecsEditor
-                | Self::QuickCommandsManager
                 | Self::AiTextEditor
                 | Self::OxideImport { .. }
                 | Self::OxideExport { .. }
@@ -312,7 +305,6 @@ pub(in crate::workspace) struct ActiveWindowModalProjection {
     pub(in crate::workspace) settings_data_directory_phase:
         Option<oxideterm_gpui_ui::motion::ExitPhase>,
     pub(in crate::workspace) remote_shell_integration_open: bool,
-    pub(in crate::workspace) terminal_trigger_quick_command_open: bool,
     pub(in crate::workspace) cloud_sync_phase: Option<oxideterm_gpui_ui::motion::ExitPhase>,
     pub(in crate::workspace) tab_close_phase: Option<oxideterm_gpui_ui::motion::ExitPhase>,
     pub(in crate::workspace) host_tools_modal:
@@ -324,7 +316,6 @@ pub(in crate::workspace) struct ActiveWindowModalProjection {
     pub(in crate::workspace) settings_ssh_import_phase:
         Option<oxideterm_gpui_ui::motion::ExitPhase>,
     pub(in crate::workspace) terminal_command_specs_editor_open: bool,
-    pub(in crate::workspace) quick_commands_manager_open: bool,
     pub(in crate::workspace) ai_text_editor_open: bool,
     pub(in crate::workspace) oxide_import_phase: Option<oxideterm_gpui_ui::motion::ExitPhase>,
     pub(in crate::workspace) oxide_export_phase: Option<oxideterm_gpui_ui::motion::ExitPhase>,
@@ -410,9 +401,6 @@ impl ActiveWindowModalProjection {
         let remote_shell_owner = self
             .remote_shell_integration_open
             .then_some(ActiveWindowModalOwner::RemoteShellIntegration);
-        let terminal_trigger_owner = self
-            .terminal_trigger_quick_command_open
-            .then_some(ActiveWindowModalOwner::TerminalTriggerQuickCommand);
         let cloud_sync_owner = self
             .cloud_sync_phase
             .map(|phase| ActiveWindowModalOwner::CloudSync { phase });
@@ -469,9 +457,6 @@ impl ActiveWindowModalProjection {
         let command_specs_owner = self
             .terminal_command_specs_editor_open
             .then_some(ActiveWindowModalOwner::TerminalCommandSpecsEditor);
-        let quick_commands_manager_owner = self
-            .quick_commands_manager_open
-            .then_some(ActiveWindowModalOwner::QuickCommandsManager);
         let ai_text_editor_owner = self
             .ai_text_editor_open
             .then_some(ActiveWindowModalOwner::AiTextEditor);
@@ -516,7 +501,6 @@ impl ActiveWindowModalProjection {
             overlay_owner,
             settings_data_owner,
             remote_shell_owner,
-            terminal_trigger_owner,
             cloud_sync_owner,
             tab_owner,
             host_tools_owner,
@@ -526,7 +510,6 @@ impl ActiveWindowModalProjection {
             theme_editor_owner,
             ssh_import_owner,
             command_specs_owner,
-            quick_commands_manager_owner,
             ai_text_editor_owner,
             oxide_import_owner,
             oxide_export_owner,
@@ -662,7 +645,6 @@ impl WorkspaceApp {
                 .workspace_runtime
                 .read(cx)
                 .remote_shell_integration_confirm_open(),
-            terminal_trigger_quick_command_open: self.terminal_trigger_quick_command_pending(),
             cloud_sync_phase,
             tab_close_phase: self.tab_host.read(cx).close_confirm_phase(),
             host_tools_modal: self.host_tools.read(cx).window_modal_snapshot(),
@@ -672,7 +654,6 @@ impl WorkspaceApp {
             theme_editor_phase,
             settings_ssh_import_phase,
             terminal_command_specs_editor_open: self.terminal_command_specs_editor_open,
-            quick_commands_manager_open: self.terminal.read(cx).quick_commands.manager_open(),
             ai_text_editor_open: self.ai_text_editor_dialog.is_some(),
             oxide_import_phase,
             oxide_export_phase,
@@ -888,12 +869,6 @@ impl WorkspaceApp {
             self.handle_shortcuts_modal_key(event, cx);
             return true;
         }
-        if owner == ActiveWindowModalOwner::QuickCommandsManager
-            && self.quick_command_text_editor_focused(window, cx)
-            && !matches!(event.keystroke.key.as_str(), "escape" | "tab")
-        {
-            return false;
-        }
         let route = owner.key_route(event.keystroke.key.as_str());
         if route.dispatch_owner.is_some() && owner.allows_modal_ime() {
             if self.defer_active_ime_key(&event.keystroke, window, cx) {
@@ -953,9 +928,6 @@ impl WorkspaceApp {
             }
             ActiveWindowModalOwner::RemoteShellIntegration => {
                 let _ = self.handle_remote_shell_integration_confirm_key(event, cx);
-            }
-            ActiveWindowModalOwner::TerminalTriggerQuickCommand => {
-                let _ = self.handle_terminal_trigger_quick_command_key(event, cx);
             }
             ActiveWindowModalOwner::CloudSync { .. } => {
                 let _ = self.handle_cloud_sync_confirm_key(event, cx);
@@ -1055,34 +1027,6 @@ impl WorkspaceApp {
             ActiveWindowModalOwner::TerminalCommandSpecsEditor => {
                 if event.keystroke.key.as_str() == "escape" {
                     self.close_terminal_command_specs_editor(cx);
-                }
-            }
-            ActiveWindowModalOwner::QuickCommandsManager => {
-                if self
-                    .terminal
-                    .read(cx)
-                    .quick_commands
-                    .category_delete_pending()
-                {
-                    match event.keystroke.key.as_str() {
-                        "escape" => {
-                            self.cancel_quick_command_category_delete(cx);
-                        }
-                        "enter" => {
-                            self.confirm_quick_command_category_delete(cx);
-                        }
-                        _ => {}
-                    }
-                } else if self
-                    .terminal
-                    .read(cx)
-                    .quick_commands
-                    .focused_input()
-                    .is_some()
-                {
-                    self.handle_quick_commands_key(event, window, cx);
-                } else if event.keystroke.key.as_str() == "escape" {
-                    self.close_quick_commands_manager(cx);
                 }
             }
             ActiveWindowModalOwner::AiTextEditor => {

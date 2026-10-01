@@ -1,7 +1,4 @@
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    sync::Arc,
-};
+use std::{collections::BTreeSet, sync::Arc};
 
 use base64::Engine;
 use http::{header::AUTHORIZATION, request::Parts};
@@ -28,17 +25,15 @@ use crate::{
     calls::{
         AuditSearchArgs, BrowseConnectionsArgs, CancelCommandArgs, CancelOperationArgs,
         CommandOutputArgs, CommandStateArgs, ConnectNodeArgs, CredentialStatusArgs,
-        DescribeConnectionArgs,
-        DesktopButtonState, DesktopClipboardImageFormat, DesktopClipboardPayload, DesktopFrameArgs,
-        DesktopHandleArgs, DesktopInputArgs, DesktopInputEvent, DisconnectNodeArgs, FilesCloseArgs,
-        FilesCompareArgs, FilesListArgs, FilesMoveArgs, FilesOpenArgs, FilesReadArgs,
-        FilesRemoveArgs, FilesStatArgs, FilesWriteArgs, ForgetCredentialArgs, ForwardHandleArgs,
-        ForwardKind, ForwardsChangeArgs, ForwardsDiscoverPortsArgs, ForwardsListArgs,
-        ForwardsOpenArgs, ForwardsRemoveArgs, HostToolsCaptureArgs, HostToolsCatalogArgs,
-        HostToolsOperateArgs, InspectNodeArgs, OpenDesktopArgs, OpenTerminalArgs,
-        OperationStateArgs, PublicCredentialSlot, PublicDesktopMouseButton, PublicToolCall,
-        QuickCommandsDescribeArgs, QuickCommandsListArgs, QuickCommandsRemoveArgs,
-        QuickCommandsRunArgs, QuickCommandsSaveArgs, ReadArtifactArgs, ReadDesktopClipboardArgs,
+        DescribeConnectionArgs, DesktopButtonState, DesktopClipboardImageFormat,
+        DesktopClipboardPayload, DesktopFrameArgs, DesktopHandleArgs, DesktopInputArgs,
+        DesktopInputEvent, DisconnectNodeArgs, FilesCloseArgs, FilesCompareArgs, FilesListArgs,
+        FilesMoveArgs, FilesOpenArgs, FilesReadArgs, FilesRemoveArgs, FilesStatArgs,
+        FilesWriteArgs, ForgetCredentialArgs, ForwardHandleArgs, ForwardKind, ForwardsChangeArgs,
+        ForwardsDiscoverPortsArgs, ForwardsListArgs, ForwardsOpenArgs, ForwardsRemoveArgs,
+        HostToolsCaptureArgs, HostToolsCatalogArgs, HostToolsOperateArgs, InspectNodeArgs,
+        OpenDesktopArgs, OpenTerminalArgs, OperationStateArgs, PublicCredentialSlot,
+        PublicDesktopMouseButton, PublicToolCall, ReadArtifactArgs, ReadDesktopClipboardArgs,
         ReadTerminalArgs, RecordingsControlArgs, RecordingsExportArgs, RecordingsSearchArgs,
         RecordingsStatusArgs, ReleaseNodeArgs, RemovePublicConnectionArgs, RequestAccessArgs,
         ResizeDesktopArgs, ResizeTerminalArgs, RevertArgs, RevokeAccessArgs,
@@ -54,17 +49,6 @@ const TOOL_LIST_CACHE_TTL_MS: u64 = 1_000;
 const COMMAND_TEXT_LIMIT_BYTES: usize = 64 * 1024;
 const WORKING_DIRECTORY_LIMIT_BYTES: usize = 16 * 1024;
 const ARTIFACT_STAGE_LIMIT_BYTES: usize = 16 * 1024 * 1024;
-const QUICK_COMMAND_NAME_LIMIT_BYTES: usize = 160;
-const QUICK_COMMAND_BODY_LIMIT_BYTES: usize = 4 * 1024;
-const QUICK_COMMAND_DESCRIPTION_LIMIT_BYTES: usize = 1024;
-const QUICK_COMMAND_ARGUMENT_LIMIT: usize = 32;
-const QUICK_COMMAND_ARGUMENT_NAME_LIMIT_BYTES: usize = 64;
-const QUICK_COMMAND_ARGUMENT_VALUE_LIMIT_BYTES: usize = 8 * 1024;
-const QUICK_COMMAND_ARGUMENT_TOTAL_LIMIT_BYTES: usize = 64 * 1024;
-const QUICK_COMMAND_PARAMETER_DEFAULT_LIMIT_BYTES: usize = 1024;
-const QUICK_COMMAND_PARAMETER_CHOICE_LIMIT: usize = 64;
-const QUICK_COMMAND_HOST_PATTERN_LIMIT: usize = 32;
-const QUICK_COMMAND_HOST_PATTERN_LIMIT_BYTES: usize = 256;
 const FORWARD_ENDPOINT_LIMIT_BYTES: usize = 255;
 const FORWARD_DESCRIPTION_LIMIT_BYTES: usize = 512;
 const FORWARD_REVISION_LIMIT_BYTES: usize = 80;
@@ -276,75 +260,6 @@ struct StageArtifactMetadata {
     name: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, JsonSchema)]
-#[expect(
-    dead_code,
-    reason = "this type exists only to generate the public tool schema"
-)]
-struct QuickCommandsSaveSchema {
-    #[serde(default)]
-    quickcommand_ref: Option<crate::QuickCommandRef>,
-    name: String,
-    command: String,
-    category: String,
-    #[serde(default)]
-    description: Option<String>,
-    #[serde(default)]
-    host_pattern: Option<String>,
-    #[serde(default)]
-    host_patterns: Option<Vec<String>>,
-    #[serde(default)]
-    parameters: Option<Vec<crate::PublicQuickCommandParameter>>,
-    #[serde(default)]
-    protocols: Option<Vec<crate::PublicQuickCommandTargetProtocol>>,
-    #[serde(default)]
-    confirmation: Option<crate::PublicQuickCommandConfirmationPolicy>,
-    expected_revision: u64,
-}
-
-#[derive(Clone, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct QuickCommandsSaveMetadata {
-    #[serde(default)]
-    quickcommand_ref: Option<crate::QuickCommandRef>,
-    name: String,
-    category: String,
-    #[serde(default)]
-    description: Option<String>,
-    #[serde(default)]
-    host_pattern: Option<String>,
-    #[serde(default)]
-    host_patterns: Option<Vec<String>>,
-    #[serde(default)]
-    parameters: Option<Vec<crate::PublicQuickCommandParameter>>,
-    #[serde(default)]
-    protocols: Option<Vec<crate::PublicQuickCommandTargetProtocol>>,
-    #[serde(default)]
-    confirmation: Option<crate::PublicQuickCommandConfirmationPolicy>,
-    expected_revision: u64,
-}
-
-#[derive(Debug, Clone, Deserialize, JsonSchema)]
-#[expect(
-    dead_code,
-    reason = "this type exists only to generate the public tool schema"
-)]
-struct QuickCommandsRunSchema {
-    quickcommand_ref: crate::QuickCommandRef,
-    node_ref: NodeRef,
-    expected_revision: u64,
-    #[serde(default)]
-    arguments: BTreeMap<String, String>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct QuickCommandsRunMetadata {
-    quickcommand_ref: crate::QuickCommandRef,
-    node_ref: NodeRef,
-    expected_revision: u64,
-}
-
 #[derive(Debug, Clone, Serialize)]
 struct CatalogEntry {
     name: String,
@@ -422,7 +337,6 @@ impl PublicMcpService {
 
         // Domain-prepared tools stage their frozen payload after workspace-side validation.
         if call.requires_approval()
-            && !call.requires_domain_preparation()
             && (client.approval_mode == ClientApprovalMode::Standard
                 || call.requires_explicit_app_approval())
         {
@@ -1224,43 +1138,6 @@ impl ServerHandler for PublicMcpService {
                 }
                 Err(error) => *error,
             },
-            "quickcommands_list" => match parse_arguments::<QuickCommandsListArgs>(arguments) {
-                Ok(args) => {
-                    self.execute_call(&client, PublicToolCall::QuickCommandsList(args))
-                        .await
-                }
-                Err(error) => *error,
-            },
-            "quickcommands_describe" => {
-                match parse_arguments::<QuickCommandsDescribeArgs>(arguments) {
-                    Ok(args) => {
-                        self.execute_call(&client, PublicToolCall::QuickCommandsDescribe(args))
-                            .await
-                    }
-                    Err(error) => *error,
-                }
-            }
-            "quickcommands_save" => match parse_quick_commands_save(arguments) {
-                Ok(args) => {
-                    self.execute_call(&client, PublicToolCall::QuickCommandsSave(Box::new(args)))
-                        .await
-                }
-                Err(error) => *error,
-            },
-            "quickcommands_remove" => match parse_arguments::<QuickCommandsRemoveArgs>(arguments) {
-                Ok(args) => {
-                    self.execute_call(&client, PublicToolCall::QuickCommandsRemove(args))
-                        .await
-                }
-                Err(error) => *error,
-            },
-            "quickcommands_run" => match parse_quick_commands_run(arguments) {
-                Ok(args) => {
-                    self.execute_call(&client, PublicToolCall::QuickCommandsRun(args))
-                        .await
-                }
-                Err(error) => *error,
-            },
             "forwards_list" => match parse_arguments::<ForwardsListArgs>(arguments) {
                 Ok(args) => {
                     self.execute_call(&client, PublicToolCall::ForwardsList(args))
@@ -1842,41 +1719,6 @@ fn tool_definitions() -> Vec<ToolDefinition> {
             false,
             true,
         ),
-        define_tool::<QuickCommandsListArgs>(
-            "quickcommands_list",
-            "List saved Quick Command metadata without returning command bodies.",
-            ToolGroup::QuickCommandRead,
-            true,
-            false,
-        ),
-        define_tool::<QuickCommandsDescribeArgs>(
-            "quickcommands_describe",
-            "Read one saved Quick Command body under its separate content grant.",
-            ToolGroup::QuickCommandContentRead,
-            true,
-            false,
-        ),
-        define_tool::<QuickCommandsSaveSchema>(
-            "quickcommands_save",
-            "Create or update one saved Quick Command at an expected store revision.",
-            ToolGroup::QuickCommandManage,
-            false,
-            true,
-        ),
-        define_tool::<QuickCommandsRemoveArgs>(
-            "quickcommands_remove",
-            "Remove one saved Quick Command at an expected store revision.",
-            ToolGroup::QuickCommandManage,
-            false,
-            true,
-        ),
-        define_tool::<QuickCommandsRunSchema>(
-            "quickcommands_run",
-            "Expand and execute one saved Quick Command on an acquired SSH node.",
-            ToolGroup::QuickCommandExecute,
-            false,
-            true,
-        ),
         define_tool::<ForwardsListArgs>(
             "forwards_list",
             "List bounded port-forward projections without exposing internal rule identities.",
@@ -2286,172 +2128,6 @@ fn parse_stage_artifact(
     })
 }
 
-fn parse_quick_commands_save(
-    mut arguments: JsonObject,
-) -> Result<QuickCommandsSaveArgs, Box<CallToolResult>> {
-    let command = match arguments.remove("command") {
-        Some(Value::String(command))
-            if !command.trim().is_empty() && command.len() <= QUICK_COMMAND_BODY_LIMIT_BYTES =>
-        {
-            Zeroizing::new(command)
-        }
-        _ => {
-            return Err(Box::new(tool_error(
-                "invalid_arguments",
-                "The Quick Command body must be non-empty and at most 4096 bytes",
-            )));
-        }
-    };
-    let metadata = parse_arguments::<QuickCommandsSaveMetadata>(arguments)?;
-    if metadata.name.trim().is_empty() || metadata.name.len() > QUICK_COMMAND_NAME_LIMIT_BYTES {
-        return Err(Box::new(tool_error(
-            "invalid_arguments",
-            "The Quick Command name must be non-empty and at most 160 bytes",
-        )));
-    }
-    if metadata.host_pattern.is_some() && metadata.host_patterns.is_some() {
-        return Err(Box::new(tool_error(
-            "invalid_arguments",
-            "Provide host_pattern or host_patterns, not both",
-        )));
-    }
-    if !quick_commands_save_metadata_is_bounded(&metadata) {
-        return Err(Box::new(tool_error(
-            "invalid_arguments",
-            "The Quick Command definition exceeds its supported limits",
-        )));
-    }
-    Ok(QuickCommandsSaveArgs {
-        quickcommand_ref: metadata.quickcommand_ref,
-        name: metadata.name,
-        command,
-        category: metadata.category,
-        description: metadata.description,
-        host_pattern: metadata.host_pattern,
-        host_patterns: metadata.host_patterns,
-        parameters: metadata.parameters,
-        protocols: metadata.protocols,
-        confirmation: metadata.confirmation,
-        expected_revision: metadata.expected_revision,
-    })
-}
-
-fn parse_quick_commands_run(
-    mut arguments: JsonObject,
-) -> Result<QuickCommandsRunArgs, Box<CallToolResult>> {
-    let parameter_values = match arguments.remove("arguments") {
-        None | Some(Value::Null) => BTreeMap::new(),
-        Some(Value::Object(values)) => {
-            if values.len() > QUICK_COMMAND_ARGUMENT_LIMIT {
-                return Err(Box::new(tool_error(
-                    "invalid_arguments",
-                    "Too many Quick Command arguments were provided",
-                )));
-            }
-            let mut total_bytes = 0usize;
-            values
-                .into_iter()
-                .map(|(name, value)| match value {
-                    Value::String(value)
-                        if name.len() <= QUICK_COMMAND_ARGUMENT_NAME_LIMIT_BYTES
-                            && value.len() <= QUICK_COMMAND_ARGUMENT_VALUE_LIMIT_BYTES
-                            && total_bytes.saturating_add(value.len())
-                                <= QUICK_COMMAND_ARGUMENT_TOTAL_LIMIT_BYTES =>
-                    {
-                        total_bytes = total_bytes.saturating_add(value.len());
-                        Ok((name, Zeroizing::new(value)))
-                    }
-                    Value::String(_) => Err(Box::new(tool_error(
-                        "invalid_arguments",
-                        "Quick Command arguments exceed their supported limits",
-                    ))),
-                    _ => Err(Box::new(tool_error(
-                        "invalid_arguments",
-                        "Quick Command argument values must be strings",
-                    ))),
-                })
-                .collect::<Result<_, _>>()?
-        }
-        Some(_) => {
-            return Err(Box::new(tool_error(
-                "invalid_arguments",
-                "Quick Command arguments must be an object",
-            )));
-        }
-    };
-    let metadata = parse_arguments::<QuickCommandsRunMetadata>(arguments)?;
-    Ok(QuickCommandsRunArgs {
-        quickcommand_ref: metadata.quickcommand_ref,
-        node_ref: metadata.node_ref,
-        expected_revision: metadata.expected_revision,
-        arguments: parameter_values,
-    })
-}
-
-fn quick_commands_save_metadata_is_bounded(metadata: &QuickCommandsSaveMetadata) -> bool {
-    if metadata.category.trim().is_empty()
-        || metadata.category.len() > 128
-        || metadata
-            .description
-            .as_ref()
-            .is_some_and(|value| value.len() > QUICK_COMMAND_DESCRIPTION_LIMIT_BYTES)
-        || metadata
-            .protocols
-            .as_ref()
-            .is_some_and(|protocols| protocols.len() > 6)
-    {
-        return false;
-    }
-    let host_patterns = metadata.host_patterns.as_deref().unwrap_or_default();
-    if host_patterns.len() > QUICK_COMMAND_HOST_PATTERN_LIMIT
-        || host_patterns
-            .iter()
-            .any(|pattern| pattern.len() > QUICK_COMMAND_HOST_PATTERN_LIMIT_BYTES)
-        || metadata
-            .host_pattern
-            .as_ref()
-            .is_some_and(|pattern| pattern.len() > QUICK_COMMAND_HOST_PATTERN_LIMIT_BYTES)
-    {
-        return false;
-    }
-    let parameters = metadata.parameters.as_deref().unwrap_or_default();
-    if parameters.len() > QUICK_COMMAND_ARGUMENT_LIMIT {
-        return false;
-    }
-    let mut total_bytes = metadata.description.as_ref().map_or(0, String::len)
-        + metadata.host_pattern.as_ref().map_or(0, String::len)
-        + host_patterns.iter().map(String::len).sum::<usize>();
-    for parameter in parameters {
-        if parameter.name.len() > QUICK_COMMAND_ARGUMENT_NAME_LIMIT_BYTES
-            || parameter.label.len() > QUICK_COMMAND_NAME_LIMIT_BYTES
-            || parameter
-                .default_value
-                .as_ref()
-                .is_some_and(|value| value.len() > QUICK_COMMAND_PARAMETER_DEFAULT_LIMIT_BYTES)
-            || parameter.choices.len() > QUICK_COMMAND_PARAMETER_CHOICE_LIMIT
-            || parameter
-                .choices
-                .iter()
-                .any(|choice| choice.len() > QUICK_COMMAND_PARAMETER_DEFAULT_LIMIT_BYTES)
-        {
-            return false;
-        }
-        if matches!(
-            parameter.kind,
-            crate::PublicQuickCommandParameterKind::Secret
-        ) && (parameter.default_value.is_some() || !parameter.choices.is_empty())
-        {
-            return false;
-        }
-        total_bytes = total_bytes
-            .saturating_add(parameter.name.len())
-            .saturating_add(parameter.label.len())
-            .saturating_add(parameter.default_value.as_ref().map_or(0, String::len))
-            .saturating_add(parameter.choices.iter().map(String::len).sum::<usize>());
-    }
-    total_bytes <= QUICK_COMMAND_ARGUMENT_TOTAL_LIMIT_BYTES
-}
-
 fn forwards_open_args_are_valid(args: &ForwardsOpenArgs) -> bool {
     if !forward_text_is_valid(&args.bind_address, FORWARD_ENDPOINT_LIMIT_BYTES)
         || args
@@ -2727,139 +2403,5 @@ mod tests {
                 "tagged enum alternatives must be preserved"
             );
         }
-    }
-
-    #[test]
-    fn quick_command_run_parses_and_redacts_parameter_values() {
-        let secret_value = "sensitive-token";
-        let quickcommand_ref = crate::QuickCommandRef::new();
-        let node_ref = NodeRef::new();
-        let arguments = json!({
-            "quickcommand_ref": quickcommand_ref,
-            "node_ref": node_ref,
-            "expected_revision": 7,
-            "arguments": { "token": secret_value }
-        })
-        .as_object()
-        .cloned()
-        .unwrap();
-
-        let parsed = parse_quick_commands_run(arguments).unwrap();
-
-        assert_eq!(parsed.arguments["token"].as_str(), secret_value);
-        assert!(!format!("{parsed:?}").contains(secret_value));
-    }
-
-    #[test]
-    fn quick_command_run_rejects_oversized_parameter_values_before_approval() {
-        let arguments = json!({
-            "quickcommand_ref": crate::QuickCommandRef::new(),
-            "node_ref": NodeRef::new(),
-            "expected_revision": 7,
-            "arguments": {
-                "value": "x".repeat(QUICK_COMMAND_ARGUMENT_VALUE_LIMIT_BYTES + 1)
-            }
-        })
-        .as_object()
-        .cloned()
-        .unwrap();
-
-        assert!(parse_quick_commands_run(arguments).is_err());
-    }
-
-    #[test]
-    fn quick_command_save_roundtrips_advanced_fields_without_debugging_defaults() {
-        let secret_default = "sensitive-default";
-        let arguments = json!({
-            "name": "Deploy",
-            "command": "deploy {{param.service}}",
-            "category": "custom",
-            "expected_revision": 7,
-            "host_patterns": ["*.prod", "bastion.*"],
-            "protocols": ["ssh", "mosh"],
-            "confirmation": "always",
-            "parameters": [{
-                "name": "service",
-                "label": "Service",
-                "kind": "choice",
-                "default_value": secret_default,
-                "choices": [secret_default, "worker"],
-                "required": true
-            }]
-        })
-        .as_object()
-        .cloned()
-        .unwrap();
-
-        let parsed = parse_quick_commands_save(arguments).unwrap();
-
-        assert_eq!(parsed.host_patterns.as_ref().map(Vec::len), Some(2));
-        assert_eq!(parsed.protocols.as_ref().map(Vec::len), Some(2));
-        assert_eq!(parsed.parameters.as_ref().map(Vec::len), Some(1));
-        assert!(!format!("{parsed:?}").contains(secret_default));
-    }
-
-    #[test]
-    fn quick_command_save_rejects_persisted_defaults_for_secret_parameters() {
-        let arguments = json!({
-            "name": "Login",
-            "command": "login {{param.password}}",
-            "category": "custom",
-            "expected_revision": 7,
-            "parameters": [{
-                "name": "password",
-                "label": "Password",
-                "kind": "secret",
-                "default_value": "must-not-persist",
-                "required": true
-            }]
-        })
-        .as_object()
-        .cloned()
-        .unwrap();
-
-        assert!(parse_quick_commands_save(arguments).is_err());
-    }
-
-    #[tokio::test]
-    async fn standard_quick_command_run_reaches_domain_preparation_before_approval() {
-        let clients = Arc::new(ClientRegistry::default());
-        let mut tool_groups = ToolGroup::selectable()
-            .iter()
-            .copied()
-            .collect::<BTreeSet<_>>();
-        tool_groups.insert(ToolGroup::Basic);
-        let registered = clients
-            .register(
-                "test client".to_string(),
-                ClientApprovalMode::Standard,
-                tool_groups,
-            )
-            .unwrap();
-        let client = clients.get(&registered.projection.client_ref).unwrap();
-        let (broker, mut receiver) = DomainBroker::channel(1);
-        let state = Arc::new(PublicMcpState {
-            clients,
-            approvals: Arc::default(),
-            audit: Arc::new(AuditStore::new(16)),
-            artifacts: Arc::default(),
-            broker,
-        });
-        let service = PublicMcpService::new(state.clone());
-        let call = PublicToolCall::QuickCommandsRun(QuickCommandsRunArgs {
-            quickcommand_ref: crate::QuickCommandRef::new(),
-            node_ref: NodeRef::new(),
-            expected_revision: 1,
-            arguments: BTreeMap::new(),
-        });
-
-        let execution = tokio::spawn(async move { service.execute_call(&client, call).await });
-        let Some(DomainMessage::Request(request)) = receiver.recv().await else {
-            panic!("Quick Command run must reach workspace preparation");
-        };
-        assert!(matches!(&request.call, PublicToolCall::QuickCommandsRun(_)));
-        assert!(state.approvals.list().is_empty());
-        request.finish(ToolEnvelope::accepted(json!({ "outcome": "approval_required" })).unwrap());
-        let _ = execution.await.unwrap();
     }
 }

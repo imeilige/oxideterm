@@ -544,23 +544,6 @@ impl WorkspaceApp {
             };
             *ssh_node_states.entry(state.to_string()).or_default() += 1;
         }
-        let recent_event_cutoff =
-            std::time::SystemTime::now() - std::time::Duration::from_secs(10 * 60);
-        let recent_events = self
-            .notification_center
-            .event_log
-            .entries
-            .iter()
-            .filter(|entry| entry.timestamp >= recent_event_cutoff)
-            .collect::<Vec<_>>();
-        let recent_event_warnings = recent_events
-            .iter()
-            .filter(|entry| entry.severity == WorkspaceEventSeverity::Warn)
-            .count();
-        let recent_event_errors = recent_events
-            .iter()
-            .filter(|entry| entry.severity == WorkspaceEventSeverity::Error)
-            .count();
         // Keep get_state(health) on the same public shape as Tauri even though
         // native derives the values from GPUI-owned stores instead of Zustand.
         let health_state = serde_json::json!({
@@ -580,10 +563,12 @@ impl WorkspaceApp {
                 "total": transfers.get("total").and_then(serde_json::Value::as_u64).unwrap_or(0),
                 "counts": transfers.get("counts").cloned().unwrap_or_else(|| serde_json::json!({})),
             },
+            // The activity event log was removed, but the public health payload
+            // keeps the key so external MCP consumers see a stable shape.
             "recentEvents": {
-                "total": recent_events.len(),
-                "warnings": recent_event_warnings,
-                "errors": recent_event_errors,
+                "total": 0,
+                "warnings": 0,
+                "errors": 0,
             },
         });
         AiOrchestratorRuntimeSnapshot {

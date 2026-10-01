@@ -56,7 +56,6 @@ const fn terminal_search_entry(
     }
 }
 
-
 fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
     let window_behavior_sections =
         usize::from(cfg!(any(target_os = "windows", target_os = "macos")));
@@ -257,12 +256,10 @@ fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
         terminal_search_entry(
             TerminalSettingsPage::CommandBar,
             3,
-            "settings_view.terminal.quick_commands",
+            "settings_view.terminal.command_specs",
             &[
-                "settings_view.terminal.quick_bar",
-                "settings_view.terminal.quick_commands_confirm",
-                "settings_view.terminal.quick_commands_toast",
-                "settings_view.terminal.command_specs",
+                "settings_view.terminal.command_specs_hint",
+                "settings_view.terminal.command_specs_edit",
             ],
         ),
         terminal_search_entry(

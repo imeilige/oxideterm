@@ -378,13 +378,6 @@ impl WorkspaceApp {
                 .into_any_element();
         }
 
-        let panel_available_height = self
-            .terminal
-            .read(cx)
-            .quick_commands
-            .panel
-            .available_height
-            .clone();
         div()
             .size_full()
             .flex()
@@ -399,31 +392,10 @@ impl WorkspaceApp {
                         surface.child(self.render_terminal_recording_controls(recording_status, cx))
                     }),
             )
-            .when(
-                self.settings_store
-                    .settings()
-                    .terminal
-                    .command_bar
-                    .quick_bar_enabled,
-                |surface| surface.child(self.render_terminal_quick_bar(window, cx)),
-            )
             .child(self.render_terminal_command_bar(cx))
-            .child(self.render_terminal_quick_commands_panel(cx))
             // The toolbar is the sender header. Hidden, compact, and expanded
             // layouts all retain the same document and running jobs below it.
             .child(self.render_terminal_command_sender_panel(window, cx))
-            .on_children_prepainted(move |bounds, window, _| {
-                // Only the terminal and dock share this budget; all other rows have already
-                // consumed their actual layout heights, including an optional quick bar.
-                if bounds.len() >= 4 {
-                    let available =
-                        f32::from(bounds[0].size.height + bounds[bounds.len() - 2].size.height);
-                    if (panel_available_height.get() - available).abs() > 0.5 {
-                        panel_available_height.set(available);
-                        window.refresh();
-                    }
-                }
-            })
             .into_any_element()
     }
 

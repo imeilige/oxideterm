@@ -58,8 +58,7 @@
       "failed_state": "실패",
       "cancelled": "취소됨",
       "completed": "백그라운드 작업 완료",
-      "failed": "백그라운드 작업 실패",
-      "notification_body": "{{count}}회 실행 후 종료되었습니다."
+      "failed": "백그라운드 작업 실패"
     },
     "chat": {
       "back_to_question": "질문으로 돌아가기",

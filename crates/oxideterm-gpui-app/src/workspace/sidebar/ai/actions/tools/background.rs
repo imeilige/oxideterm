@@ -89,7 +89,9 @@ impl WorkspaceApp {
         _event: ai_background_tasks::AiBackgroundTaskEvent,
         cx: &mut Context<Self>,
     ) {
-        let events = self.ai_background_tasks.read(cx).take_events();
+        // State changes are still forwarded on this channel; drain them so the
+        // forwarder never buffers events the workspace cannot surface anymore.
+        self.ai_background_tasks.read(cx).take_events();
         let requests = self
             .ai_background_tasks
             .read(cx)
@@ -103,34 +105,6 @@ impl WorkspaceApp {
                 self.execute_ai_background_read(request.execution, cx)
             });
             let _ = request.response.send(result);
-        }
-        for event in events {
-            let oxideterm_ai_tasks::BackgroundTaskEvent::Changed(snapshot) = event else {
-                continue;
-            };
-            let (severity, title_key) = match snapshot.state {
-                oxideterm_ai_tasks::BackgroundTaskState::Completed => (
-                    WorkspaceNotificationSeverity::Info,
-                    "ai.background_tasks.completed",
-                ),
-                oxideterm_ai_tasks::BackgroundTaskState::Failed => (
-                    WorkspaceNotificationSeverity::Error,
-                    "ai.background_tasks.failed",
-                ),
-                _ => continue,
-            };
-            let body = self
-                .i18n
-                .t("ai.background_tasks.notification_body")
-                .replace("{{count}}", &snapshot.run_count.to_string());
-            self.push_notification_entry(
-                WorkspaceNotificationKind::Agent,
-                severity,
-                format!("{} · {}", self.i18n.t(title_key), snapshot.title),
-                Some(body),
-                WorkspaceNotificationScope::Global,
-                Some(format!("ai-background-task:{}", snapshot.id.as_str())),
-            );
         }
         cx.notify();
     }

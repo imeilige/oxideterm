@@ -35,7 +35,6 @@ pub enum TabKind {
     Runtime,
     ConnectionPool,
     Topology,
-    NotificationCenter,
     Sftp,
     Forwards,
     SessionManager,

@@ -1011,9 +1011,6 @@ impl WorkspaceApp {
             request.finish(ToolEnvelope::failed(error));
             return;
         }
-        self.terminal.update(cx, |terminal, _cx| {
-            terminal.quick_commands.store.reload_from_store()
-        });
         self.invalidate_cloud_sync_snapshot_caches(cx);
         self.refresh_cloud_sync_local_dirty_state(cx);
         self.save_cloud_sync_state(cx);

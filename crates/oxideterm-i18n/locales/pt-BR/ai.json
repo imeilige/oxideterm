@@ -58,8 +58,7 @@
       "failed_state": "Falhou",
       "cancelled": "Cancelada",
       "completed": "Tarefa em segundo plano concluída",
-      "failed": "Falha na tarefa em segundo plano",
-      "notification_body": "Finalizada após {{count}} execuções."
+      "failed": "Falha na tarefa em segundo plano"
     },
     "chat": {
       "back_to_question": "Voltar à pergunta",

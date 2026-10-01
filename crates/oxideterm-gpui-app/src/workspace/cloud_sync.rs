@@ -80,7 +80,6 @@ use oxideterm_gpui_ui::{
 };
 use oxideterm_settings_model::{CloudSyncFormDraft, cloud_sync_form_input_value_ref};
 
-use super::quick_commands::QuickCommandImportStrategy;
 use super::*;
 use oxideterm_gpui_ui::modal::overlay_content_boundary;
 use oxideterm_gpui_ui::select::{

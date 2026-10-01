@@ -202,7 +202,6 @@ impl WorkspaceApp {
                         | TabKind::Runtime
                         | TabKind::ConnectionPool
                         | TabKind::Topology
-                        | TabKind::NotificationCenter
                         | TabKind::CloudSync
                         | TabKind::Knowledge
                         | TabKind::RemoteDesktop
@@ -235,7 +234,6 @@ impl WorkspaceApp {
                     self.render_connection_runtime_surface(cx)
                 }
                 (TabKind::Topology, _) => self.render_topology_surface(cx),
-                (TabKind::NotificationCenter, _) => self.render_notification_center_surface(cx),
                 (TabKind::Sftp, _) => self.render_sftp_surface(window, cx),
                 (TabKind::Forwards, _) => self.render_forwards_surface(window, cx),
                 (TabKind::SessionManager, _) => self.render_session_manager_surface(window, cx),
@@ -414,7 +412,6 @@ impl WorkspaceApp {
                     return;
                 }
                 if this.active_sftp_editor_owns_key(event.keystroke.key.as_str(), cx)
-                    || this.quick_command_text_editor_focused(window, cx)
                     || this
                         .tab_host
                         .read(cx)
@@ -527,17 +524,10 @@ impl WorkspaceApp {
                     this.handle_keybinding_recording_key(event, cx);
                     window.prevent_default();
                     cx.stop_propagation();
-                } else if {
-                    let quick_commands = &this.terminal.read(cx).quick_commands;
-                    quick_commands.is_open() && quick_commands.focused_input().is_some()
-                } {
-                    this.handle_quick_commands_key(event, window, cx);
-                    window.prevent_default();
-                    cx.stop_propagation();
                 } else if this.handle_terminal_git_branch_picker_key(event, cx) {
                     window.prevent_default();
                     cx.stop_propagation();
-                } else if this.handle_terminal_command_overlay_escape(event, window, cx) {
+                } else if this.handle_terminal_command_overlay_escape(event, cx) {
                     window.prevent_default();
                     cx.stop_propagation();
                 } else if this.handle_ai_inline_panel_key(event, window, cx) {
@@ -692,7 +682,6 @@ impl WorkspaceApp {
                 this.update_sftp_pane_resize(event, window, cx);
                 this.update_sftp_queue_resize(event, window, cx);
                 this.update_terminal_command_sender_resize(event, window, cx);
-                this.update_terminal_quick_commands_resize(event, cx);
                 this.update_split_drag(event, window, cx);
                 this.update_settings_slider_drag(event, cx);
                 this.update_terminal_cast_seek_drag(event, cx);
@@ -897,9 +886,6 @@ impl WorkspaceApp {
             }))
             .on_action(cx.listener(|this, _: &TerminalFreeTypeMode, _window, cx| {
                 this.toggle_free_type_mode(cx);
-            }))
-            .on_action(cx.listener(|this, _: &PaletteEventLog, window, cx| {
-                this.open_notification_center_tab(window, cx);
             }))
             .on_action(cx.listener(|this, _: &PaletteAiSidebar, _window, cx| {
                 let _ = this.toggle_ai_sidebar(cx);
@@ -1173,10 +1159,6 @@ impl WorkspaceApp {
                 self.render_remote_shell_integration_confirm(cx),
                 |root, dialog| root.child(dialog),
             )
-            .when_some(
-                self.render_terminal_trigger_quick_command_confirm(cx),
-                |root, dialog| root.child(dialog),
-            )
             .when(cloud_sync_confirm_open, |root| {
                 root.child(self.render_cloud_sync_confirm_dialog(cx))
             })
@@ -1282,14 +1264,6 @@ impl WorkspaceApp {
                 // ownership so the settings list never contains a nested editor.
                 root.child(self.render_terminal_command_specs_editor_modal(cx))
             })
-            .when(
-                self.terminal.read(cx).quick_commands.manager_open(),
-                |root| {
-                    // Quick command editing is independent from the compact
-                    // command-bar launcher and must cover all workspace chrome.
-                    root.child(self.render_quick_commands_manager_modal(cx))
-                },
-            )
             .when(self.ai_text_editor_dialog.is_some(), |root| {
                 // Long AI documents use workspace-wide modal ownership so the
                 // settings list keeps compact, independently measured cards.
@@ -1375,8 +1349,7 @@ impl WorkspaceApp {
             Some(
                 browser_behavior::BrowserPointerCaptureOwner::EmbeddedSftpSidebarResize
                 | browser_behavior::BrowserPointerCaptureOwner::SftpQueueResize
-                | browser_behavior::BrowserPointerCaptureOwner::TerminalCommandSenderResize
-                | browser_behavior::BrowserPointerCaptureOwner::TerminalQuickCommandsResize,
+                | browser_behavior::BrowserPointerCaptureOwner::TerminalCommandSenderResize,
             ) => CursorStyle::ResizeRow,
             _ => CursorStyle::ResizeColumn,
         };
@@ -1401,7 +1374,6 @@ impl WorkspaceApp {
                 this.update_sftp_pane_resize(event, window, cx);
                 this.update_sftp_queue_resize(event, window, cx);
                 this.update_terminal_command_sender_resize(event, window, cx);
-                this.update_terminal_quick_commands_resize(event, cx);
                 this.update_host_tools_tab_scrollbar_drag(event, cx);
                 cx.stop_propagation();
             }))
@@ -1430,7 +1402,6 @@ impl WorkspaceApp {
         self.finish_sftp_pane_resize(cx);
         self.finish_sftp_queue_resize(cx);
         self.finish_terminal_command_sender_resize(cx);
-        self.finish_terminal_quick_commands_resize(cx);
         self.finish_split_drag(cx);
         self.finish_settings_slider_drag(cx);
         self.finish_terminal_cast_seek_drag(cx);

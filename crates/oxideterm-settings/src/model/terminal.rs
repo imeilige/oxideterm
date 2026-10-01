@@ -95,11 +95,7 @@ pub struct TerminalCommandBarSettings {
     #[serde(default = "default_command_bar_show_current_directory")]
     pub show_current_directory: bool,
     pub smart_completion: bool,
-    pub quick_commands_enabled: bool,
     #[serde(default)]
-    pub quick_bar_enabled: bool,
-    pub quick_commands_confirm_before_run: bool,
-    pub quick_commands_show_toast: bool,
     pub focus_handoff_commands: Vec<String>,
     #[serde(flatten)]
     pub extra: ExtraFields,
@@ -142,10 +138,6 @@ impl Default for TerminalCommandBarSettings {
             current_directory_awareness: true,
             show_current_directory: true,
             smart_completion: true,
-            quick_commands_enabled: true,
-            quick_bar_enabled: false,
-            quick_commands_confirm_before_run: false,
-            quick_commands_show_toast: true,
             focus_handoff_commands: RECOMMENDED_FOCUS_HANDOFF_COMMANDS
                 .iter()
                 .map(|command| (*command).to_string())
@@ -808,14 +800,13 @@ mod tests {
 
     #[test]
     fn command_bar_settings_restore_legacy_defaults() {
-        let defaults: [(&str, bool, fn(&TerminalCommandBarSettings) -> bool); 3] = [
+        let defaults: [(&str, bool, fn(&TerminalCommandBarSettings) -> bool); 2] = [
             (
                 "currentDirectoryAwareness",
                 true,
                 |settings| settings.current_directory_awareness,
             ),
             ("projectTasks", true, |settings| settings.project_tasks),
-            ("quickBarEnabled", false, |settings| settings.quick_bar_enabled),
         ];
 
         for (field, expected, read) in defaults {

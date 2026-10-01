@@ -259,12 +259,7 @@
       "generic_title": "Connection Error"
     },
     "reconnect": {
-      "starting": "{{name}} is reconnecting...",
-      "ssh_restored": "SSH connection restored",
-      "completed": "Connection restored, {{count}} service(s) recovered",
-      "failed": "Reconnection failed: {{error}}",
-      "cancelled": "Reconnection cancelled",
-      "recovered": "Connection recovered - session preserved"
+      "ssh_restored": "SSH connection restored"
     },
     "trace": {
       "connecting": "Connecting {{label}}",

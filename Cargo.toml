@@ -33,7 +33,6 @@ members = [
   "crates/oxideterm-desktop-presence",
   "crates/oxideterm-quick-commands",
   "crates/oxideterm-connection-monitor",
-  "crates/oxideterm-notification-center",
   "crates/oxideterm-audit",
   "crates/oxideterm-network-proxy",
   "crates/oxideterm-topology",
@@ -113,7 +112,7 @@ vte = { path = "crates/vte" }
 edition = "2024"
 license = "GPL-3.0-only"
 publish = false
-version = "2.2.5"
+version = "2.2.6"
 
 [workspace.dependencies]
 accesskit = { version = "0.24.0", features = ["enumn"] }
@@ -390,7 +389,10 @@ large_enum_variant = "allow"
 nonminimal_bool = "allow"
 
 [profile.release]
-lto = "thin"
+# Whole-program optimization both shrinks and speeds up the binary: it lets
+# cross-crate inlining reach the whole dependency graph. opt-level stays at 3
+# because size-for-speed trades away terminal rendering throughput.
+lto = "fat"
 codegen-units = 1
 strip = true
 panic = "abort"

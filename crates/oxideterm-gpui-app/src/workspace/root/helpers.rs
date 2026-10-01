@@ -12,7 +12,6 @@ pub(in crate::workspace) fn tab_background_key(kind: &TabKind) -> &'static str {
         TabKind::Runtime => "runtime",
         TabKind::ConnectionPool => "runtime",
         TabKind::Topology => "topology",
-        TabKind::NotificationCenter => "notification_center",
         TabKind::Sftp => "sftp",
         TabKind::Forwards => "forwards",
         TabKind::SessionManager => "session_manager",
@@ -577,107 +576,6 @@ impl WorkspaceApp {
         )
     }
 
-    pub(in crate::workspace) fn push_event_log_entry(
-        &mut self,
-        severity: WorkspaceEventSeverity,
-        category: WorkspaceEventCategory,
-        node_id: Option<NodeId>,
-        connection_id: Option<String>,
-        title: impl Into<String>,
-        detail: Option<String>,
-        source: &'static str,
-    ) {
-        let title = title.into();
-        self.notification_center.event_log.push(
-            severity,
-            category,
-            node_id.map(|node_id| node_id.0),
-            connection_id,
-            title,
-            detail,
-            source,
-        );
-    }
-
-    pub(in crate::workspace) fn push_notification_entry(
-        &mut self,
-        kind: WorkspaceNotificationKind,
-        severity: WorkspaceNotificationSeverity,
-        title: impl Into<String>,
-        body: Option<String>,
-        scope: WorkspaceNotificationScope,
-        dedupe_key: Option<String>,
-    ) {
-        self.notification_center
-            .notifications
-            .push(kind, severity, title, body, scope, dedupe_key);
-    }
-
-    pub(in crate::workspace) fn resolve_connection_notifications_for_node(
-        &mut self,
-        node_id: &NodeId,
-    ) {
-        self.notification_center
-            .notifications
-            .resolve_connection_for_node(&node_id.0);
-    }
-
-    pub(in crate::workspace) fn recount_notifications(&mut self) {
-        self.notification_center.notifications.recount();
-    }
-
-    pub(in crate::workspace) fn clear_notifications(&mut self) {
-        self.notification_center.notifications.clear();
-    }
-
-    pub(in crate::workspace) fn mark_all_notifications_read(&mut self) {
-        self.notification_center.notifications.mark_all_read();
-    }
-
-    pub(in crate::workspace) fn dismiss_notification(&mut self, id: u64) {
-        self.notification_center.notifications.remove(id);
-    }
-
-    pub(in crate::workspace) fn cycle_notification_status_filter(&mut self) {
-        self.notification_center.notifications.cycle_status_filter();
-    }
-
-    pub(in crate::workspace) fn cycle_notification_severity_filter(&mut self) {
-        self.notification_center
-            .notifications
-            .cycle_severity_filter();
-    }
-
-    pub(in crate::workspace) fn cycle_notification_kind_filter(&mut self) {
-        self.notification_center.notifications.cycle_kind_filter();
-    }
-
-    pub(in crate::workspace) fn notification_matches_filter(
-        &self,
-        entry: &WorkspaceNotificationEntry,
-    ) -> bool {
-        self.notification_center.notifications.matches_filter(entry)
-    }
-
-    pub(in crate::workspace) fn push_reconnect_notice(
-        &self,
-        title: impl Into<String>,
-        description: Option<String>,
-        variant: TerminalNoticeVariant,
-        cx: &App,
-    ) {
-        self.push_workspace_notice(
-            TerminalNotice {
-                title: title.into(),
-                description,
-                status_text: None,
-                progress: None,
-                variant,
-            },
-            cx,
-        );
-    }
-
     pub(in crate::workspace) fn i18n_with(
         &self,
         key: &str,
@@ -811,48 +709,6 @@ impl WorkspaceApp {
         });
     }
 
-    pub(in crate::workspace) fn log_reconnect_phase(
-        &mut self,
-        node_id: &NodeId,
-        phase: ReconnectPhase,
-        _detail: Option<String>,
-    ) {
-        let severity = match phase {
-            ReconnectPhase::Failed => WorkspaceEventSeverity::Error,
-            ReconnectPhase::Cancelled => WorkspaceEventSeverity::Warn,
-            _ => WorkspaceEventSeverity::Info,
-        };
-        self.push_event_log_entry(
-            severity,
-            WorkspaceEventCategory::Reconnect,
-            Some(node_id.clone()),
-            self.node_router.connection_id_for_node(node_id),
-            "event_log.events.reconnect_phase",
-            Some(reconnect_phase_label(&phase).to_string()),
-            "reconnect_orchestrator",
-        );
-    }
-
-    pub(in crate::workspace) fn log_connection_event(
-        &mut self,
-        node_id: &NodeId,
-        connection_id: Option<String>,
-        title: impl Into<String>,
-        severity: WorkspaceEventSeverity,
-        detail: Option<String>,
-        source: &'static str,
-    ) {
-        self.push_event_log_entry(
-            severity,
-            WorkspaceEventCategory::Connection,
-            Some(node_id.clone()),
-            connection_id,
-            title,
-            detail,
-            source,
-        );
-    }
-
     pub(in crate::workspace) fn has_active_reconnect_job(
         &self,
         node_id: &NodeId,
@@ -888,21 +744,6 @@ impl WorkspaceApp {
                     node.readiness = NodeReadiness::Disconnected;
                 }
             }
-            self.push_event_log_entry(
-                WorkspaceEventSeverity::Warn,
-                WorkspaceEventCategory::Reconnect,
-                Some(node_id.clone()),
-                self.node_router.connection_id_for_node(node_id),
-                "event_log.events.reconnect_phase",
-                Some(reconnect_phase_label(&ReconnectPhase::Cancelled).to_string()),
-                "reconnect_orchestrator",
-            );
-            self.push_reconnect_notice(
-                self.i18n.t("connections.reconnect.cancelled"),
-                None,
-                TerminalNoticeVariant::Default,
-                cx,
-            );
             self.persist_session_tree_snapshot();
             cx.notify();
         }
@@ -913,7 +754,6 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) {
         self.session_sort_menu_open = false;
-        self.audit.open_filter = None;
         // Tauri dialogs are Radix modal roots: opening one dismisses background
         // popovers and input focus before the overlay starts trapping events.
         self.release_active_remote_desktop_inputs(cx);
@@ -943,7 +783,7 @@ impl WorkspaceApp {
         &mut self,
         cx: &mut Context<Self>,
     ) -> bool {
-        let mut changed = self.audit.open_filter.take().is_some();
+        let mut changed = false;
 
         // Match browser/Radix outside-click behavior for non-modal UI only.
         // Auth prompts, confirm dialogs, QuickLook, and SFTP editor shells keep

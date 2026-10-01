@@ -545,7 +545,6 @@ pub(in crate::workspace) fn ai_tab_kind_label(kind: &TabKind) -> &'static str {
         TabKind::ConnectionPool => "runtime",
         TabKind::Topology => "topology",
         TabKind::Graphics => "graphics",
-        TabKind::NotificationCenter => "notifications",
         TabKind::CloudSync => "cloud_sync",
         TabKind::Knowledge => "knowledge",
         TabKind::RemoteDesktop => "remote_desktop",

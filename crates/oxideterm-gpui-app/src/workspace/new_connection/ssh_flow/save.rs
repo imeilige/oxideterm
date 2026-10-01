@@ -3,7 +3,6 @@
 
 use super::*;
 use crate::workspace::{
-    WorkspaceNotificationKind, WorkspaceNotificationScope, WorkspaceNotificationSeverity,
     new_connection::terminal_serial_runtime_options_from_profile,
     standalone_connections::{StandaloneConnectionKind, StandaloneConnectionLaunch},
 };
@@ -2652,15 +2651,7 @@ impl WorkspaceApp {
             // stale reference without exposing its identifier or connection data.
             tracing::warn!("Saved connection lookup failed before opening");
             let title = self.i18n.t("sessionManager.toast.connection_not_found");
-            self.push_command_palette_toast(title.clone(), None, TerminalNoticeVariant::Error, cx);
-            self.push_notification_entry(
-                WorkspaceNotificationKind::Connection,
-                WorkspaceNotificationSeverity::Error,
-                title,
-                None,
-                WorkspaceNotificationScope::Global,
-                Some("saved-connection-not-found".to_string()),
-            );
+            self.push_command_palette_toast(title, None, TerminalNoticeVariant::Error, cx);
             cx.notify();
             return;
         };

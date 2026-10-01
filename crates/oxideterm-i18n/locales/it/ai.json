@@ -58,8 +58,7 @@
       "failed_state": "Non riuscita",
       "cancelled": "Annullata",
       "completed": "Attività in background completata",
-      "failed": "Attività in background non riuscita",
-      "notification_body": "Terminata dopo {{count}} esecuzioni."
+      "failed": "Attività in background non riuscita"
     },
     "chat": {
       "back_to_question": "Torna alla domanda",

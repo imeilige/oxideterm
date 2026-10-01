@@ -1,21 +1,17 @@
 use std::{collections::HashMap, path::Path, process::Stdio, time::Duration};
 
-use gpui::{AnyElement, App, Context, EntityId, Task, Timer, WeakEntity, div, prelude::*};
+use gpui::{App, Context, EntityId, Task, Timer, WeakEntity};
 use oxideterm_gpui_terminal::TerminalPane;
-use oxideterm_quick_commands::{QuickCommandRisk, prepare_quick_command};
 use oxideterm_terminal::TerminalSessionKind;
 use oxideterm_terminal_triggers::{
     ExpandedLocalProcessSpec, ExpandedTriggerAction, SavedConnectionKind, SavedConnectionRef,
     TerminalTrigger, TerminalTriggerScope, TerminalTriggersSnapshot, TriggerMatched,
-    compile_active, expand_template,
+    compile_active,
 };
 use tokio::process::Command;
 use zeroize::Zeroizing;
 
-use super::{
-    ConfirmDialogVariant, ConfirmDialogView, PaneId, TerminalNotice, TerminalNoticeVariant,
-    TerminalSessionId, WorkspaceApp,
-};
+use super::{PaneId, TerminalNotice, TerminalNoticeVariant, TerminalSessionId, WorkspaceApp};
 
 #[cfg(windows)]
 const TERMINAL_TRIGGER_PROCESS_CREATE_NO_WINDOW: u32 = 0x08000000;
@@ -27,7 +23,6 @@ pub(super) struct TerminalTriggerRuntimeState {
     session_overrides: HashMap<TerminalSessionId, HashMap<String, bool>>,
     delayed_tasks: HashMap<u64, Task<()>>,
     process_tasks: HashMap<u64, LocalTriggerProcessTask>,
-    pending_quick_command: Option<PendingTriggerQuickCommand>,
 }
 
 impl Default for TerminalTriggerRuntimeState {
@@ -38,7 +33,6 @@ impl Default for TerminalTriggerRuntimeState {
             session_overrides: HashMap::new(),
             delayed_tasks: HashMap::new(),
             process_tasks: HashMap::new(),
-            pending_quick_command: None,
         }
     }
 }
@@ -56,18 +50,6 @@ impl TerminalTriggerActionTarget {
     }
 }
 
-struct PendingTriggerQuickCommand {
-    target: TerminalTriggerActionTarget,
-    trigger_id: String,
-    generation: u64,
-    quick_command_id: String,
-    quick_command_updated_at: u64,
-    command: Zeroizing<String>,
-    rule_name: String,
-    quick_command_name: String,
-    risk: Option<QuickCommandRisk>,
-}
-
 struct LocalTriggerProcessTask {
     _completion: Task<()>,
     abort_handle: tokio::task::AbortHandle,
@@ -81,12 +63,6 @@ impl Drop for LocalTriggerProcessTask {
 }
 
 impl WorkspaceApp {
-    pub(in crate::workspace) fn terminal_trigger_quick_command_pending(&self) -> bool {
-        self.terminal_trigger_runtime
-            .pending_quick_command
-            .is_some()
-    }
-
     pub(in crate::workspace) fn handle_terminal_trigger_matches(
         &mut self,
         pane_id: PaneId,
@@ -172,13 +148,19 @@ impl WorkspaceApp {
                     pane.send_trigger_text(&text, append_enter, cx)
                 });
             }
-            ExpandedTriggerAction::RunQuickCommand { quick_command_id } => {
-                self.run_terminal_trigger_quick_command(
-                    target,
-                    trigger.id,
-                    trigger.name,
-                    quick_command_id,
-                    &matched,
+            ExpandedTriggerAction::RunQuickCommand { .. } => {
+                // Quick Commands no longer ship an app-side store, so a saved
+                // trigger that targets one cannot be resolved. Surface the gap
+                // instead of silently swallowing the match; the action variant
+                // itself is owned by the persisted trigger model.
+                self.push_workspace_notice(
+                    TerminalNotice {
+                        title: self.i18n.t("terminal.triggers.quick_command_data_missing"),
+                        description: None,
+                        status_text: None,
+                        progress: None,
+                        variant: TerminalNoticeVariant::Error,
+                    },
                     cx,
                 );
             }
@@ -319,7 +301,6 @@ impl WorkspaceApp {
             .wrapping_add(1)
             .max(1);
         self.terminal_trigger_runtime.delayed_tasks.clear();
-        self.terminal_trigger_runtime.pending_quick_command = None;
         let pane_ids = self
             .tab_host
             .read(cx)
@@ -335,7 +316,6 @@ impl WorkspaceApp {
     pub(in crate::workspace) fn shutdown_terminal_trigger_runtime(&mut self) {
         // Workspace release cancels timers and aborts every still-running local child.
         self.terminal_trigger_runtime.delayed_tasks.clear();
-        self.terminal_trigger_runtime.pending_quick_command = None;
         self.terminal_trigger_runtime.process_tasks.clear();
     }
 
@@ -389,222 +369,6 @@ impl WorkspaceApp {
         self.set_terminal_trigger_session_override(session_id, trigger_id.to_string(), enabled);
         self.refresh_terminal_trigger_pane(pane_id, cx);
         cx.notify();
-    }
-
-    fn run_terminal_trigger_quick_command(
-        &mut self,
-        target: TerminalTriggerActionTarget,
-        trigger_id: String,
-        rule_name: String,
-        quick_command_id: String,
-        matched: &TriggerMatched,
-        cx: &mut Context<Self>,
-    ) {
-        let Some(mut quick_command) = self
-            .terminal
-            .read(cx)
-            .quick_commands
-            .store
-            .commands
-            .iter()
-            .find(|command| command.id == quick_command_id)
-            .cloned()
-        else {
-            return;
-        };
-        let Ok(command_template) = expand_template(&quick_command.command, matched) else {
-            return;
-        };
-        quick_command.command = command_template.to_string();
-        let parameter_values = quick_command
-            .parameters
-            .iter()
-            .filter_map(|parameter| {
-                parameter
-                    .default_value
-                    .clone()
-                    .map(|value| (parameter.name.clone(), zeroize::Zeroizing::new(value)))
-            })
-            .collect::<std::collections::BTreeMap<_, _>>();
-        let Some(context) = self.quick_command_context_for_pane(target.pane_id, cx) else {
-            return;
-        };
-        let Ok(prepared) = prepare_quick_command(&quick_command, &[context], &parameter_values)
-        else {
-            self.push_workspace_notice(
-                TerminalNotice {
-                    title: self.i18n.t("terminal.triggers.quick_command_data_missing"),
-                    description: None,
-                    status_text: None,
-                    progress: None,
-                    variant: TerminalNoticeVariant::Error,
-                },
-                cx,
-            );
-            return;
-        };
-        let template_requires_confirmation = prepared.confirmation_required;
-        let Some(prepared_target) = prepared.targets.into_iter().next() else {
-            return;
-        };
-        let command = prepared_target.command;
-        let risk = prepared_target.risk;
-        let requires_confirmation = template_requires_confirmation
-            || self
-                .settings_store
-                .settings()
-                .terminal
-                .command_bar
-                .quick_commands_confirm_before_run;
-        if requires_confirmation {
-            if self
-                .terminal_trigger_runtime
-                .pending_quick_command
-                .is_some()
-            {
-                return;
-            }
-            self.terminal_trigger_runtime.pending_quick_command =
-                Some(PendingTriggerQuickCommand {
-                    target,
-                    trigger_id,
-                    generation: matched.generation(),
-                    quick_command_id,
-                    quick_command_updated_at: quick_command.updated_at,
-                    command,
-                    rule_name,
-                    quick_command_name: quick_command.name,
-                    risk,
-                });
-            self.reset_standard_confirm_focus();
-            cx.notify();
-            return;
-        }
-        let _ = target
-            .pane
-            .update(cx, |pane, cx| pane.send_trigger_text(&command, true, cx));
-    }
-
-    pub(in crate::workspace) fn cancel_terminal_trigger_quick_command(
-        &mut self,
-        cx: &mut Context<Self>,
-    ) {
-        self.terminal_trigger_runtime.pending_quick_command = None;
-        self.clear_standard_confirm_focus();
-        cx.notify();
-    }
-
-    pub(in crate::workspace) fn handle_terminal_trigger_quick_command_key(
-        &mut self,
-        event: &gpui::KeyDownEvent,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        match self.handle_standard_confirm_key(event, cx) {
-            Some(super::ConfirmKeyboardAction::Cancel) => {
-                self.cancel_terminal_trigger_quick_command(cx);
-                true
-            }
-            Some(super::ConfirmKeyboardAction::Confirm) => {
-                self.confirm_terminal_trigger_quick_command(cx);
-                true
-            }
-            Some(super::ConfirmKeyboardAction::Handled) => true,
-            None => false,
-        }
-    }
-
-    pub(in crate::workspace) fn confirm_terminal_trigger_quick_command(
-        &mut self,
-        cx: &mut Context<Self>,
-    ) {
-        let Some(pending) = self.terminal_trigger_runtime.pending_quick_command.take() else {
-            return;
-        };
-        self.clear_standard_confirm_focus();
-        let quick_command_is_current = self
-            .terminal
-            .read(cx)
-            .quick_commands
-            .store
-            .commands
-            .iter()
-            .any(|command| {
-                command.id == pending.quick_command_id
-                    && command.updated_at == pending.quick_command_updated_at
-            });
-        let current_trigger = self
-            .terminal_triggers
-            .snapshot
-            .triggers
-            .iter()
-            .find(|trigger| trigger.id == pending.trigger_id && trigger.enabled)
-            .cloned();
-        let trigger_is_current = pending.generation == self.terminal_trigger_runtime.generation
-            && current_trigger.as_ref().is_some_and(|trigger| {
-                self.terminal_trigger_applies_to_pane(pending.target.pane_id, trigger, cx)
-            });
-        if quick_command_is_current
-            && trigger_is_current
-            && self.terminal_trigger_enabled_for_session(
-                pending.target.session_id,
-                &pending.trigger_id,
-            )
-            && self.terminal_trigger_target_is_live(&pending.target, cx)
-        {
-            let _ = pending.target.pane.update(cx, |pane, cx| {
-                pane.send_trigger_text(&pending.command, true, cx)
-            });
-        }
-        cx.notify();
-    }
-
-    pub(in crate::workspace) fn render_terminal_trigger_quick_command_confirm(
-        &self,
-        cx: &mut Context<Self>,
-    ) -> Option<AnyElement> {
-        let pending = self
-            .terminal_trigger_runtime
-            .pending_quick_command
-            .as_ref()?;
-        let risk_key = match pending.risk {
-            Some(QuickCommandRisk::High) => "terminal.triggers.risk_high",
-            Some(QuickCommandRisk::Medium) => "terminal.triggers.risk_medium",
-            None => "terminal.triggers.risk_configured",
-        };
-        let description = self
-            .i18n
-            .t("terminal.triggers.risky_quick_command_description")
-            .replace("{{trigger}}", &pending.rule_name)
-            .replace("{{command}}", &pending.quick_command_name)
-            .replace("{{risk}}", &self.i18n.t(risk_key));
-        Some(
-            oxideterm_gpui_ui::confirm::confirm_dialog_with_focus(
-                &self.tokens,
-                ConfirmDialogView {
-                    variant: ConfirmDialogVariant::Danger,
-                    title: div()
-                        .child(self.i18n.t("terminal.triggers.risky_quick_command_title"))
-                        .into_any_element(),
-                    description: Some(div().child(description).into_any_element()),
-                    cancel_label: div()
-                        .child(self.i18n.t("terminal.triggers.cancel"))
-                        .into_any_element(),
-                    confirm_label: div()
-                        .child(self.i18n.t("terminal.triggers.run"))
-                        .into_any_element(),
-                },
-                self.standard_confirm_focus(),
-                cx.listener(|workspace, _event, _window, cx| {
-                    workspace.cancel_terminal_trigger_quick_command(cx);
-                    cx.stop_propagation();
-                }),
-                cx.listener(|workspace, _event, _window, cx| {
-                    workspace.confirm_terminal_trigger_quick_command(cx);
-                    cx.stop_propagation();
-                }),
-            )
-            .into_any_element(),
-        )
     }
 
     fn launch_terminal_trigger_process(

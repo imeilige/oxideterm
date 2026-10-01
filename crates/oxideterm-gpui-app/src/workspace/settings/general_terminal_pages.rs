@@ -1081,46 +1081,9 @@ impl WorkspaceApp {
                 vec![self.focus_handoff_commands_row(settings, cx)],
             ),
             (TerminalSettingsPage::CommandBar, 2) => self.settings_card(
-                "settings_view.terminal.quick_commands",
-                "",
-                vec![
-                    self.bool_row(
-                        "settings_view.terminal.quick_commands",
-                        "settings_view.terminal.quick_commands_hint",
-                        settings.terminal.command_bar.quick_commands_enabled,
-                        set_quick_commands_enabled,
-                        cx,
-                    ),
-                    self.card_separator(),
-                    self.bool_row(
-                        "settings_view.terminal.quick_bar",
-                        "settings_view.terminal.quick_bar_hint",
-                        settings.terminal.command_bar.quick_bar_enabled,
-                        set_quick_bar_enabled,
-                        cx,
-                    ),
-                    self.card_separator(),
-                    self.bool_row(
-                        "settings_view.terminal.quick_commands_confirm",
-                        "settings_view.terminal.quick_commands_confirm_hint",
-                        settings
-                            .terminal
-                            .command_bar
-                            .quick_commands_confirm_before_run,
-                        set_quick_commands_confirm,
-                        cx,
-                    ),
-                    self.card_separator(),
-                    self.bool_row(
-                        "settings_view.terminal.quick_commands_toast",
-                        "settings_view.terminal.quick_commands_toast_hint",
-                        settings.terminal.command_bar.quick_commands_show_toast,
-                        set_quick_commands_toast,
-                        cx,
-                    ),
-                    self.card_separator(),
-                    self.terminal_command_specs_editor_row(cx),
-                ],
+                "settings_view.terminal.command_specs",
+                "settings_view.terminal.command_specs_hint",
+                vec![self.terminal_command_specs_editor_row(cx)],
             ),
             (TerminalSettingsPage::Awareness, 0) => self.settings_card(
                 "settings_view.terminal.awareness_title",

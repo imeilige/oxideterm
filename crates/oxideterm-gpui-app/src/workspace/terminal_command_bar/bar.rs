@@ -74,13 +74,6 @@ impl WorkspaceApp {
         } else {
             String::new()
         };
-        let quick_commands_enabled = self
-            .settings_store
-            .settings()
-            .terminal
-            .command_bar
-            .quick_commands_enabled;
-        let quick_commands_open = self.terminal.read(cx).quick_commands.is_open();
         let (command_sender_visible, command_sender_expanded, command_sender_running_count) = {
             let sender = self.terminal_command_sender.read(cx);
             (
@@ -174,7 +167,6 @@ impl WorkspaceApp {
                                         .terminal_command_sender
                                         .update(cx, |sender, cx| sender.toggle_visible(cx));
                                     if visible {
-                                        this.blur_terminal_quick_commands_input(cx);
                                         this.terminal_command_sender.update(cx, |sender, cx| {
                                             sender.set_compact_focused(true, cx);
                                         });
@@ -327,7 +319,6 @@ impl WorkspaceApp {
                                     let expanding =
                                         !this.terminal_command_sender.read(cx).is_expanded();
                                     if expanding {
-                                        this.close_terminal_quick_commands_panel(cx);
                                         this.close_terminal_command_overlays(cx);
                                         this.ime_marked_text = None;
                                     }
@@ -367,33 +358,6 @@ impl WorkspaceApp {
                                         .child(command_sender_running_count.to_string()),
                                 )
                             })
-                            .when(
-                                quick_commands_enabled
-                                    && (!command_sender_visible || command_sender_expanded),
-                                |actions| {
-                                    actions.child(self.terminal_command_action_button(
-                                        LucideIcon::Zap,
-                                        if quick_commands_open {
-                                            rgb(theme.accent)
-                                        } else {
-                                            rgb(theme.text_muted)
-                                        },
-                                        false,
-                                        Some(if quick_commands_open {
-                                            rgba((theme.accent << 8) | 0x26)
-                                        } else {
-                                            rgba(0x00000000)
-                                        }),
-                                        "terminal-command-quick-commands",
-                                        self.i18n.t("terminal.quick_commands.title"),
-                                        |this, _event, window, cx| {
-                                            this.toggle_terminal_quick_commands_panel(window, cx);
-                                            cx.stop_propagation();
-                                        },
-                                        cx,
-                                    ))
-                                },
-                            )
                             .when_some(active_pane_id, |actions, pane_id| {
                                 // Capture the visible pane so the shortcut cannot retarget after a tab switch.
                                 actions.child(self.terminal_command_action_button(
@@ -690,7 +654,6 @@ impl WorkspaceApp {
         let should_open = !self.terminal_recording_menu_open;
         self.terminal_recording_menu_open = should_open;
         if should_open {
-            self.blur_terminal_quick_commands_input(cx);
             self.dismiss_terminal_broadcast_menu(cx);
             self.dismiss_terminal_highlight_popover();
             self.close_terminal_cwd_picker(cx);

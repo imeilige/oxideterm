@@ -58,8 +58,7 @@
       "failed_state": "失敗",
       "cancelled": "已取消",
       "completed": "背景工作已完成",
-      "failed": "背景工作失敗",
-      "notification_body": "工作在執行 {{count}} 次後結束。"
+      "failed": "背景工作失敗"
     },
     "chat": {
       "back_to_question": "回到提問",

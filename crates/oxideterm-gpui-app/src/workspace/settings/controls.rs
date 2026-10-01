@@ -709,23 +709,24 @@ impl WorkspaceApp {
             }
             (SettingsTab::Terminal, SettingsSelect::TerminalTriggerAction) => {
                 let draft = self.terminal_trigger_draft()?;
+                // Quick commands are gone, so an already-stored RunQuickCommand
+                // trigger has no entry in this list and nothing is highlighted.
                 let current = match &draft.action {
-                    TerminalTriggerAction::SendText { .. } => 0,
-                    TerminalTriggerAction::RunQuickCommand { .. } => 1,
-                    TerminalTriggerAction::LaunchLocalProcess { .. } => 2,
+                    TerminalTriggerAction::SendText { .. } => Some(0),
+                    TerminalTriggerAction::RunQuickCommand { .. } => None,
+                    TerminalTriggerAction::LaunchLocalProcess { .. } => Some(1),
                 };
                 let mut popup = select_overlay_popup(&self.tokens, width);
-                for action_index in 0..3 {
+                for action_index in 0..2 {
                     let label_key = match action_index {
                         0 => "settings_view.terminal.triggers.action_send_text",
-                        1 => "settings_view.terminal.triggers.action_quick_command",
                         _ => "settings_view.terminal.triggers.action_local_process",
                     };
                     popup = popup.child(select_option_action(
                         select_option(
                             &self.tokens,
                             self.i18n.t(label_key),
-                            action_index == current,
+                            current == Some(action_index),
                         ),
                         false,
                         false,
@@ -736,18 +737,6 @@ impl WorkspaceApp {
                                     text: String::new(),
                                     append_enter: false,
                                 },
-                                1 => {
-                                    let quick_command_id = this
-                                        .terminal
-                                        .read(cx)
-                                        .quick_commands
-                                        .store
-                                        .commands
-                                        .first()
-                                        .map(|command| command.id.clone())
-                                        .unwrap_or_default();
-                                    TerminalTriggerAction::RunQuickCommand { quick_command_id }
-                                }
                                 _ => TerminalTriggerAction::LaunchLocalProcess {
                                     process: LocalProcessSpec::DirectProgram {
                                         executable: String::new(),
@@ -796,45 +785,7 @@ impl WorkspaceApp {
                 }
                 Some(popup)
             }
-            (SettingsTab::Terminal, SettingsSelect::TerminalTriggerQuickCommand) => {
-                let draft = self.terminal_trigger_draft()?;
-                let current = match &draft.action {
-                    TerminalTriggerAction::RunQuickCommand { quick_command_id } => {
-                        quick_command_id.clone()
-                    }
-                    _ => String::new(),
-                };
-                let mut popup = select_panel_overlay_popup_with_max_height(
-                    &self.tokens,
-                    width,
-                    self.tokens.metrics.settings_theme_select_popup_max_height,
-                );
-                for command in self
-                    .terminal
-                    .read(cx)
-                    .quick_commands
-                    .store
-                    .commands
-                    .iter()
-                    .filter(|command| {
-                        oxideterm_quick_commands::quick_command_can_run_non_interactively(command)
-                    })
-                {
-                    let id = command.id.clone();
-                    popup = popup.child(select_option_action(
-                        select_option(&self.tokens, command.name.clone(), id == current),
-                        false,
-                        false,
-                        cx.listener(move |this, _event, _window, cx| {
-                            this.close_settings_select();
-                            this.select_terminal_trigger_quick_command(id.clone());
-                            cx.stop_propagation();
-                            cx.notify();
-                        }),
-                    ));
-                }
-                Some(popup)
-            }
+            (SettingsTab::Terminal, SettingsSelect::TerminalTriggerQuickCommand) => None,
             (SettingsTab::Terminal, SettingsSelect::TerminalTriggerTiming) => {
                 let draft = self.terminal_trigger_draft()?;
                 let current = draft.timing.dispatch;

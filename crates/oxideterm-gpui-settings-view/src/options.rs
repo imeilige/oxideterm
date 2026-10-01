@@ -118,7 +118,6 @@ pub fn compact_decimal(value: f64) -> String {
 pub fn font_family_options() -> &'static [FontFamily] {
     &[
         FontFamily::Jetbrains,
-        FontFamily::Meslo,
         FontFamily::Maple,
         FontFamily::Cascadia,
         FontFamily::Consolas,
@@ -468,25 +467,6 @@ pub fn set_command_bar_current_directory_awareness(settings: &mut PersistedSetti
 
 pub fn set_command_bar_show_current_directory(settings: &mut PersistedSettings, value: bool) {
     settings.terminal.command_bar.show_current_directory = value;
-}
-
-pub fn set_quick_commands_enabled(settings: &mut PersistedSettings, value: bool) {
-    settings.terminal.command_bar.quick_commands_enabled = value;
-}
-
-pub fn set_quick_bar_enabled(settings: &mut PersistedSettings, value: bool) {
-    settings.terminal.command_bar.quick_bar_enabled = value;
-}
-
-pub fn set_quick_commands_confirm(settings: &mut PersistedSettings, value: bool) {
-    settings
-        .terminal
-        .command_bar
-        .quick_commands_confirm_before_run = value;
-}
-
-pub fn set_quick_commands_toast(settings: &mut PersistedSettings, value: bool) {
-    settings.terminal.command_bar.quick_commands_show_toast = value;
 }
 
 pub fn set_terminal_trigger_shell_execution(settings: &mut PersistedSettings, value: bool) {

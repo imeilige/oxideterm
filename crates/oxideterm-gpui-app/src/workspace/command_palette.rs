@@ -1061,7 +1061,6 @@ impl WorkspaceApp {
                     TabKind::Runtime => self.i18n.t("sidebar.panels.runtime"),
                     TabKind::ConnectionPool => self.i18n.t("sidebar.panels.runtime_overview"),
                     TabKind::Topology => self.i18n.t("topology.title"),
-                    TabKind::NotificationCenter => self.i18n.t("sidebar.panels.notifications"),
                     TabKind::CloudSync => self.i18n.t("plugin.cloud_sync.panel_title"),
                     TabKind::Knowledge => self.i18n.t("sidebar.panels.knowledge"),
                     TabKind::RemoteDesktop => {
@@ -2179,7 +2178,6 @@ fn tab_kind_icon(kind: &TabKind) -> LucideIcon {
         TabKind::Runtime => LucideIcon::Gauge,
         TabKind::ConnectionPool => LucideIcon::Gauge,
         TabKind::Topology => LucideIcon::Network,
-        TabKind::NotificationCenter => LucideIcon::Bell,
         TabKind::Forwards => LucideIcon::ArrowLeftRight,
         TabKind::Sftp => LucideIcon::HardDrive,
         TabKind::CloudSync => LucideIcon::Cloud,

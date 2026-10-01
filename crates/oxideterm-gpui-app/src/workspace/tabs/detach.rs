@@ -1692,7 +1692,6 @@ impl WorkspaceApp {
                 self.render_connection_runtime_surface(cx)
             }
             (TabKind::Topology, _) => self.render_topology_surface(cx),
-            (TabKind::NotificationCenter, _) => self.render_notification_center_surface(cx),
             (TabKind::SessionManager, _) => self.render_session_manager_surface(window, cx),
             (TabKind::CloudSync, _) => self.render_cloud_sync_surface(cx),
             (TabKind::RemoteDesktop, _) => self.render_remote_desktop_surface(tab_id, window, cx),

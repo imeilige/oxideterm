@@ -488,7 +488,6 @@ impl WorkspaceApp {
                     );
                 });
                 if child_message {
-                    self.notify_ai_agent_attention(conversation_id, message_id, "ai.agents.failed", cx);
                     self.ai_entity.read(cx).persist_agent_records(); return;
                 }
                 // Provider errors may contain response bodies or request
@@ -676,7 +675,6 @@ impl WorkspaceApp {
             self.ai_entity.update(cx, |ai, _| { ai.pending_user_questions.remove(&(generation, tool_call_id.to_owned())); });
         }
         let persisted_arguments = sanitize_ai_tool_arguments_for_persistence(arguments);
-        if status == "pending_user_approval" { self.notify_ai_agent_attention(conversation_id, message_id, "ai.agents.approval", cx); }
         let persisted_result = result
             .as_ref()
             .map(|result| oxideterm_ai::sanitize_tool_result_json_for_persistence(name, result));

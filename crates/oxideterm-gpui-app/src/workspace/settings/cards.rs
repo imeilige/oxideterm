@@ -646,8 +646,6 @@ impl WorkspaceApp {
             ) && self.has_ai_sidebar_floating_overlay(cx))
             || (anchor.id == SelectAnchorId::TerminalBroadcastMenu
                 && self.terminal.read(cx).broadcast_menu_open())
-            || (anchor.id == SelectAnchorId::TerminalCommandBar
-                && self.terminal.read(cx).quick_commands.is_open())
             || (anchor.id == SelectAnchorId::TerminalCwdMenu
                 && self.terminal.read(cx).cwd_picker_open())
             || (anchor.id == SelectAnchorId::TerminalGitBranchMenu
@@ -656,15 +654,6 @@ impl WorkspaceApp {
                 && self.terminal.read(cx).project_panel_open())
             || (anchor.id == SelectAnchorId::SessionManagerViewMode
                 && self.session_manager.read(cx).view_mode_menu_open)
-            || (matches!(
-                anchor.id,
-                SelectAnchorId::AuditCategory
-                    | SelectAnchorId::AuditSeverity
-                    | SelectAnchorId::AuditSource
-                    | SelectAnchorId::AuditOutcome
-                    | SelectAnchorId::AuditTime
-                    | SelectAnchorId::AuditSearchField
-            ) && self.audit.open_filter.is_some())
             || (anchor.id == SelectAnchorId::ActiveSessionSort && self.session_sort_menu_open)
             || (anchor.id == SelectAnchorId::SessionManagerSort
                 && self.session_manager.read(cx).sort_menu_open)
@@ -930,9 +919,6 @@ impl WorkspaceApp {
             .update(cx, |terminal, _cx| terminal.blur_cast_search())
         {
             self.ime_marked_text = None;
-            changed = true;
-        }
-        if self.blur_terminal_quick_commands_input(cx) {
             changed = true;
         }
         if self.close_terminal_git_branch_picker(cx) {

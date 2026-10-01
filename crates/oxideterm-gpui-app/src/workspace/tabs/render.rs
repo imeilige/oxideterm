@@ -25,7 +25,6 @@ fn tab_kind_icon(kind: &TabKind) -> LucideIcon {
         TabKind::Graphics | TabKind::RemoteDesktop => LucideIcon::Monitor,
         TabKind::Runtime | TabKind::ConnectionPool => LucideIcon::Gauge,
         TabKind::Topology => LucideIcon::Network,
-        TabKind::NotificationCenter => LucideIcon::Bell,
         TabKind::Sftp => LucideIcon::FolderInput,
         TabKind::Forwards => LucideIcon::ArrowLeftRight,
         TabKind::SessionManager => LucideIcon::LayoutList,

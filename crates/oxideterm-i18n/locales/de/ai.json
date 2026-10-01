@@ -58,8 +58,7 @@
       "failed_state": "Fehlgeschlagen",
       "cancelled": "Abgebrochen",
       "completed": "Hintergrundaufgabe abgeschlossen",
-      "failed": "Hintergrundaufgabe fehlgeschlagen",
-      "notification_body": "Nach {{count}} Durchläufen beendet."
+      "failed": "Hintergrundaufgabe fehlgeschlagen"
     },
     "chat": {
       "back_to_question": "Zur Frage zurück",

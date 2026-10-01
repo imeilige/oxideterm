@@ -49,7 +49,6 @@ impl WorkspaceApp {
             return;
         };
         self.dismiss_terminal_recording_menu();
-        self.blur_terminal_quick_commands_input(cx);
         self.dismiss_terminal_broadcast_menu(cx);
         self.dismiss_terminal_highlight_popover();
         self.close_terminal_cwd_picker(cx);

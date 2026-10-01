@@ -58,8 +58,7 @@
       "failed_state": "失败",
       "cancelled": "已取消",
       "completed": "后台任务已完成",
-      "failed": "后台任务失败",
-      "notification_body": "任务在运行 {{count}} 次后结束。"
+      "failed": "后台任务失败"
     },
     "chat": {
       "back_to_question": "回到提问",

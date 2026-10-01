@@ -58,8 +58,7 @@
       "failed_state": "Failed",
       "cancelled": "Cancelled",
       "completed": "Background task completed",
-      "failed": "Background task failed",
-      "notification_body": "Finished after {{count}} runs."
+      "failed": "Background task failed"
     },
     "chat": {
       "back_to_question": "Back to question",

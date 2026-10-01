@@ -1477,11 +1477,6 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) {
         let mut outcome = outcome;
-        // Structured apply persists Quick Commands through the domain crate, so refresh the
-        // GPUI projection before any later UI edit can overwrite the newly synchronized file.
-        self.terminal.update(cx, |terminal, _cx| {
-            terminal.quick_commands.store.reload_from_store()
-        });
         if let Some(envelope) = outcome.sensitive_credentials_envelope.as_mut() {
             self.apply_oxide_import_portable_secrets(envelope, cx);
         }
@@ -1557,13 +1552,6 @@ impl WorkspaceApp {
             0
         };
         outcome.envelope.imported_forwards = imported_forwards;
-        let (imported_quick_commands, _skipped_quick_commands, quick_command_errors) = self
-            .apply_oxide_import_quick_commands(
-                outcome.envelope.quick_commands_json.as_deref(),
-                selection.import_quick_commands,
-                QuickCommandImportStrategy::Merge,
-                cx,
-            );
         let (imported_plugin_settings, plugin_settings_failed) = match self
             .try_apply_oxide_import_plugin_settings(
                 &outcome.envelope.plugin_settings,
@@ -1639,12 +1627,10 @@ impl WorkspaceApp {
             + outcome.envelope.imported_mosh_profiles
             + outcome.envelope.imported_standalone_sftp_profiles
             + outcome.envelope.imported_remote_desktop_profiles
-            + imported_quick_commands
             + imported_plugin_settings
             + usize::from(imported_app_settings)
             + outcome.envelope.imported_portable_secrets;
         let errors = outcome.envelope.errors.len()
-            + quick_command_errors.len()
             + usize::from(plugin_settings_failed)
             + usize::from(cloud_options.import_app_settings && skipped_app_settings);
         (applied, errors)

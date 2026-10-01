@@ -81,12 +81,7 @@
       "node_connecting_title": "Bereits am Verbinden"
     },
     "reconnect": {
-      "cancelled": "Neuverbindung abgebrochen",
-      "completed": "Verbindung wiederhergestellt, {{count}} Dienst(e) wiederhergestellt",
-      "failed": "Neuverbindung fehlgeschlagen: {{error}}",
-      "recovered": "Verbindung wiederhergestellt — Sitzung erhalten",
-      "ssh_restored": "SSH-Verbindung wiederhergestellt",
-      "starting": "{{name}} wird neu verbunden..."
+      "ssh_restored": "SSH-Verbindung wiederhergestellt"
     },
     "toast": {
       "proxy_chain_desc": "Kettentiefe {{depth}}. Topologie synchronisiert.",

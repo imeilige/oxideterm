@@ -23,9 +23,6 @@ use super::new_connection::{
     CONNECTION_NOTES_LINE_HEIGHT, CONNECTION_NOTES_VERTICAL_PADDING, NewConnectionField,
     refresh_connection_timeout_seconds, refresh_identity_agent_availability,
 };
-use super::quick_commands::{
-    QUICK_COMMAND_TEXTAREA_LINE_HEIGHT, QUICK_COMMAND_TEXTAREA_VERTICAL_PADDING, QuickCommandInput,
-};
 use super::session_manager::{SessionManagerInput, SessionManagerState};
 use super::sftp::SftpInput;
 use super::sidebar::{ai_input_line_index_for_offset, ai_input_visual_lines};
@@ -118,8 +115,6 @@ pub(super) enum WorkspaceImeTarget {
     CommandPalette,
     ShortcutsModalSearch,
     ActiveSessionSearch,
-    AuditSearch,
-    AuditPolicy(super::audit::AuditPolicyInput),
     KnowledgeSearch,
     KnowledgeRename,
     Search(PaneId),
@@ -141,7 +136,6 @@ pub(super) enum WorkspaceImeTarget {
     HostScheduleSearch,
     HostFilesystemSearch,
     HostPackageSearch,
-    QuickCommand(QuickCommandInput),
     Settings(SettingsInput),
     SessionManager(SessionManagerInput),
     Forwards(super::TabId, ForwardInput),
@@ -494,9 +488,6 @@ impl WorkspaceImeTarget {
             Self::CommandPalette => 4,
             Self::ShortcutsModalSearch => 5,
             Self::ActiveSessionSearch => 22,
-            Self::AuditSearch => 25,
-            Self::AuditPolicy(super::audit::AuditPolicyInput::Retention) => 26,
-            Self::AuditPolicy(super::audit::AuditPolicyInput::Capacity) => 27,
             Self::KnowledgeSearch => 23,
             Self::KnowledgeRename => 24,
             Self::Search(pane_id) => (1_u64 << 63) | pane_id.0,
@@ -518,7 +509,6 @@ impl WorkspaceImeTarget {
             Self::HostScheduleSearch => 14,
             Self::HostFilesystemSearch => 15,
             Self::HostPackageSearch => 16,
-            Self::QuickCommand(input) => 500 + input.anchor_key(),
             Self::Settings(input) => 1_000 + input.anchor_key(),
             Self::SessionManager(input) => 1_500 + input.anchor_key(),
             Self::Forwards(page, input) => (1_u64 << 61) | (page.0 << 12) | input.anchor_key(),
@@ -857,9 +847,6 @@ impl InputHandler for WorkspaceInputHandler {
                 });
             }
             let viewport = match target {
-                WorkspaceImeTarget::QuickCommand(input) => {
-                    Some(view.terminal.read(cx).quick_commands.input_viewport(input))
-                }
                 WorkspaceImeTarget::TerminalCommandSenderCompact => view
                     .terminal_command_sender
                     .read(cx)
@@ -1121,27 +1108,6 @@ impl WorkspaceApp {
             return Some(WorkspaceImeTarget::KnowledgeSearch);
         }
 
-        if self.notification_center.active_view == super::WorkspaceActivityView::EventLog
-            && self.audit.settings_open
-            && self.audit.open_filter.is_none()
-            && let Some(target @ WorkspaceImeTarget::AuditPolicy(_)) = self
-                .selected_ime_range
-                .as_ref()
-                .map(|selection| selection.target)
-                .or(self.selected_ime_target)
-        {
-            return Some(target);
-        }
-        if self.notification_center.active_view == super::WorkspaceActivityView::EventLog
-            && self.audit.open_filter.is_none()
-            && (self.selected_ime_target == Some(WorkspaceImeTarget::AuditSearch)
-                || self
-                    .selected_ime_range
-                    .as_ref()
-                    .is_some_and(|selection| selection.target == WorkspaceImeTarget::AuditSearch))
-        {
-            return Some(WorkspaceImeTarget::AuditSearch);
-        }
         if self.session_search_open
             && !self.sidebar_collapsed
             && !self.session_sort_menu_open
@@ -1171,21 +1137,6 @@ impl WorkspaceApp {
             return Some(WorkspaceImeTarget::ShortcutsModalSearch);
         }
 
-        let quick_command_manager_input = {
-            let quick_commands = &self.terminal.read(cx).quick_commands;
-            quick_commands
-                .manager_open()
-                .then(|| quick_commands.focused_input())
-                .flatten()
-        };
-        if let Some(input) = quick_command_manager_input {
-            // The workspace manager owns IME independently from the compact
-            // terminal launcher, which deliberately keeps `open` false.
-            // Command text uses an entity editor with its own platform input handler.
-            return (input != QuickCommandInput::CommandText)
-                .then_some(WorkspaceImeTarget::QuickCommand(input));
-        }
-
         if self.host_tools_visibility(cx).main_window_is_visible()
             && let Some(input) = self.host_tools.read(cx).ui.focused_input
         {
@@ -1209,17 +1160,6 @@ impl WorkspaceApp {
             if self.terminal.read(cx).broadcast_group_editor().is_some() {
                 return Some(WorkspaceImeTarget::TerminalBroadcastGroupName);
             }
-            let quick_command_input = {
-                let quick_commands = &self.terminal.read(cx).quick_commands;
-                quick_commands
-                    .is_open()
-                    .then(|| quick_commands.focused_input())
-                    .flatten()
-            };
-            if let Some(input) = quick_command_input {
-                return Some(WorkspaceImeTarget::QuickCommand(input));
-            }
-
             if self.terminal.read(cx).cwd_picker_open() {
                 return Some(WorkspaceImeTarget::TerminalCwdSearch);
             }
@@ -1759,9 +1699,6 @@ impl WorkspaceApp {
         }
 
         let viewport = match target {
-            WorkspaceImeTarget::QuickCommand(input) => {
-                Some(self.terminal.read(cx).quick_commands.input_viewport(input))
-            }
             WorkspaceImeTarget::TerminalCommandSenderCompact => self
                 .terminal_command_sender
                 .read(cx)
@@ -1913,9 +1850,6 @@ impl WorkspaceApp {
             WorkspaceImeTarget::NewConnection(NewConnectionField::Notes) => {
                 px(CONNECTION_NOTES_LINE_HEIGHT)
             }
-            WorkspaceImeTarget::QuickCommand(QuickCommandInput::CommandText) => {
-                px(QUICK_COMMAND_TEXTAREA_LINE_HEIGHT)
-            }
             _ if ime_target_is_read_only(target) && line_count > 0 => {
                 let inferred = f32::from(bounds.size.height) / line_count as f32;
                 px(inferred.clamp(16.0, 40.0))
@@ -1951,9 +1885,6 @@ impl WorkspaceApp {
             }
             WorkspaceImeTarget::NewConnection(NewConnectionField::Notes) => {
                 px(CONNECTION_NOTES_VERTICAL_PADDING)
-            }
-            WorkspaceImeTarget::QuickCommand(QuickCommandInput::CommandText) => {
-                px(QUICK_COMMAND_TEXTAREA_VERTICAL_PADDING)
             }
             _ => px(0.0),
         }
@@ -2136,11 +2067,6 @@ impl WorkspaceApp {
                 // across long JSON and command lines.
                 super::settings_mono_font_family(self.settings_store.settings())
             }
-            WorkspaceImeTarget::QuickCommand(input)
-                if super::quick_commands::quick_command_input_uses_monospace(input) =>
-            {
-                super::settings_mono_font_family(self.settings_store.settings())
-            }
             WorkspaceImeTarget::TerminalCommandSenderCompact => {
                 super::settings_mono_font_family(self.settings_store.settings())
             }
@@ -2160,8 +2086,6 @@ impl WorkspaceApp {
             }
             WorkspaceImeTarget::ShortcutsModalSearch => Some(self.shortcuts_modal.query.clone()),
             WorkspaceImeTarget::ActiveSessionSearch => Some(self.session_search_query.clone()),
-            WorkspaceImeTarget::AuditSearch => Some(self.audit.search.clone()),
-            WorkspaceImeTarget::AuditPolicy(input) => Some(self.audit_policy_input_value(input)),
             WorkspaceImeTarget::KnowledgeSearch => Some(
                 self.knowledge_workspace
                     .read(cx)
@@ -2284,7 +2208,6 @@ impl WorkspaceApp {
                 .ui
                 .input_value(HostToolsTextInput::PackageSearch)
                 .map(str::to_string),
-            WorkspaceImeTarget::QuickCommand(input) => self.quick_command_input_value(input, cx),
             WorkspaceImeTarget::Settings(input) => {
                 if self
                     .settings_workspace
@@ -3011,14 +2934,6 @@ impl WorkspaceApp {
                 self.show_active_input_caret(cx);
                 cx.notify();
             }
-            WorkspaceImeTarget::AuditSearch => {
-                replace_utf16(&mut self.audit.search, replacement_range, text);
-                self.show_active_input_caret(cx);
-                cx.notify();
-            }
-            WorkspaceImeTarget::AuditPolicy(input) => {
-                self.replace_audit_policy_input(input, replacement_range, text, cx);
-            }
             WorkspaceImeTarget::ActiveSessionSearch => {
                 replace_utf16(&mut self.session_search_query, replacement_range, text);
                 self.show_active_input_caret(cx);
@@ -3193,16 +3108,6 @@ impl WorkspaceApp {
                     text,
                     cx,
                 );
-            }
-            WorkspaceImeTarget::QuickCommand(input) => {
-                if self.terminal.update(cx, |terminal, _cx| {
-                    terminal
-                        .quick_commands
-                        .replace_input(input, replacement_range, text)
-                }) {
-                    self.show_active_input_caret(cx);
-                    cx.notify();
-                }
             }
             WorkspaceImeTarget::Settings(input) => {
                 let entity_input_focused = self
@@ -3705,7 +3610,6 @@ fn ime_target_accepts_newline(target: WorkspaceImeTarget) -> bool {
         WorkspaceImeTarget::Settings(input) => input.accepts_newline(),
         WorkspaceImeTarget::AiChatInput | WorkspaceImeTarget::AiMessageEdit => true,
         WorkspaceImeTarget::NewConnection(NewConnectionField::Notes) => true,
-        WorkspaceImeTarget::QuickCommand(QuickCommandInput::CommandText) => true,
         WorkspaceImeTarget::SessionManager(SessionManagerInput::OxideExportDescription) => true,
         _ => false,
     }
@@ -4019,7 +3923,7 @@ mod tests {
 
     use super::{
         CopyShortcutOwner, FileManagerInput, HostToolsPlainTextImeFrame, HostToolsTextInput,
-        NewConnectionField, PendingPlatformTextCommit, QuickCommandInput, SettingsInput, SftpInput,
+        NewConnectionField, PendingPlatformTextCommit, SettingsInput, SftpInput,
         TextInputAnchorStore, WorkspaceCaretState, WorkspaceCaretVisibility,
         WorkspaceImeMarkedText, WorkspaceImeTarget, active_ime_should_defer_input_key,
         collapsed_copy_shortcut_is_owned_by_target, copy_shortcut_owner_for_target,
@@ -4392,16 +4296,6 @@ mod tests {
             normalized.as_str(),
             "-----BEGIN TEST KEY-----\nfake-material\n-----END TEST KEY-----"
         );
-    }
-
-    #[test]
-    fn quick_command_clipboard_normalization_preserves_command_lines() {
-        let normalized = normalize_clipboard_text_for_ime_target(
-            WorkspaceImeTarget::QuickCommand(QuickCommandInput::CommandText),
-            "first\r\nsecond\rthird",
-        );
-
-        assert_eq!(normalized.as_str(), "first\nsecond\nthird");
     }
 
     #[test]

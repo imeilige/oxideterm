@@ -5,7 +5,7 @@ mod ai_lazy;
 mod ai_runtime_context;
 mod ai_state;
 mod app_lock;
-mod audit;
+mod audit_runtime;
 mod breadcrumb_scroll;
 mod browser_behavior;
 mod cloud_sync;
@@ -25,13 +25,11 @@ mod local_sessions;
 mod local_shell_launcher;
 mod local_terminal_background;
 mod new_connection;
-mod notification_center;
 mod onboarding;
 mod overlay;
 mod pane_tree;
 mod path_completion;
 mod public_mcp;
-mod quick_commands;
 mod remote_desktop;
 mod runtime_entity;
 mod root {
@@ -194,17 +192,6 @@ use oxideterm_gpui_ui::{
     tooltip::tooltip_surface,
 };
 use oxideterm_i18n::{I18n, Locale};
-use oxideterm_notification_center::{
-    ActivityView as WorkspaceActivityView, EventCategory as WorkspaceEventCategory,
-    EventSeverity as WorkspaceEventSeverity, NotificationCenterState,
-    NotificationEntry as WorkspaceNotificationEntry, NotificationKind as WorkspaceNotificationKind,
-    NotificationKindFilter as WorkspaceNotificationKindFilter,
-    NotificationScope as WorkspaceNotificationScope,
-    NotificationSeverity as WorkspaceNotificationSeverity,
-    NotificationSeverityFilter as WorkspaceNotificationSeverityFilter,
-    NotificationStatus as WorkspaceNotificationStatus,
-    NotificationStatusFilter as WorkspaceNotificationStatusFilter,
-};
 use oxideterm_render_policy::{
     DetectedGraphics, EffectiveRenderPolicy, RenderProfile, compute_render_policy,
 };
@@ -308,11 +295,11 @@ use crate::{
     FindPrev, FontDecrease, FontIncrease, FontReset, GoToTab1, GoToTab2, GoToTab3, GoToTab4,
     GoToTab5, GoToTab6, GoToTab7, GoToTab8, GoToTab9, NewConnection, NewTerminal, NextTab,
     OpenSettings, PaletteAiSidebar, PaletteBroadcast, PaletteCancelReconnect, PaletteCleanupDead,
-    PaletteDetachTerminal, PaletteDisconnectAll, PaletteEventLog, PaletteHealthCheck,
-    PaletteReconnectAll, PaletteResetPanes, Paste, PrevTab, Quit, ShellLauncher, ShowShortcuts,
-    SplitHorizontal, SplitNavLeft, SplitNavRight, SplitVertical, SwitchLocaleChinese,
-    SwitchLocaleEnglish, SwitchLocaleFrench, SwitchLocaleGerman, SwitchLocaleItalian,
-    SwitchLocaleJapanese, SwitchLocaleKorean, SwitchLocalePortugueseBrazil, SwitchLocaleSpanish,
+    PaletteDetachTerminal, PaletteDisconnectAll, PaletteHealthCheck, PaletteReconnectAll,
+    PaletteResetPanes, Paste, PrevTab, Quit, ShellLauncher, ShowShortcuts, SplitHorizontal,
+    SplitNavLeft, SplitNavRight, SplitVertical, SwitchLocaleChinese, SwitchLocaleEnglish,
+    SwitchLocaleFrench, SwitchLocaleGerman, SwitchLocaleItalian, SwitchLocaleJapanese,
+    SwitchLocaleKorean, SwitchLocalePortugueseBrazil, SwitchLocaleSpanish,
     SwitchLocaleTraditionalChinese, SwitchLocaleVietnamese, TerminalAiPanel, TerminalClearScreen,
     TerminalFreeTypeMode, TerminalRecording, ToggleFullscreen, ToggleSidebar, ZenMode,
 };
@@ -892,9 +879,6 @@ pub(crate) struct WorkspaceApp {
     sftp_transfer_manager: Arc<SftpTransferManager>,
     sftp_progress_store: Arc<dyn ProgressStore>,
     node_router: NodeRouter,
-    notification_center: NotificationCenterState,
-    notification_sidebar_list_state: ListState,
-    notification_sidebar_list_cache: RefCell<VirtualListSignatureCache>,
     ssh_nodes: HashMap<NodeId, WorkspaceSshNode>,
     saved_ssh_nodes: HashMap<String, NodeId>,
     expanded_ssh_nodes: HashSet<NodeId>,
@@ -961,7 +945,7 @@ pub(crate) struct WorkspaceApp {
     overlay: Entity<WorkspaceOverlayEntity>,
     _overlay_observation: Subscription,
     // Producers release before the writer, so their final cancellation records can drain.
-    audit: audit::AuditState,
+    audit: audit_runtime::AuditRuntime,
 }
 
 impl Drop for WorkspaceApp {

@@ -52,7 +52,6 @@ pub(super) enum SidebarSection {
     Automation,
     Workspace,
     Files,
-    Notifications,
     Settings,
 }
 
@@ -120,7 +119,8 @@ impl SidebarSection {
             // The standalone monitor activity button was retired after Host Tools
             // became the cross-platform owner of connection monitoring.
             "monitor" => Self::HostTools,
-            "notifications" => Self::Notifications,
+            // The notification activity panel was removed; persisted keys of that
+            // name still load and resolve to the sessions panel instead of failing.
             "settings" => Self::Settings,
             _ => Self::Sessions,
         }
@@ -140,7 +140,6 @@ impl SidebarSection {
             Self::Automation => "automation",
             Self::Workspace => "workspace",
             Self::Files => "files",
-            Self::Notifications => "notifications",
             Self::Settings => "settings",
         }
     }
@@ -160,7 +159,6 @@ impl WorkspaceApp {
             | SidebarSection::Automation
             | SidebarSection::Workspace
             | SidebarSection::Files
-            | SidebarSection::Notifications
             | SidebarSection::Settings => SidebarSection::Sessions,
         }
     }
@@ -206,7 +204,6 @@ mod sidebar_persistence_tests {
             SidebarSection::Automation,
             SidebarSection::Workspace,
             SidebarSection::Files,
-            SidebarSection::Notifications,
             SidebarSection::Settings,
         ];
 
