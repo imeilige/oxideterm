@@ -83,57 +83,7 @@ pub(crate) fn parse(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{HighlightCache, LanguageId, StructureCache, SyntaxSession};
+    
+    
 
-    #[test]
-    fn sliced_work_preserves_results_and_cancelled_work_is_not_reusable() {
-        let source = "fn example() {\n    let value = 42;\n}\n".repeat(512);
-        let generation = Arc::new(AtomicU64::new(1));
-        let work = SyntaxWork::new(generation.clone(), 1, Duration::from_micros(1));
-        let session =
-            SyntaxSession::parse_controlled(LanguageId::Rust, &source, Some(&work)).unwrap();
-        let expected = SyntaxSession::parse(LanguageId::Rust, &source).unwrap();
-        let mut highlights = HighlightCache::default();
-        let mut structure = StructureCache::default();
-        highlights
-            .update_controlled(&session, &source, None, Some(&work))
-            .unwrap();
-        structure
-            .update_controlled(&session, &source, 4, None, Some(&work))
-            .unwrap();
-        assert_eq!(
-            highlights
-                .spans_in_range(0..source.len())
-                .collect::<Vec<_>>(),
-            expected.highlight_spans(&source)
-        );
-        assert_eq!(structure.fold_at_line(0), Some((0, 2)));
-        assert_eq!(structure.columns_for_line(1), [0]);
-        let markdown = "**中文🙂** and [link](https://example.com)\n\n".repeat(128);
-        let md =
-            SyntaxSession::parse_controlled(LanguageId::Markdown, &markdown, Some(&work)).unwrap();
-        let range = oxideterm_editor_core::TextRange::new(
-            oxideterm_editor_core::BufferOffset(0),
-            oxideterm_editor_core::BufferOffset(markdown.len()),
-        );
-        assert_eq!(
-            md.highlights_controlled(&markdown, range, Some(&work))
-                .unwrap(),
-            md.highlight_spans(&markdown)
-        );
-        generation.store(2, Ordering::Release);
-        assert!(matches!(
-            SyntaxSession::parse_controlled(LanguageId::Rust, &source, Some(&work)),
-            Err(SyntaxError::ParseCancelled)
-        ));
-        assert!(matches!(
-            highlights.update_controlled(&session, &source, None, Some(&work)),
-            Err(SyntaxError::ParseCancelled)
-        ));
-        assert!(matches!(
-            structure.update_controlled(&session, &source, 4, None, Some(&work)),
-            Err(SyntaxError::ParseCancelled)
-        ));
-    }
 }

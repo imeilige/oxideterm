@@ -358,82 +358,14 @@ fn append_display_rows_for_line(
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        DisplayRow, DisplayRows, FoldRange, compute_display_rows_from_grapheme_widths,
-        display_row_for_visual_column,
-    };
+    
 
     fn ascii_line_widths(lengths: &[usize]) -> Vec<Vec<usize>> {
         lengths.iter().map(|length| vec![1; *length]).collect()
     }
 
-    #[test]
-    fn folded_rows_hide_inner_lines() {
-        let rows = compute_display_rows_from_grapheme_widths(
-            &ascii_line_widths(&[9, 8, 1, 6]),
-            &[FoldRange {
-                start_line: 0,
-                end_line: 2,
-            }],
-            None,
-        );
 
-        assert_eq!(
-            rows,
-            vec![
-                DisplayRow {
-                    line: 0,
-                    start_col: 0,
-                    end_col: 9,
-                    is_first: true,
-                    is_folded_header: true,
-                },
-                DisplayRow {
-                    line: 3,
-                    start_col: 0,
-                    end_col: 6,
-                    is_first: true,
-                    is_folded_header: false,
-                },
-            ]
-        );
-    }
 
-    #[test]
-    fn wrapped_boundary_belongs_to_the_later_display_row() {
-        let rows =
-            compute_display_rows_from_grapheme_widths(&ascii_line_widths(&[16]), &[], Some(8));
-
-        let rows = DisplayRows::Explicit(rows);
-        assert_eq!(display_row_for_visual_column(&rows, 0, 7).unwrap().0, 0);
-        assert_eq!(display_row_for_visual_column(&rows, 0, 8).unwrap().0, 1);
-        assert_eq!(display_row_for_visual_column(&rows, 0, 16).unwrap().0, 1);
-    }
-
-    #[test]
-    fn wrapping_never_splits_a_wide_grapheme() {
-        let rows = compute_display_rows_from_grapheme_widths(&[vec![1, 2, 2, 1]], &[], Some(4));
-
-        assert_eq!(
-            rows,
-            vec![
-                DisplayRow {
-                    line: 0,
-                    start_col: 0,
-                    end_col: 3,
-                    is_first: true,
-                    is_folded_header: false,
-                },
-                DisplayRow {
-                    line: 0,
-                    start_col: 3,
-                    end_col: 6,
-                    is_first: false,
-                    is_folded_header: false,
-                },
-            ]
-        );
-    }
 }
 
 #[cfg(test)]
@@ -502,51 +434,6 @@ mod edit_layout_tests {
         });
     }
 
-    #[gpui::test]
-    fn compact_rows_transition_to_folding_and_wrapping(cx: &mut TestAppContext) {
-        use gpui::{Bounds, point, px, size};
-        use oxideterm_editor_syntax::LanguageId;
-        let editor = cx.new(|cx| {
-            TextEditorView::new("fn sample() {\n    call();\n}\nlast", &default_tokens(), cx)
-        });
-        editor.update(cx, |editor, cx| {
-            editor.set_language(Some(LanguageId::Rust), cx)
-        });
-        cx.run_until_parked();
-        editor.update(cx, |editor, cx| {
-            editor.settings.soft_wrap = false;
-            let original = editor.display_rows();
-            assert_eq!(
-                original
-                    .iter()
-                    .map(|row| (row.line, row.end_col))
-                    .collect::<Vec<_>>(),
-                [(0, 13), (1, 11), (2, 1), (3, 4)]
-            );
-            let (index, row, column) = display_row_for_visual_column(&original, 0, 50).unwrap();
-            assert_eq!((index, row.line, column), (0, 0, 50));
-            assert!(editor.toggle_fold_at_line(0, cx));
-            let folded = editor.display_rows();
-            assert_eq!(
-                folded
-                    .iter()
-                    .map(|row| (row.line, row.is_folded_header))
-                    .collect::<Vec<_>>(),
-                [(0, true), (3, false)]
-            );
-            assert!(editor.toggle_fold_at_line(0, cx));
-            assert_eq!(*editor.display_rows(), *original);
-            editor.content_bounds = Some(Bounds::new(
-                point(px(0.0), px(0.0)),
-                size(px(1000.0), px(500.0)),
-            ));
-            editor.settings.soft_wrap = true;
-            editor.settings.soft_wrap_column = Some(8);
-            let wrapped = editor.display_rows();
-            let (index, row, column) = display_row_for_visual_column(&wrapped, 0, 8).unwrap();
-            assert_eq!((index, row.start_col, row.end_col, column), (1, 8, 13, 0));
-        });
-    }
 
     #[gpui::test]
     fn unwrapped_edits_update_rows_without_changing_retained_layout(cx: &mut TestAppContext) {

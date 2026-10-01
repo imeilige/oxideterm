@@ -34,11 +34,11 @@ oxideterm-desktop-presence = { path = "../oxideterm-desktop-presence" }
 oxideterm-editor-core = { path = "../oxideterm-editor-core" }
 oxideterm-forwarding = { path = "../oxideterm-forwarding" }
 oxideterm-gpui-cloud-sync = { path = "../oxideterm-gpui-cloud-sync" }
-oxideterm-gpui-editor = { path = "../oxideterm-gpui-editor" }
 oxideterm-gpui-markdown = { path = "../oxideterm-gpui-markdown" }
 oxideterm-gpui-platform = { path = "../oxideterm-gpui-platform" }
 oxideterm-gpui-remote-desktop = { path = "../oxideterm-gpui-remote-desktop" }
 oxideterm-gpui-settings-view = { path = "../oxideterm-gpui-settings-view" }
+oxideterm-gpui-editor = { path = "../oxideterm-gpui-editor" }
 oxideterm-gpui-terminal = { path = "../oxideterm-gpui-terminal" }
 oxideterm-gpui-ui = { path = "../oxideterm-gpui-ui" }
 oxideterm-editor-syntax = { path = "../oxideterm-editor-syntax" }

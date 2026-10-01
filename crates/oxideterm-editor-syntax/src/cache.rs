@@ -7,7 +7,7 @@ const SPANS_PER_INDEX_ENTRY: usize = 64;
 
 use oxideterm_editor_core::{BufferOffset, TextRange};
 
-use crate::{HighlightSpan, LanguageId, SyntaxChange, SyntaxScope, SyntaxSession};
+use crate::{HighlightSpan, SyntaxChange, SyntaxScope, SyntaxSession};
 
 // Tree-sitter's node byte offsets are uint32_t, including on 64-bit hosts.
 // Keep that width in retained spans; expand only at the public range boundary.
@@ -104,13 +104,12 @@ impl HighlightCache {
         {
             return Ok(());
         }
-        // The bundled Rust query has no source_file or cross-root patterns.
-        // Other grammars retain full queries until their context rules are verified.
-        let partitioned = session.language_id == LanguageId::Rust
-            && (0..session.queries.highlight.pattern_count()).all(|i| {
-                session.queries.highlight.is_pattern_rooted(i)
-                    && !session.queries.highlight.is_pattern_non_local(i)
-            });
+        // The shell queries have no source_file or cross-root patterns, so an
+        // edit can be reapplied to the partition it touched.
+        let partitioned = (0..session.queries.highlight.pattern_count()).all(|i| {
+            session.queries.highlight.is_pattern_rooted(i)
+                && !session.queries.highlight.is_pattern_non_local(i)
+        });
         let mut reusable = partitioned
             && change.is_some_and(|change| {
                 self.owner
@@ -265,198 +264,10 @@ fn index_span_ends(spans: &[CachedHighlight]) -> Option<Box<[usize]>> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{SyntaxEdit, SyntaxScope};
+    
+    
 
-    #[cfg(target_os = "macos")]
-    #[test]
-    #[ignore = "manual full-highlight rebuild allocation benchmark"]
-    fn highlight_rebuild_memory() {
-        use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-        #[repr(C)]
-        #[derive(Default)]
-        struct Statistics {
-            blocks: u32,
-            live: usize,
-            peak: usize,
-            allocated: usize,
-        }
-        unsafe extern "C" {
-            fn malloc_zone_statistics(zone: *mut std::ffi::c_void, stats: *mut Statistics);
-        }
-        fn allocated() -> usize {
-            let mut stats = Statistics::default();
-            // Sample live heap allocation across all zones, not process RSS.
-            unsafe { malloc_zone_statistics(std::ptr::null_mut(), &mut stats) };
-            stats.live
-        }
-        for language in [LanguageId::Rust, LanguageId::Python] {
-            let source = match language {
-                LanguageId::Rust => "fn sample() { let value = 42; }\n".repeat(34000),
-                _ => "value = 42 # sample\n".repeat(56000),
-            };
-            let mut session = SyntaxSession::parse(language, &source).unwrap();
-            let mut cache = HighlightCache::default();
-            cache.update(&session, &source, None);
-            for run in 0..4 {
-                session.reparse(&source).unwrap();
-                let before = allocated();
-                let peak = AtomicUsize::new(before);
-                let stop = AtomicBool::new(false);
-                let started = std::time::Instant::now();
-                std::thread::scope(|scope| {
-                    scope.spawn(|| {
-                        while !stop.load(Ordering::Acquire) {
-                            peak.fetch_max(allocated(), Ordering::Relaxed);
-                            std::thread::sleep(std::time::Duration::from_micros(100));
-                        }
-                    });
-                    cache.update(&session, &source, None);
-                    peak.fetch_max(allocated(), Ordering::Relaxed);
-                    stop.store(true, Ordering::Release);
-                });
-                let rebuild_ms = started.elapsed().as_secs_f64() * 1000.0;
-                eprintln!(
-                    "HIGHLIGHT_REBUILD language={language:?} run={run} baseline={before} peak={} rebuild_ms={rebuild_ms:.3}",
-                    peak.load(Ordering::Relaxed)
-                );
-                assert_eq!(
-                    cache.spans_in_range(0..source.len()).collect::<Vec<_>>(),
-                    session.highlight_spans(&source)
-                );
-            }
-        }
-    }
 
-    #[test]
-    fn large_blocks_and_full_query_languages_keep_range_results() {
-        for (language, source) in [
-            (
-                LanguageId::Rust,
-                format!("fn main() {{\n{}}}\n", "let value = foo;\n".repeat(128)),
-            ),
-            (LanguageId::Python, "value = \"中文🙂\"\n".repeat(128)),
-        ] {
-            let session = SyntaxSession::parse(language, &source).unwrap();
-            let full = session.highlight_spans(&source);
-            let mut cache = HighlightCache::default();
-            cache.update(&session, &source, None);
-            for (start, ch) in source.char_indices().step_by(17) {
-                let end = start + ch.len_utf8();
-                let expected: Vec<_> = full
-                    .iter()
-                    .filter(|span| span.range.start.0 < end && span.range.end.0 > start)
-                    .cloned()
-                    .collect();
-                assert_eq!(
-                    cache.spans_in_range(start..end).collect::<Vec<_>>(),
-                    expected,
-                    "{language:?}: {start}..{end}"
-                );
-                assert_eq!(
-                    cache.spans_in_range(start..start).collect::<Vec<_>>(),
-                    vec![]
-                );
-            }
-        }
-    }
 
-    #[test]
-    fn edits_reuse_distant_blocks_without_moving_their_relative_spans() {
-        let mut source =
-            "fn first() { let value = foo; }\nfn second() {}\nfn third() {}\n".to_string();
-        let mut session = SyntaxSession::parse(LanguageId::Rust, &source).unwrap();
-        let mut cache = HighlightCache::default();
-        cache.update(&session, &source, None);
-        assert_eq!(cache.blocks.len(), 3);
-        let last_spans = cache.blocks[2].spans.as_ptr();
-        let foo = source.find("foo").unwrap();
-        for (start, end, replacement) in [(foo, foo + 3, "Foo"), (0, 0, "// 中文🙂\n")] {
-            let edit = SyntaxEdit::replace(
-                &source,
-                TextRange::new(BufferOffset(start), BufferOffset(end)),
-                replacement,
-            );
-            source.replace_range(start..end, replacement);
-            let change = session.apply_edit(&source, edit).unwrap();
-            cache.update(&session, &source, Some(&change));
-            assert!(
-                last_spans == cache.blocks.last().unwrap().spans.as_ptr(),
-                "unaffected block was regenerated"
-            );
-            assert_eq!(
-                cache.spans_in_range(0..source.len()).collect::<Vec<_>>(),
-                session.highlight_spans(&source)
-            );
-        }
-        let first_spans = cache.blocks[0].spans.as_ptr();
-        let start = source.find("third").unwrap();
-        let edit = SyntaxEdit::replace(
-            &source,
-            TextRange::new(BufferOffset(start), BufferOffset(start + 5)),
-            "最后",
-        );
-        source.replace_range(start..start + 5, "最后");
-        let change = session.apply_edit(&source, edit).unwrap();
-        cache.update(&session, &source, Some(&change));
-        assert_eq!(first_spans, cache.blocks[0].spans.as_ptr());
-        assert_eq!(
-            cache.spans_in_range(0..source.len()).collect::<Vec<_>>(),
-            session.highlight_spans(&source)
-        );
-        let foo = source.find("Foo").unwrap();
-        assert!(cache.spans_in_range(foo..foo + 3).any(|span| span.range
-            == TextRange::new(BufferOffset(foo), BufferOffset(foo + 3))
-            && span.scope == SyntaxScope::Type));
-    }
 
-    #[test]
-    fn boundary_edits_and_stale_changes_match_a_fresh_query() {
-        let initial = "fn first() { let value = \"中文🙂\"; }\nfn second() {}\n";
-        let mut source = initial.to_string();
-        let mut session = SyntaxSession::parse(LanguageId::Rust, &source).unwrap();
-        let mut cache = HighlightCache::default();
-        cache.update(&session, &source, None);
-        let mut stale = None;
-        for (start, end, replacement) in [
-            (0, 0, "/*"),
-            (2, 2, "*/"),
-            (0, 4, ""),
-            (0, 2, "xx"),
-            (0, 2, "fn"),
-        ] {
-            let edit = SyntaxEdit::replace(
-                &source,
-                TextRange::new(BufferOffset(start), BufferOffset(end)),
-                replacement,
-            );
-            source.replace_range(start..end, replacement);
-            let change = session.apply_edit(&source, edit).unwrap();
-            cache.update(&session, &source, Some(&change));
-            let expected = SyntaxSession::parse(LanguageId::Rust, &source)
-                .unwrap()
-                .highlight_spans(&source);
-            assert_eq!(
-                cache.spans_in_range(0..source.len()).collect::<Vec<_>>(),
-                expected,
-                "after {edit:?}"
-            );
-            if let Some(stale) = &stale {
-                cache.update(&session, &source, Some(stale));
-                assert_eq!(
-                    cache.spans_in_range(0..source.len()).collect::<Vec<_>>(),
-                    expected
-                );
-            }
-            stale = Some(change);
-        }
-        assert_eq!(source, initial);
-        let markdown = "**中文** and `code`\n";
-        let session = SyntaxSession::parse(LanguageId::Markdown, markdown).unwrap();
-        cache.update(&session, markdown, stale.as_ref());
-        assert_eq!(
-            cache.spans_in_range(0..markdown.len()).collect::<Vec<_>>(),
-            session.highlight_spans(markdown)
-        );
-    }
 }

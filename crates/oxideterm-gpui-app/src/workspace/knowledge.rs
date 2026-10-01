@@ -8,7 +8,6 @@ mod operations;
 mod preview;
 
 use gpui::EventEmitter;
-use oxideterm_editor_syntax::LanguageId;
 use oxideterm_gpui_editor::{EditorContextMenuLabels, TextEditorView};
 use oxideterm_gpui_ui::{
     IconButtonOptions, SegmentedControlOptions, ToolbarButtonOptions,
@@ -336,7 +335,6 @@ impl KnowledgeDocumentEditor {
         let editor = cx.new(|cx| {
             let mut editor = TextEditorView::new(content.clone(), &tokens, cx);
             editor.set_context_menu_labels(editor_labels);
-            editor.set_language(is_markdown.then_some(LanguageId::Markdown), cx);
             editor.set_border_visible(false);
             editor.set_settings(
                 oxideterm_gpui_editor::EditorSettings {

@@ -127,7 +127,7 @@ impl SyntaxSession {
             self.language_id,
             &self.tree,
             &self.queries.highlight,
-            self.queries.markdown_inline.as_ref(),
+            None,
             source,
             range.start.0..range.end.0,
             work,
@@ -166,7 +166,6 @@ impl SyntaxSession {
 /// Queries are immutable language data; parsers, trees and cursors stay per document.
 pub(crate) struct LanguageQueries {
     pub(crate) highlight: Query,
-    markdown_inline: Option<Query>,
 }
 
 impl LanguageQueries {
@@ -181,19 +180,7 @@ impl LanguageQueries {
             return Ok(existing);
         }
         let highlight = Query::new(language, language_id.highlight_query())?;
-        let markdown_inline = if language_id == LanguageId::Markdown {
-            let language: Language = tree_sitter_md::INLINE_LANGUAGE.into();
-            Some(Query::new(
-                &language,
-                tree_sitter_md::HIGHLIGHT_QUERY_INLINE,
-            )?)
-        } else {
-            None
-        };
-        let compiled = Arc::new(Self {
-            highlight,
-            markdown_inline,
-        });
+        let compiled = Arc::new(Self { highlight });
         // Idle languages retain only a weak entry; closing the last document
         // releases the compiled queries along with its syntax state.
         queries.insert(language_id, Arc::downgrade(&compiled));
