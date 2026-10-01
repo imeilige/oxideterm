@@ -38,7 +38,7 @@ pub use calls::{
     PublicRemoteDesktopProfile, PublicSavedConnectionProfile, PublicSerialFlowControl,
     PublicSerialParity, PublicSshChannelStrategy, PublicSyncConflictStrategy, PublicSyncSection,
     PublicTelnetControl, PublicTerminalBackspaceSequence, PublicTerminalDeleteSequence,
-    PublicTerminalEncoding, PublicTerminalOptions, PublicTerminalSessionLogPolicy, PublicToolCall,
+    PublicTerminalEncoding, PublicTerminalOptions, PublicToolCall,
     PublicUpstreamProxy, PublicUpstreamProxyProtocol, PublicVncCompression, PublicVncImageQuality,
     PublicVncSecurityPolicy, PublicVncSessionMode, PublicX11ForwardingMode,
     ReadDesktopClipboardArgs, RecordingExportFormat, RecordingStatusTarget, RecordingsControlArgs,

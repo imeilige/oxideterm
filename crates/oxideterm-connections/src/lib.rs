@@ -43,7 +43,7 @@ pub use store::{
     CLEARED_PROFILE_CREDENTIAL_KIND, CONFIG_VERSION, ConnectionCredentialSlot, ConnectionInfo,
     ConnectionOptions, ConnectionStore, ConnectionStoreCheckpoint, ConnectionStoreData,
     ConnectionTerminalBackspaceSequence, ConnectionTerminalDeleteSequence,
-    ConnectionTerminalEncoding, ConnectionTerminalOptions, ConnectionTerminalSessionLogPolicy,
+    ConnectionTerminalEncoding, ConnectionTerminalOptions,
     ConnectionX11ForwardingMode, ConnectionX11ForwardingOptions, CredentialOwner, CredentialSlot,
     CredentialSyncSelection, CredentialTarget, DEFAULT_SSH_CONNECT_TIMEOUT_SECONDS,
     DEFAULT_X11_UNTRUSTED_TIMEOUT_SECONDS, DeletedConnectionTombstone, FtpProfile,

@@ -188,12 +188,6 @@ def bundled_asset_notices(cwd: Path) -> list[BundledAssetNotice]:
             fonts_dir / "JetBrainsMono",
         ),
         (
-            "Meslo Nerd Font Subset",
-            "Apache License 2.0",
-            fonts_dir / "Meslo" / "LICENSE.txt",
-            fonts_dir / "Meslo",
-        ),
-        (
             "Maple Mono NF CN Subset",
             "SIL Open Font License 1.1",
             fonts_dir / "MapleMono" / "LICENSE.txt",

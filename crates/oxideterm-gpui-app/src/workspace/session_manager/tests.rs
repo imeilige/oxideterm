@@ -704,7 +704,6 @@ pub(super) fn edit_properties_round_trips_host_terminal_overrides() {
         delete_sequence: Some(oxideterm_connections::ConnectionTerminalDeleteSequence::Delete),
         semantic_scheme: Some("conservative".to_string()),
         highlight_rule_set: Some("network-devices".to_string()),
-        session_log_policy: oxideterm_connections::ConnectionTerminalSessionLogPolicy::Manual,
     };
 
     let mut form = form_from_saved_connection(&saved_connection, None);

@@ -75,7 +75,6 @@ const TERMINAL_BEHAVIOR_KEYS: &[&str] = &[
     "commandMarks",
     "highlightRules",
     "inBandTransfer",
-    "sessionLog",
     "terminalEncoding",
     "backspaceSequence",
     "deleteSequence",

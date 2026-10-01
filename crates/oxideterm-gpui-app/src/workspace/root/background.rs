@@ -10,10 +10,10 @@ struct BundledWorkspaceBackground {
 // Bundled gallery assets are installed on startup and protected from user deletion.
 const BUNDLED_WORKSPACE_BACKGROUNDS: &[BundledWorkspaceBackground] = &[
     BundledWorkspaceBackground {
-        file_name: "oxide-ambient-v1.png",
+        file_name: "oxide-ambient-v1.webp",
         bytes: include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/resources/backgrounds/oxide-ambient-v1.png"
+            "/resources/backgrounds/oxide-ambient-v1.webp"
         )),
     },
     BundledWorkspaceBackground {

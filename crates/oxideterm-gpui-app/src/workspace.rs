@@ -150,7 +150,7 @@ use oxideterm_connection_monitor::{
     visible_tmux_session_rows,
 };
 use oxideterm_connections::{
-    ConnectionStore, ConnectionTerminalOptions, ConnectionTerminalSessionLogPolicy,
+    ConnectionStore, ConnectionTerminalOptions,
     MoshIpFamily as SavedMoshIpFamily, MoshPredictionMode,
     MoshUdpPortSelection as SavedMoshUdpPortSelection, PrivilegeCredentialKind,
     SaveConnectionRequest, SavedPrivilegeCredential, SshConfigSyncService,
@@ -173,12 +173,10 @@ use oxideterm_gpui_terminal::{
     TerminalKittyFileTransmissionLabels, TerminalModemLabels, TerminalNotice,
     TerminalNoticeVariant, TerminalPane, TerminalPaneEvent, TerminalPasteLabels,
     TerminalRecordingState, TerminalRecordingStatus, TerminalSearchStatus,
-    TerminalSerialControlLabels, TerminalSessionLogContext, TerminalSessionLogLabels,
-    TerminalSessionLogOptions, TerminalSessionLogState, TerminalSessionLogStatus,
-    TerminalTmuxLabels, TerminalTrzszLabels, TerminalUiPreferenceOverrides, TerminalUiPreferences,
-    TerminalUiTheme, TerminalWorkingDirectorySource, detect_custom_privilege_prompt,
-    prune_terminal_session_logs, resolved_terminal_semantic_scheme, terminal_semantic_line_band,
-    terminal_semantic_variant_color,
+    TerminalSerialControlLabels, TerminalTmuxLabels, TerminalTrzszLabels,
+    TerminalUiPreferenceOverrides, TerminalUiPreferences, TerminalUiTheme,
+    TerminalWorkingDirectorySource, detect_custom_privilege_prompt,
+    resolved_terminal_semantic_scheme, terminal_semantic_line_band, terminal_semantic_variant_color,
 };
 use oxideterm_gpui_ui::scroll::ScrollableElement;
 use oxideterm_gpui_ui::{

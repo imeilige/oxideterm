@@ -114,20 +114,6 @@ pub enum PublicTerminalDeleteSequence {
     ControlH,
 }
 
-#[derive(Debug, Clone, Copy, Default, Deserialize, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum PublicTerminalSessionLogPolicy {
-    #[default]
-    /// Use the application-wide automatic logging choice.
-    Inherit,
-    /// Start a log whenever this connection opens.
-    Automatic,
-    /// Allow logging from the terminal menu without starting it automatically.
-    Manual,
-    /// Prevent this connection from creating a session log.
-    Disabled,
-}
-
 #[derive(Debug, Clone, Default, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct PublicTerminalOptions {
@@ -137,8 +123,6 @@ pub struct PublicTerminalOptions {
     pub backspace_sequence: Option<PublicTerminalBackspaceSequence>,
     #[serde(default)]
     pub delete_sequence: Option<PublicTerminalDeleteSequence>,
-    #[serde(default)]
-    pub session_log_policy: PublicTerminalSessionLogPolicy,
 }
 
 #[derive(Debug, Clone, Copy, Default, Deserialize, JsonSchema)]

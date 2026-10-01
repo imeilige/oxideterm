@@ -4,7 +4,7 @@ mod tests {
     use std::fs;
 
     use crate::{
-        ConnectionTerminalOptions, ConnectionTerminalSessionLogPolicy, MoshIpFamily,
+        ConnectionTerminalOptions, MoshIpFamily,
         MoshPredictionMode, MoshUdpPortSelection, PrivilegeCredentialKind, SaveMoshProfileRequest,
         SavePrivilegeCredentialRequest,
         SaveRemoteDesktopProfileRequest, SaveSerialProfileRequest, SaveTelnetProfileRequest,
@@ -383,7 +383,6 @@ mod tests {
                 port_path: "/dev/cu.usbserial-1".to_string(),
                 flow_control: Some(SerialFlowControl::Hardware),
                 terminal: ConnectionTerminalOptions {
-                    session_log_policy: ConnectionTerminalSessionLogPolicy::Manual,
                     ..ConnectionTerminalOptions::default()
                 },
                 ..SaveSerialProfileRequest::default()
@@ -409,7 +408,6 @@ mod tests {
                 host: "router.example.test".to_string(),
                 port: 2323,
                 terminal: ConnectionTerminalOptions {
-                    session_log_policy: ConnectionTerminalSessionLogPolicy::Disabled,
                     ..ConnectionTerminalOptions::default()
                 },
                 ..SaveTelnetProfileRequest::default()
@@ -501,7 +499,6 @@ mod tests {
                 prediction: MoshPredictionMode::Adaptive,
                 locale: Some("en_US.UTF-8".to_string()),
                 terminal: ConnectionTerminalOptions {
-                    session_log_policy: ConnectionTerminalSessionLogPolicy::Automatic,
                     ..ConnectionTerminalOptions::default()
                 },
                 identity_agent: None,
@@ -549,10 +546,6 @@ mod tests {
             Some("Intermittent link")
         );
         assert!(matches!(target.mosh_profiles()[0].auth, SavedAuth::Agent));
-        assert_eq!(
-            target.mosh_profiles()[0].terminal.session_log_policy,
-            ConnectionTerminalSessionLogPolicy::Automatic
-        );
     }
 
     #[test]

@@ -84,8 +84,6 @@ impl WorkspaceApp {
         };
         let recording_status = self.active_terminal_recording_status(cx);
         let recording_active = recording_status.state != TerminalRecordingState::Idle;
-        let session_log_active =
-            self.active_terminal_session_log_status(cx).state != TerminalSessionLogState::Idle;
         let timestamps_active = self.active_terminal_timestamps_enabled(cx);
         let highlight_override_active = self.active_terminal_highlight_override(cx);
         let timestamps_tooltip_title = if timestamps_active {
@@ -98,11 +96,7 @@ impl WorkspaceApp {
             TerminalRecordingState::Recording => self.i18n.t("terminal.recording.pause"),
             TerminalRecordingState::Paused => self.i18n.t("terminal.recording.resume"),
         };
-        let capture_menu_tooltip_title = if session_log_active {
-            self.i18n.t("terminal.session_log.title")
-        } else {
-            self.i18n.t("terminal.recording.title")
-        };
+        let capture_menu_tooltip_title = self.i18n.t("terminal.recording.title");
         let bar = div()
             .relative()
             .flex_none()
@@ -518,16 +512,8 @@ impl WorkspaceApp {
                                         .relative()
                                         .flex_none()
                                         .child(self.terminal_command_action_button(
-                                            if session_log_active {
-                                                LucideIcon::FileText
-                                            } else {
-                                                LucideIcon::FileVideo
-                                            },
-                                            if session_log_active {
-                                                rgb(theme.accent)
-                                            } else {
-                                                rgb(theme.text_muted)
-                                            },
+                                            LucideIcon::FileVideo,
+                                            rgb(theme.text_muted),
                                             false,
                                             Some(if self.terminal_recording_menu_open {
                                                 rgba((theme.accent << 8) | 0x26)
@@ -545,37 +531,6 @@ impl WorkspaceApp {
                                         .when(self.terminal_recording_menu_open, |anchor| {
                                             // Keep the menu in the toolbar button's local coordinate
                                             // owner so its anchor is current in the same draw pass.
-                                            anchor.child(self.render_terminal_recording_menu(cx))
-                                        }),
-                                )
-                            })
-                            .when(recording_active, |actions| {
-                                actions.child(
-                                    div()
-                                        .relative()
-                                        .flex_none()
-                                        .child(self.terminal_command_action_button(
-                                            LucideIcon::FileText,
-                                            if session_log_active {
-                                                rgb(theme.accent)
-                                            } else {
-                                                rgb(theme.text_muted)
-                                            },
-                                            false,
-                                            Some(if self.terminal_recording_menu_open {
-                                                rgba((theme.accent << 8) | 0x26)
-                                            } else {
-                                                rgba(0x00000000)
-                                            }),
-                                            "terminal-command-session-log-menu",
-                                            self.i18n.t("terminal.session_log.title"),
-                                            |this, _event, _window, cx| {
-                                                this.toggle_terminal_recording_menu(cx);
-                                                cx.stop_propagation();
-                                            },
-                                            cx,
-                                        ))
-                                        .when(self.terminal_recording_menu_open, |anchor| {
                                             anchor.child(self.render_terminal_recording_menu(cx))
                                         }),
                                 )
@@ -668,8 +623,6 @@ impl WorkspaceApp {
     }
 
     fn render_terminal_recording_menu(&self, cx: &mut Context<Self>) -> AnyElement {
-        let session_log_status = self.active_terminal_session_log_status(cx);
-        let session_log_available = self.active_terminal_session_log_available(cx);
         let menu = context_menu_event_boundary(
             dropdown_menu_content(&self.tokens)
                 .absolute()
@@ -693,156 +646,30 @@ impl WorkspaceApp {
             false,
         );
 
-        let menu = menu
-            .child(self.workspace_context_menu_styled_action(
-                start_item,
-                false,
-                false,
-                ContextMenuActionableStyle::default(),
-                |this| {
-                    this.terminal_recording_menu_open = false;
-                },
-                |this, _event, _window, cx| {
-                    this.start_active_terminal_recording(cx);
-                },
-                cx,
-            ))
-            .child(self.workspace_context_menu_styled_action(
-                open_item,
-                false,
-                false,
-                ContextMenuActionableStyle::default(),
-                |this| {
-                    this.terminal_recording_menu_open = false;
-                },
-                |this, _event, window, cx| {
-                    this.open_terminal_cast_file(window, cx);
-                },
-                cx,
-            ))
-            .child(dropdown_menu_separator(&self.tokens));
-
-        let menu = match session_log_status.state {
-            TerminalSessionLogState::Idle => {
-                let item = dropdown_menu_item(
-                    &self.tokens,
-                    self.i18n.t("terminal.session_log.start"),
-                    DropdownMenuItemKind::Plain,
-                    false,
-                    !session_log_available,
-                );
-                menu.child(self.workspace_context_menu_styled_action(
-                    item,
-                    !session_log_available,
-                    false,
-                    ContextMenuActionableStyle::default(),
-                    |this| this.terminal_recording_menu_open = false,
-                    |this, _event, _window, cx| this.start_active_terminal_session_log(cx),
-                    cx,
-                ))
-            }
-            TerminalSessionLogState::Logging => {
-                let pause_item = dropdown_menu_item(
-                    &self.tokens,
-                    self.i18n.t("terminal.session_log.pause"),
-                    DropdownMenuItemKind::Plain,
-                    false,
-                    false,
-                );
-                let stop_item = dropdown_menu_item(
-                    &self.tokens,
-                    self.i18n.t("terminal.session_log.stop"),
-                    DropdownMenuItemKind::Plain,
-                    false,
-                    false,
-                );
-                menu.child(self.workspace_context_menu_styled_action(
-                    pause_item,
-                    false,
-                    false,
-                    ContextMenuActionableStyle::default(),
-                    |this| this.terminal_recording_menu_open = false,
-                    |this, _event, _window, cx| this.pause_active_terminal_session_log(cx),
-                    cx,
-                ))
-                .child(self.workspace_context_menu_styled_action(
-                    stop_item,
-                    false,
-                    false,
-                    ContextMenuActionableStyle::default(),
-                    |this| this.terminal_recording_menu_open = false,
-                    |this, _event, _window, cx| this.stop_active_terminal_session_log(cx),
-                    cx,
-                ))
-            }
-            TerminalSessionLogState::Paused => {
-                let resume_item = dropdown_menu_item(
-                    &self.tokens,
-                    self.i18n.t("terminal.session_log.resume"),
-                    DropdownMenuItemKind::Plain,
-                    false,
-                    false,
-                );
-                let stop_item = dropdown_menu_item(
-                    &self.tokens,
-                    self.i18n.t("terminal.session_log.stop"),
-                    DropdownMenuItemKind::Plain,
-                    false,
-                    false,
-                );
-                menu.child(self.workspace_context_menu_styled_action(
-                    resume_item,
-                    false,
-                    false,
-                    ContextMenuActionableStyle::default(),
-                    |this| this.terminal_recording_menu_open = false,
-                    |this, _event, _window, cx| this.resume_active_terminal_session_log(cx),
-                    cx,
-                ))
-                .child(self.workspace_context_menu_styled_action(
-                    stop_item,
-                    false,
-                    false,
-                    ContextMenuActionableStyle::default(),
-                    |this| this.terminal_recording_menu_open = false,
-                    |this, _event, _window, cx| this.stop_active_terminal_session_log(cx),
-                    cx,
-                ))
-            }
-        };
-
-        let menu = menu.when(session_log_status.path.is_some(), |menu| {
-            let item = dropdown_menu_item(
-                &self.tokens,
-                self.i18n.t("terminal.session_log.open_file"),
-                DropdownMenuItemKind::Plain,
-                false,
-                false,
-            );
-            menu.child(self.workspace_context_menu_styled_action(
-                item,
-                false,
-                false,
-                ContextMenuActionableStyle::default(),
-                |this| this.terminal_recording_menu_open = false,
-                |this, _event, _window, cx| this.open_active_terminal_session_log(cx),
-                cx,
-            ))
-        });
-        let directory_item = dropdown_menu_item(
-            &self.tokens,
-            self.i18n.t("terminal.session_log.open_directory"),
-            DropdownMenuItemKind::Plain,
-            false,
-            false,
-        );
         menu.child(self.workspace_context_menu_styled_action(
-            directory_item,
+            start_item,
             false,
             false,
             ContextMenuActionableStyle::default(),
-            |this| this.terminal_recording_menu_open = false,
-            |this, _event, _window, cx| this.open_terminal_session_log_directory(cx),
+            |this| {
+                this.terminal_recording_menu_open = false;
+            },
+            |this, _event, _window, cx| {
+                this.start_active_terminal_recording(cx);
+            },
+            cx,
+        ))
+        .child(self.workspace_context_menu_styled_action(
+            open_item,
+            false,
+            false,
+            ContextMenuActionableStyle::default(),
+            |this| {
+                this.terminal_recording_menu_open = false;
+            },
+            |this, _event, window, cx| {
+                this.open_terminal_cast_file(window, cx);
+            },
             cx,
         ))
         .into_any_element()

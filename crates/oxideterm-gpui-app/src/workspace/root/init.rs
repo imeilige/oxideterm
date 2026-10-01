@@ -39,18 +39,6 @@ impl WorkspaceApp {
         // process-owned index and never copies the document into credential storage.
         let local_terminal_command_history =
             SharedTerminalCommandHistory::from_commands(load_local_shell_history_commands());
-        let session_log_directory = settings::terminal_session_log_root_directory(
-            settings_store.path(),
-            settings.terminal.session_log.directory.as_deref(),
-        );
-        let session_log_retention_days = settings.terminal.session_log.retention_days.max(0) as u64;
-        cx.background_executor()
-            .spawn(async move {
-                // Cleanup is one-shot and non-fatal; it never owns or observes a terminal connection.
-                let _ =
-                    prune_terminal_session_logs(&session_log_directory, session_log_retention_days);
-            })
-            .detach();
         oxideterm_network_proxy::install_application_proxy_policy_from_settings(
             &settings,
             &connection_store,
@@ -912,12 +900,6 @@ impl WorkspaceApp {
             connection.options.terminal.clone(),
             &self.settings_store.settings().terminal,
         );
-        overrides.session_log_context = Some(TerminalSessionLogContext {
-            session: connection.name.clone(),
-            host: connection.host.clone(),
-            username: connection.username.clone(),
-            protocol: "ssh".to_string(),
-        });
         overrides
     }
 
@@ -951,12 +933,6 @@ impl WorkspaceApp {
             semantic_scheme_id,
             semantic_shell: Some(semantic_shell_dialect(&shell.id)),
             local_shell_id: Some(shell.id.clone()),
-            session_log_context: Some(TerminalSessionLogContext {
-                session: shell.label.clone(),
-                host: "localhost".to_string(),
-                username: String::new(),
-                protocol: "local".to_string(),
-            }),
             ..TerminalUiPreferenceOverrides::default()
         }
     }
@@ -976,12 +952,6 @@ impl WorkspaceApp {
             node.terminal_options.clone(),
             &self.settings_store.settings().terminal,
         );
-        overrides.session_log_context = Some(TerminalSessionLogContext {
-            session: node.title.clone(),
-            host: node.endpoint.host.clone(),
-            username: node.endpoint.username.clone(),
-            protocol: "ssh".to_string(),
-        });
         overrides
     }
 
@@ -1051,11 +1021,6 @@ impl WorkspaceApp {
         let clear_screen_shortcut = clear_screen_shortcut
             .as_ref()
             .map(crate::keybindings::format_combo);
-        let session_log_settings = &terminal.session_log;
-        let session_log_directory = settings::terminal_session_log_root_directory(
-            self.settings_store.path(),
-            session_log_settings.directory.as_deref(),
-        );
         TerminalUiPreferences {
             processing_failed_message: self.i18n.t("terminal.processing_failed"),
             font_family: terminal
@@ -1244,26 +1209,6 @@ impl WorkspaceApp {
                 name_placeholder: self.i18n.t("terminal.tmux.name_placeholder"),
                 confirm: self.i18n.t("terminal.tmux.confirm"),
                 cancel: self.i18n.t("terminal.tmux.cancel"),
-            },
-            session_log_options: Some(TerminalSessionLogOptions {
-                directory: session_log_directory,
-                directory_template: session_log_settings.directory_template.clone(),
-                include_control_sequences: session_log_settings.include_control_sequences,
-                retention_days: session_log_settings.retention_days.max(0) as u64,
-                // Zero is the explicit unlimited setting; positive values keep a byte boundary.
-                max_file_bytes: u64::try_from(session_log_settings.max_file_size_mib)
-                    .ok()
-                    .filter(|size_mib| *size_mib > 0)
-                    .map(|size_mib| size_mib.saturating_mul(1024 * 1024)),
-                file_name_template: session_log_settings.file_name_template.clone(),
-                content_template: session_log_settings.content_template.clone(),
-                file_mode: session_log_settings.file_mode,
-                context: TerminalSessionLogContext::default(),
-            }),
-            session_log_automatic: session_log_settings.automatic,
-            session_log_labels: TerminalSessionLogLabels {
-                start_failed: self.i18n.t("terminal.session_log.start_failed"),
-                write_failed: self.i18n.t("terminal.session_log.write_failed"),
             },
             trzsz_labels: TerminalTrzszLabels {
                 select_upload_directory_title: self
@@ -1472,19 +1417,6 @@ pub(in crate::workspace) fn terminal_preference_overrides(
         highlight_rule_set_id,
         semantic_shell: None,
         local_shell_id: None,
-        session_log_available: match options.session_log_policy {
-            ConnectionTerminalSessionLogPolicy::Disabled => Some(false),
-            ConnectionTerminalSessionLogPolicy::Automatic
-            | ConnectionTerminalSessionLogPolicy::Manual => Some(true),
-            ConnectionTerminalSessionLogPolicy::Inherit => None,
-        },
-        session_log_automatic: match options.session_log_policy {
-            ConnectionTerminalSessionLogPolicy::Disabled => Some(false),
-            ConnectionTerminalSessionLogPolicy::Automatic => Some(true),
-            ConnectionTerminalSessionLogPolicy::Manual => Some(false),
-            ConnectionTerminalSessionLogPolicy::Inherit => None,
-        },
-        session_log_context: None,
     }
 }
 
@@ -1589,44 +1521,5 @@ mod semantic_scheme_tests {
                 .map(|rule| rule.pattern.as_str()),
             Some("ERROR")
         );
-    }
-
-    #[test]
-    fn connection_session_log_policy_controls_availability_and_automatic_start() {
-        let terminal = oxideterm_settings::TerminalSettings::default();
-        let automatic = terminal_preference_overrides(
-            ConnectionTerminalOptions {
-                session_log_policy: ConnectionTerminalSessionLogPolicy::Automatic,
-                ..ConnectionTerminalOptions::default()
-            },
-            &terminal,
-        );
-        assert_eq!(automatic.session_log_available, Some(true));
-        assert_eq!(automatic.session_log_automatic, Some(true));
-
-        let manual = terminal_preference_overrides(
-            ConnectionTerminalOptions {
-                session_log_policy: ConnectionTerminalSessionLogPolicy::Manual,
-                ..ConnectionTerminalOptions::default()
-            },
-            &terminal,
-        );
-        assert_eq!(manual.session_log_available, Some(true));
-        assert_eq!(manual.session_log_automatic, Some(false));
-
-        let disabled = terminal_preference_overrides(
-            ConnectionTerminalOptions {
-                session_log_policy: ConnectionTerminalSessionLogPolicy::Disabled,
-                ..ConnectionTerminalOptions::default()
-            },
-            &terminal,
-        );
-        assert_eq!(disabled.session_log_available, Some(false));
-        assert_eq!(disabled.session_log_automatic, Some(false));
-
-        let inherited =
-            terminal_preference_overrides(ConnectionTerminalOptions::default(), &terminal);
-        assert_eq!(inherited.session_log_available, None);
-        assert_eq!(inherited.session_log_automatic, None);
     }
 }

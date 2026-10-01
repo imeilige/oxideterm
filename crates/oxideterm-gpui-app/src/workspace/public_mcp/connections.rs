@@ -2,7 +2,7 @@ use chrono::SecondsFormat;
 use oxideterm_connections::{
     ConnectionCredentialSlot, ConnectionTerminalBackspaceSequence,
     ConnectionTerminalDeleteSequence, ConnectionTerminalEncoding, ConnectionTerminalOptions,
-    ConnectionTerminalSessionLogPolicy, ConnectionX11ForwardingMode,
+    ConnectionX11ForwardingMode,
     ConnectionX11ForwardingOptions, DEFAULT_SSH_CONNECT_TIMEOUT_SECONDS,
     DEFAULT_X11_UNTRUSTED_TIMEOUT_SECONDS, MoshIpFamily, MoshPredictionMode, MoshUdpPortSelection,
     SaveConnectionRequest, SaveMoshProfileRequest, SaveRemoteDesktopProfileRequest,
@@ -16,7 +16,7 @@ use oxideterm_public_mcp::{
     PublicRdpNetworkProfile, PublicRemoteDesktopOptions, PublicSavedConnectionProfile,
     PublicSerialFlowControl, PublicSerialParity, PublicSshChannelStrategy,
     PublicTerminalBackspaceSequence, PublicTerminalDeleteSequence, PublicTerminalEncoding,
-    PublicTerminalOptions, PublicTerminalSessionLogPolicy, PublicToolCall, PublicUpstreamProxy,
+    PublicTerminalOptions, PublicToolCall, PublicUpstreamProxy,
     PublicUpstreamProxyProtocol, PublicVncCompression, PublicVncImageQuality,
     PublicVncSecurityPolicy, PublicVncSessionMode, PublicX11ForwardingMode, ToolEnvelope,
 };
@@ -743,16 +743,6 @@ fn terminal_options(options: &PublicTerminalOptions) -> ConnectionTerminalOption
         }),
         semantic_scheme: None,
         highlight_rule_set: None,
-        session_log_policy: match options.session_log_policy {
-            PublicTerminalSessionLogPolicy::Inherit => ConnectionTerminalSessionLogPolicy::Inherit,
-            PublicTerminalSessionLogPolicy::Automatic => {
-                ConnectionTerminalSessionLogPolicy::Automatic
-            }
-            PublicTerminalSessionLogPolicy::Manual => ConnectionTerminalSessionLogPolicy::Manual,
-            PublicTerminalSessionLogPolicy::Disabled => {
-                ConnectionTerminalSessionLogPolicy::Disabled
-            }
-        },
     }
 }
 

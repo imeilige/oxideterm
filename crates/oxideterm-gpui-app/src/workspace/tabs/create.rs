@@ -515,12 +515,6 @@ impl WorkspaceApp {
             terminal_options,
             &self.settings_store.settings().terminal,
         );
-        preference_overrides.session_log_context = Some(TerminalSessionLogContext {
-            session: title.clone(),
-            host: config.host.clone(),
-            username: String::new(),
-            protocol: "telnet".to_string(),
-        });
         let mut preferences =
             self.prepare_terminal_preferences_for_tab_kind(&TabKind::LocalTerminal, cx);
         preference_overrides.apply_to(&mut preferences);
@@ -629,12 +623,6 @@ impl WorkspaceApp {
             terminal_options,
             &self.settings_store.settings().terminal,
         );
-        preference_overrides.session_log_context = Some(TerminalSessionLogContext {
-            session: title.clone(),
-            host: config.port_path.clone(),
-            username: String::new(),
-            protocol: "serial".to_string(),
-        });
         preference_overrides.apply_to(&mut preferences);
         let pane_config = config.clone();
         let serial_session = match TerminalPane::open_serial_session_with_preferences(
@@ -703,12 +691,6 @@ impl WorkspaceApp {
             terminal_options,
             &self.settings_store.settings().terminal,
         );
-        preference_overrides.session_log_context = Some(TerminalSessionLogContext {
-            session: title.clone(),
-            host: String::new(),
-            username: String::new(),
-            protocol: "mosh".to_string(),
-        });
         preference_overrides.apply_to(&mut preferences);
         let pane = cx.new(|cx| {
             TerminalPane::new_mosh_with_preferences(config, preferences, window, cx)

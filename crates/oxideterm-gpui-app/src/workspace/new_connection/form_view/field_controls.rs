@@ -1,6 +1,6 @@
 use super::*;
 use gpui::{Animation, AnimationExt, App, CursorStyle};
-use oxideterm_connections::{ConnectionTerminalSessionLogPolicy, SavedAuth, SshChannelStrategy};
+use oxideterm_connections::{SavedAuth, SshChannelStrategy};
 use oxideterm_remote_desktop::RemoteDesktopRdpNetworkProfile;
 use oxideterm_settings_model::parse_rgb24_hex;
 
@@ -578,9 +578,6 @@ impl WorkspaceApp {
             }
             NewConnectionSelect::TerminalHighlightRuleSet => {
                 SelectAnchorId::NewConnectionTerminalHighlightRuleSet
-            }
-            NewConnectionSelect::TerminalSessionLogPolicy => {
-                SelectAnchorId::NewConnectionTerminalSessionLogPolicy
             }
         }
     }
@@ -1501,8 +1498,7 @@ impl WorkspaceApp {
                     | NewConnectionSelect::TerminalBackspaceSequence
                     | NewConnectionSelect::TerminalDeleteSequence
                     | NewConnectionSelect::TerminalSemanticScheme
-                    | NewConnectionSelect::TerminalHighlightRuleSet
-                    | NewConnectionSelect::TerminalSessionLogPolicy => return,
+                    | NewConnectionSelect::TerminalHighlightRuleSet => {}
                 }
                 form.field_focused = false;
                 form.selected_field = None;
@@ -4332,26 +4328,6 @@ impl WorkspaceApp {
             .and_then(|id| application_defaults.highlight_rule_set(id))
             .map(|rule_set| rule_set.name.clone())
             .unwrap_or_else(|| inherited_label(&default_highlight_rule_set));
-        let inherited_session_log_policy_label = if application_defaults.session_log.automatic {
-            self.i18n.t("ssh.form.terminal_session_log_automatic")
-        } else {
-            self.i18n.t("ssh.form.terminal_session_log_manual")
-        };
-        let session_log_policy_label = match terminal.session_log_policy {
-            ConnectionTerminalSessionLogPolicy::Inherit => {
-                inherited_label(&inherited_session_log_policy_label)
-            }
-            ConnectionTerminalSessionLogPolicy::Automatic => {
-                self.i18n.t("ssh.form.terminal_session_log_automatic")
-            }
-            ConnectionTerminalSessionLogPolicy::Manual => {
-                self.i18n.t("ssh.form.terminal_session_log_manual")
-            }
-            ConnectionTerminalSessionLogPolicy::Disabled => {
-                self.i18n.t("ssh.form.terminal_session_log_disabled")
-            }
-        };
-
         div()
             .flex()
             .flex_col()
@@ -4444,22 +4420,6 @@ impl WorkspaceApp {
                                 ),
                             )),
                     )
-                    .child(
-                        div()
-                            .flex_1()
-                            .min_w(px(CONNECTION_TERMINAL_CONTROL_MIN_WIDTH))
-                            .child(form_field(
-                                &self.tokens,
-                                self.i18n.t("ssh.form.terminal_session_log"),
-                                self.render_new_connection_select_control(
-                                    NewConnectionSelect::TerminalSessionLogPolicy,
-                                    session_log_policy_label,
-                                    false,
-                                    false,
-                                    cx,
-                                ),
-                            )),
-                    ),
             )
             .child(self.render_connection_checkbox_with_help(
                 "new-connection-dedicated-terminal-help",
@@ -4809,23 +4769,6 @@ impl WorkspaceApp {
         self.update_connection_form_state(cx, |state| {
             if let Some(form) = state.form.as_mut() {
                 form.terminal.highlight_rule_set = rule_set_id;
-                form.field_focused = false;
-                clear_connection_selection(form);
-                form.error = None;
-            }
-        });
-        self.ime_marked_text = None;
-        cx.notify();
-    }
-
-    pub(super) fn set_new_connection_terminal_session_log_policy(
-        &mut self,
-        policy: ConnectionTerminalSessionLogPolicy,
-        cx: &mut Context<Self>,
-    ) {
-        self.update_connection_form_state(cx, |state| {
-            if let Some(form) = state.form.as_mut() {
-                form.terminal.session_log_policy = policy;
                 form.field_focused = false;
                 clear_connection_selection(form);
                 form.error = None;

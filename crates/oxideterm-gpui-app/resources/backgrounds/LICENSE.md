@@ -20,7 +20,7 @@ marks as trademarks or to imply endorsement by the OxideTerm project.
 
 | File | Origin | SHA-256 |
 | --- | --- | --- |
-| `oxide-ambient-v1.png` | OxideTerm project artwork; first recorded in repository commit `3538f60524cb8546a15314dea9f95ff9cd7be5fc`. | `a8b5235bb71a293664622a94702d739ad3e4084c38e61ac7d60846de46641de5` |
+| `oxide-ambient-v1.webp` | OxideTerm project artwork; first recorded in repository commit `3538f60524cb8546a15314dea9f95ff9cd7be5fc`, re-encoded from the original PNG to WebP by OxideTerm contributors. | `af584ec9b481568867e1c5f25623d483431bcd0791fe89916d7de2db7a609535` |
 | `oxide-nocturne-v1.webp` | Generated for OxideTerm with OpenAI image generation, then selected, edited, and encoded by OxideTerm contributors. | `d2c48252ffdf7a2a35c50a747d07564442e6430d56d355e43b9e187939ecf044` |
 | `oxide-verdant-v1.webp` | Generated for OxideTerm with OpenAI image generation, then selected and encoded by OxideTerm contributors. | `37617e6292c485d4a9586f89ffbff0be458d8892e18cd0ea5ea7d77b4fd542ab` |
 

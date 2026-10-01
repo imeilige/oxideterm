@@ -1325,8 +1325,7 @@ This section is a review prompt for binary distribution; it does not replace leg
 | Asset | Files | License | License File |
 |---|---:|---|---|
 | JetBrains Mono Subset | 4 | SIL Open Font License 1.1 | crates/oxideterm-gpui-app/resources/fonts/JetBrainsMono/OFL.txt |
-| Meslo Nerd Font Subset | 4 | Apache License 2.0 | crates/oxideterm-gpui-app/resources/fonts/Meslo/LICENSE.txt |
-| Maple Mono NF CN Subset | 4 | SIL Open Font License 1.1 | crates/oxideterm-gpui-app/resources/fonts/MapleMono/LICENSE.txt |
+| Maple Mono NF CN Subset | 1 | SIL Open Font License 1.1 | crates/oxideterm-gpui-app/resources/fonts/MapleMono/LICENSE.txt |
 
 ## Distribution Icon Assets
 

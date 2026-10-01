@@ -5,11 +5,7 @@ use anyhow::{Context, Result};
 use serde_json::{Map, Value, json};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::{
-    ParsedTerminalSessionLogTemplate, TerminalSessionLogTemplateError, model::*,
-    parse_terminal_session_log_content_template, parse_terminal_session_log_directory_template,
-    parse_terminal_session_log_file_name_template,
-};
+use crate::model::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SanitizedSettings {
@@ -463,6 +459,19 @@ fn normalize_ai_reasoning_effort_aliases(settings: &mut Value) {
     ai.insert("reasoningEffort".to_string(), json!(normalized));
 }
 
+/// Releases up to 2.2.8 shipped the Meslo bundled subset and recorded "meslo"
+/// in the persisted font family. The subset is no longer embedded, and an
+/// unknown variant tag would fail the whole settings document, so remap it to
+/// the bundled JetBrains family before deserialization.
+fn normalize_retired_font_family(settings: &mut Value) {
+    let Some(terminal) = object_mut(settings, "terminal") else {
+        return;
+    };
+    if terminal.get("fontFamily").and_then(Value::as_str) == Some("meslo") {
+        terminal.insert("fontFamily".to_string(), json!("jetbrains"));
+    }
+}
+
 fn ai_reasoning_profile_value(value: &str) -> &'static str {
     match value {
         "none" | "off" => "none",
@@ -661,6 +670,7 @@ pub fn sanitize_settings_value(raw: Value) -> Result<SanitizedSettings> {
         object.insert("version".to_string(), json!(SETTINGS_SCHEMA_VERSION));
     }
     normalize_sftp_speed_limit_key(&mut settings, &raw);
+    normalize_retired_font_family(&mut settings);
     migrate_ai_providers(&mut settings, &mut migration_warnings);
     remove_ai_provider_default_models(&mut settings);
     migrate_ai_tool_use_settings(&mut settings, &raw);
@@ -757,59 +767,11 @@ pub fn sanitize_settings_value(raw: Value) -> Result<SanitizedSettings> {
             100 * 1024 * 1024,
             100 * 1024 * 1024 * 1024,
         ),
-        ("terminal.sessionLog.retentionDays", 30, 0, 3650),
-        ("terminal.sessionLog.maxFileSizeMib", 100, 0, 4096),
     ] {
         let segments: Vec<_> = path.split('.').collect();
         if let Some(value) = get_path_mut(&mut settings, &segments) {
             clamp_i64(value, fallback, min, max, path, &mut validation_warnings);
         }
-    }
-
-    for (path, fallback, validator) in [
-        (
-            "terminal.sessionLog.fileNameTemplate",
-            "{date}_{time}_{protocol}_{session}.log",
-            parse_terminal_session_log_file_name_template
-                as fn(
-                    &str,
-                ) -> std::result::Result<
-                    ParsedTerminalSessionLogTemplate,
-                    TerminalSessionLogTemplateError,
-                >,
-        ),
-        (
-            "terminal.sessionLog.contentTemplate",
-            "[{timestamp}] {text}",
-            parse_terminal_session_log_content_template
-                as fn(
-                    &str,
-                ) -> std::result::Result<
-                    ParsedTerminalSessionLogTemplate,
-                    TerminalSessionLogTemplateError,
-                >,
-        ),
-    ] {
-        let segments: Vec<_> = path.split('.').collect();
-        if let Some(value) = get_path_mut(&mut settings, &segments)
-            && value
-                .as_str()
-                .is_none_or(|template| validator(template).is_err())
-        {
-            *value = json!(fallback);
-            validation_warnings.push(format!("Reset invalid {path}"));
-        }
-    }
-
-    if let Some(value) = get_path_mut(
-        &mut settings,
-        &["terminal", "sessionLog", "directoryTemplate"],
-    ) && value
-        .as_str()
-        .is_none_or(|template| parse_terminal_session_log_directory_template(template).is_err())
-    {
-        *value = json!("");
-        validation_warnings.push("Reset invalid terminal.sessionLog.directoryTemplate".to_string());
     }
 
     for (path, fallback, min, max) in [
@@ -881,13 +843,6 @@ pub fn sanitize_settings_value(raw: Value) -> Result<SanitizedSettings> {
         &["terminal", "renderer"],
         &["auto", "webgl", "canvas"],
         if cfg!(windows) { "canvas" } else { "auto" },
-        &mut validation_warnings,
-    );
-    sanitize_enum(
-        &mut settings,
-        &["terminal", "sessionLog", "fileMode"],
-        &["unique", "append", "overwrite"],
-        "unique",
         &mut validation_warnings,
     );
     sanitize_enum(
@@ -1029,6 +984,39 @@ mod tests {
     use super::*;
 
     #[test]
+    fn retired_meslo_font_family_falls_back_without_losing_other_settings() {
+        let sanitized = sanitize_settings_value(json!({
+            "terminal": { "fontFamily": "meslo", "fontSize": 19 }
+        }))
+        .expect("sanitize settings");
+
+        assert_eq!(
+            sanitized.settings.terminal.font_family,
+            FontFamily::Jetbrains
+        );
+        // The rest of the document must survive the remap, otherwise a released
+        // build that stored "meslo" would reset the whole user profile.
+        assert_eq!(sanitized.settings.terminal.font_size, 19);
+    }
+
+    #[test]
+    fn supported_font_families_are_left_untouched() {
+        for (raw, expected) in [
+            ("jetbrains", FontFamily::Jetbrains),
+            ("maple", FontFamily::Maple),
+            ("cascadia", FontFamily::Cascadia),
+            ("consolas", FontFamily::Consolas),
+            ("menlo", FontFamily::Menlo),
+        ] {
+            let sanitized = sanitize_settings_value(json!({
+                "terminal": { "fontFamily": raw }
+            }))
+            .expect("sanitize settings");
+            assert_eq!(sanitized.settings.terminal.font_family, expected);
+        }
+    }
+
+    #[test]
     fn invalid_custom_semantic_schemes_are_removed_before_deserialization() {
         let sanitized = sanitize_settings_value(json!({
             "terminal": {
@@ -1060,29 +1048,6 @@ mod tests {
         );
         assert!(sanitized.settings.terminal.semantic_custom_scheme.is_none());
         assert!(!sanitized.validation_warnings.is_empty());
-    }
-
-    #[test]
-    fn invalid_session_log_templates_and_mode_fall_back_to_safe_defaults() {
-        let sanitized = sanitize_settings_value(json!({
-            "terminal": {
-                "sessionLog": {
-                    "fileNameTemplate": "../escape.log",
-                    "contentTemplate": "missing text variable",
-                    "fileMode": "replaceAnything"
-                }
-            }
-        }))
-        .expect("sanitize settings");
-
-        let session_log = sanitized.settings.terminal.session_log;
-        assert_eq!(
-            session_log.file_name_template,
-            "{date}_{time}_{protocol}_{session}.log"
-        );
-        assert_eq!(session_log.content_template, "[{timestamp}] {text}");
-        assert_eq!(session_log.file_mode, TerminalSessionLogFileMode::Unique);
-        assert_eq!(sanitized.validation_warnings.len(), 3);
     }
 
     #[test]

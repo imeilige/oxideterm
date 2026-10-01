@@ -3,7 +3,7 @@
 
 //! Bundled terminal font registration for the native GPUI app.
 //!
-//! MapleMono faces are embedded as independent Zstd frames and decompressed
+//! MapleMono's CN face is embedded as an independent Zstd frame and decompressed
 //! only when registered. GPUI/font-kit still receives the original SFNT bytes.
 //! Registration stays lazy: startup and terminal-open paths load only the
 //! selected font's critical faces, matching Tauri's fontLoader strategy.
@@ -25,29 +25,9 @@ const JETBRAINS_ITALIC: &[u8] =
 const JETBRAINS_BOLD_ITALIC: &[u8] = include_bytes!(
     "../resources/fonts/JetBrainsMono/JetBrainsMonoNerdFontMono-Subset-BoldItalic.ttf"
 );
-const MESLO_REGULAR: &[u8] =
-    include_bytes!("../resources/fonts/Meslo/MesloLGMNerdFontMono-Subset-Regular.ttf");
-const MESLO_BOLD: &[u8] =
-    include_bytes!("../resources/fonts/Meslo/MesloLGMNerdFontMono-Subset-Bold.ttf");
-const MESLO_ITALIC: &[u8] =
-    include_bytes!("../resources/fonts/Meslo/MesloLGMNerdFontMono-Subset-Italic.ttf");
-const MESLO_BOLD_ITALIC: &[u8] =
-    include_bytes!("../resources/fonts/Meslo/MesloLGMNerdFontMono-Subset-BoldItalic.ttf");
 const MAPLE_REGULAR: &[u8] = include_bytes!(concat!(
     env!("OUT_DIR"),
     "/MapleMono-NF-CN-Subset-Regular.ttf.zst"
-));
-const MAPLE_BOLD: &[u8] = include_bytes!(concat!(
-    env!("OUT_DIR"),
-    "/MapleMono-NF-CN-Subset-Bold.ttf.zst"
-));
-const MAPLE_ITALIC: &[u8] = include_bytes!(concat!(
-    env!("OUT_DIR"),
-    "/MapleMono-NF-CN-Subset-Italic.ttf.zst"
-));
-const MAPLE_BOLD_ITALIC: &[u8] = include_bytes!(concat!(
-    env!("OUT_DIR"),
-    "/MapleMono-NF-CN-Subset-BoldItalic.ttf.zst"
 ));
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -56,14 +36,7 @@ pub(crate) enum BundledTerminalFace {
     JetBrainsBold,
     JetBrainsItalic,
     JetBrainsBoldItalic,
-    MesloRegular,
-    MesloBold,
-    MesloItalic,
-    MesloBoldItalic,
     MapleRegular,
-    MapleBold,
-    MapleItalic,
-    MapleBoldItalic,
 }
 
 impl BundledTerminalFace {
@@ -73,23 +46,13 @@ impl BundledTerminalFace {
             Self::JetBrainsBold => JETBRAINS_BOLD,
             Self::JetBrainsItalic => JETBRAINS_ITALIC,
             Self::JetBrainsBoldItalic => JETBRAINS_BOLD_ITALIC,
-            Self::MesloRegular => MESLO_REGULAR,
-            Self::MesloBold => MESLO_BOLD,
-            Self::MesloItalic => MESLO_ITALIC,
-            Self::MesloBoldItalic => MESLO_BOLD_ITALIC,
             Self::MapleRegular => MAPLE_REGULAR,
-            Self::MapleBold => MAPLE_BOLD,
-            Self::MapleItalic => MAPLE_ITALIC,
-            Self::MapleBoldItalic => MAPLE_BOLD_ITALIC,
         }
     }
 
     pub(crate) fn load(self) -> Result<Vec<u8>> {
         let bytes = self.embedded_bytes();
-        if matches!(
-            self,
-            Self::MapleRegular | Self::MapleBold | Self::MapleItalic | Self::MapleBoldItalic
-        ) {
+        if matches!(self, Self::MapleRegular) {
             // The build script writes frames with their original length, allowing one allocation.
             let size = zstd::zstd_safe::get_frame_content_size(bytes)
                 .map_err(|error| anyhow::anyhow!("invalid bundled font {self:?}: {error}"))?
@@ -108,14 +71,7 @@ const ALL_TERMINAL_FACES: &[BundledTerminalFace] = &[
     BundledTerminalFace::JetBrainsBold,
     BundledTerminalFace::JetBrainsItalic,
     BundledTerminalFace::JetBrainsBoldItalic,
-    BundledTerminalFace::MesloRegular,
-    BundledTerminalFace::MesloBold,
-    BundledTerminalFace::MesloItalic,
-    BundledTerminalFace::MesloBoldItalic,
     BundledTerminalFace::MapleRegular,
-    BundledTerminalFace::MapleBold,
-    BundledTerminalFace::MapleItalic,
-    BundledTerminalFace::MapleBoldItalic,
 ];
 
 static LOADED_TERMINAL_FACES: LazyLock<Mutex<HashSet<BundledTerminalFace>>> =
@@ -146,12 +102,8 @@ fn critical_faces_for_family(family: FontFamily) -> &'static [BundledTerminalFac
             BundledTerminalFace::JetBrainsRegular,
             BundledTerminalFace::JetBrainsBold,
         ],
-        FontFamily::Meslo => &[
-            BundledTerminalFace::MesloRegular,
-            BundledTerminalFace::MesloBold,
-        ],
-        // Maple is large: regular is the critical path; other weights stay
-        // deferred until native grows an idle/background font warmer.
+        // Maple is large and only the regular face is embedded; styled CJK
+        // runs fall back to the system CJK fonts.
         FontFamily::Maple => &[BundledTerminalFace::MapleRegular],
         FontFamily::Cascadia | FontFamily::Consolas | FontFamily::Menlo | FontFamily::Custom => &[],
     }
@@ -226,27 +178,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn bundled_maple_faces_preserve_the_complete_original_fonts() {
-        for (face, style) in [
-            (BundledTerminalFace::MapleRegular, "Regular"),
-            (BundledTerminalFace::MapleBold, "Bold"),
-            (BundledTerminalFace::MapleItalic, "Italic"),
-            (BundledTerminalFace::MapleBoldItalic, "BoldItalic"),
-        ] {
-            let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(format!(
-                "resources/fonts/MapleMono/MapleMono-NF-CN-Subset-{style}.ttf"
-            ));
-            let original = std::fs::read(path).unwrap();
-            let decoded = face.load().unwrap();
-            assert!(
-                decoded == original,
-                "{face:?} must preserve every original byte"
-            );
-            assert!(
-                face.embedded_bytes().len() < original.len(),
-                "{face:?} must reduce embedded size"
-            );
-        }
+    fn bundled_maple_face_preserves_the_complete_original_font() {
+        let face = BundledTerminalFace::MapleRegular;
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("resources/fonts/MapleMono/MapleMono-NF-CN-Subset-Regular.ttf");
+        let original = std::fs::read(path).unwrap();
+        let decoded = face.load().unwrap();
+        assert_eq!(
+            decoded, original,
+            "{face:?} must preserve every original byte"
+        );
+        assert!(
+            face.embedded_bytes().len() < original.len(),
+            "{face:?} must reduce embedded size"
+        );
     }
 
     #[test]
@@ -259,14 +204,7 @@ mod tests {
                 | BundledTerminalFace::JetBrainsBoldItalic => {
                     oxideterm_settings::JETBRAINS_MONO_SUBSET_FAMILY
                 }
-                BundledTerminalFace::MesloRegular
-                | BundledTerminalFace::MesloBold
-                | BundledTerminalFace::MesloItalic
-                | BundledTerminalFace::MesloBoldItalic => oxideterm_settings::MESLO_SUBSET_FAMILY,
-                BundledTerminalFace::MapleRegular
-                | BundledTerminalFace::MapleBold
-                | BundledTerminalFace::MapleItalic
-                | BundledTerminalFace::MapleBoldItalic => {
+                BundledTerminalFace::MapleRegular => {
                     oxideterm_settings::MAPLE_MONO_SUBSET_FAMILY
                 }
             };
@@ -290,7 +228,6 @@ mod tests {
     fn app_code_font_is_loaded_for_every_terminal_family() {
         for family in [
             FontFamily::Jetbrains,
-            FontFamily::Meslo,
             FontFamily::Maple,
             FontFamily::Cascadia,
             FontFamily::Consolas,

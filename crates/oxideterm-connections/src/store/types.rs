@@ -191,23 +191,6 @@ pub enum ConnectionTerminalDeleteSequence {
     ControlH,
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum ConnectionTerminalSessionLogPolicy {
-    #[default]
-    Inherit,
-    Automatic,
-    // Manual keeps the terminal action available without starting a log on connect.
-    Manual,
-    Disabled,
-}
-
-impl ConnectionTerminalSessionLogPolicy {
-    fn is_inherit(&self) -> bool {
-        *self == Self::Inherit
-    }
-}
-
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionTerminalOptions {
@@ -221,11 +204,6 @@ pub struct ConnectionTerminalOptions {
     pub semantic_scheme: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub highlight_rule_set: Option<String>,
-    #[serde(
-        default,
-        skip_serializing_if = "ConnectionTerminalSessionLogPolicy::is_inherit"
-    )]
-    pub session_log_policy: ConnectionTerminalSessionLogPolicy,
 }
 
 impl ConnectionTerminalOptions {
@@ -235,7 +213,6 @@ impl ConnectionTerminalOptions {
             && self.delete_sequence.is_none()
             && self.semantic_scheme.is_none()
             && self.highlight_rule_set.is_none()
-            && self.session_log_policy == ConnectionTerminalSessionLogPolicy::Inherit
     }
 }
 

@@ -47,7 +47,6 @@ pub enum TerminalSettingsPage {
     CommandBar,
     Awareness,
     Transfer,
-    Logging,
     Highlight,
 }
 
@@ -93,7 +92,6 @@ pub enum SettingsSelect {
     TerminalEncoding,
     TerminalBackspaceSequence,
     TerminalDeleteSequence,
-    TerminalSessionLogFileMode,
     TerminalCursorStyle,
     RemoteShellIntegrationMode,
     TerminalTriggerMatchMode,
@@ -163,12 +161,6 @@ pub enum SettingsInput {
     InBandTransferMaxChunkBytes,
     InBandTransferMaxFileCount,
     InBandTransferMaxTotalBytes,
-    TerminalSessionLogRetentionDays,
-    TerminalSessionLogMaxFileSizeMib,
-    TerminalSessionLogDirectory,
-    TerminalSessionLogDirectoryTemplate,
-    TerminalSessionLogFileNameTemplate,
-    TerminalSessionLogContentTemplate,
     TerminalCommandBarFocusHandoff,
     TerminalCommandSpecsJson,
     TerminalTriggerName,
@@ -277,7 +269,6 @@ impl TerminalSettingsPage {
             Self::CommandBar,
             Self::Awareness,
             Self::Transfer,
-            Self::Logging,
             Self::Highlight,
         ]
     }
@@ -290,7 +281,6 @@ impl TerminalSettingsPage {
             Self::CommandBar => "settings_view.terminal.page_commandBar",
             Self::Awareness => "settings_view.terminal.page_awareness",
             Self::Transfer => "settings_view.terminal.page_transfer",
-            Self::Logging => "settings_view.terminal.page_logging",
             Self::Highlight => "settings_view.terminal.page_highlight",
         }
     }
@@ -517,12 +507,6 @@ impl SettingsInput {
             Self::InBandTransferMaxChunkBytes => 13,
             Self::InBandTransferMaxFileCount => 14,
             Self::InBandTransferMaxTotalBytes => 15,
-            Self::TerminalSessionLogRetentionDays => 33_200,
-            Self::TerminalSessionLogMaxFileSizeMib => 33_201,
-            Self::TerminalSessionLogFileNameTemplate => 33_202,
-            Self::TerminalSessionLogContentTemplate => 33_203,
-            Self::TerminalSessionLogDirectory => 33_204,
-            Self::TerminalSessionLogDirectoryTemplate => 33_205,
             Self::TerminalCommandBarFocusHandoff => 16,
             Self::TerminalCommandSpecsJson => 17,
             Self::TerminalTriggerName => 33_100,

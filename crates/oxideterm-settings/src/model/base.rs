@@ -218,7 +218,6 @@ pub enum TerminalDeleteSequence {
 pub enum FontFamily {
     #[default]
     Jetbrains,
-    Meslo,
     Maple,
     Cascadia,
     Consolas,
@@ -227,7 +226,6 @@ pub enum FontFamily {
 }
 
 pub const JETBRAINS_MONO_SUBSET_FAMILY: &str = "JetBrainsMono NFM";
-pub const MESLO_SUBSET_FAMILY: &str = "MesloLGLDZ Nerd Font Mono";
 pub const MAPLE_MONO_SUBSET_FAMILY: &str = "Maple Mono NF CN";
 
 impl FontFamily {
@@ -237,7 +235,6 @@ impl FontFamily {
         }
         match self {
             Self::Jetbrains => JETBRAINS_MONO_SUBSET_FAMILY.to_string(),
-            Self::Meslo => MESLO_SUBSET_FAMILY.to_string(),
             Self::Maple => MAPLE_MONO_SUBSET_FAMILY.to_string(),
             Self::Cascadia => "Cascadia Code".to_string(),
             Self::Consolas => "Consolas".to_string(),

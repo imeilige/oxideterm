@@ -341,13 +341,13 @@ mod tests {
 
         let installed = ensure_bundled_background_image(
             &settings_path,
-            "oxide-ambient-v1.png",
+            "oxide-ambient-v1.webp",
             b"bundled image",
         )
         .expect("install bundled background");
         let repeated = ensure_bundled_background_image(
             &settings_path,
-            "oxide-ambient-v1.png",
+            "oxide-ambient-v1.webp",
             b"replacement image",
         )
         .expect("reuse bundled background");
@@ -355,7 +355,7 @@ mod tests {
         assert_eq!(installed, repeated);
         assert_eq!(
             installed,
-            background_images_directory(&settings_path).join("oxide-ambient-v1.png")
+            background_images_directory(&settings_path).join("oxide-ambient-v1.webp")
         );
         assert_eq!(
             fs::read(installed).expect("installed bytes"),

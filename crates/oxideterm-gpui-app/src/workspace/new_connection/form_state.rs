@@ -175,7 +175,6 @@ pub(in crate::workspace) enum NewConnectionSelect {
     TerminalDeleteSequence,
     TerminalSemanticScheme,
     TerminalHighlightRuleSet,
-    TerminalSessionLogPolicy,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

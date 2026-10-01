@@ -466,7 +466,6 @@ mod tests {
                 delete_sequence: Some(ConnectionTerminalDeleteSequence::Delete),
                 semantic_scheme: Some("conservative".to_string()),
                 highlight_rule_set: Some("network-devices".to_string()),
-                session_log_policy: ConnectionTerminalSessionLogPolicy::Automatic,
             },
             ..ConnectionOptions::default()
         };
@@ -479,7 +478,6 @@ mod tests {
             serialized["terminal"]["highlightRuleSet"],
             "network-devices"
         );
-        assert_eq!(serialized["terminal"]["sessionLogPolicy"], "automatic");
         assert_eq!(serialized["dedicated_new_terminal_connection"], true);
         assert_eq!(serialized["ssh_channel_strategy"], "dedicated_per_consumer");
         assert_eq!(
@@ -2629,7 +2627,6 @@ mod tests {
                 delete_sequence: Some(ConnectionTerminalDeleteSequence::ControlH),
                 semantic_scheme: None,
                 highlight_rule_set: None,
-                session_log_policy: ConnectionTerminalSessionLogPolicy::Disabled,
             },
             connect_on_open: true,
             created_at: now,
@@ -2644,10 +2641,6 @@ mod tests {
         let value = serde_json::to_value(&data).unwrap();
 
         assert_eq!(value["telnet_profiles"][0]["id"], "telnet-1");
-        assert_eq!(
-            value["telnet_profiles"][0]["terminal"]["sessionLogPolicy"],
-            "disabled"
-        );
         assert_eq!(value["telnet_profiles"][0]["icon"], "network");
         assert_eq!(value["telnet_profiles"][0]["color"], "#86efac");
         assert_eq!(

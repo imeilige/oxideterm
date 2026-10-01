@@ -686,10 +686,6 @@ mod tests {
                     "maxFileCount": 999999,
                     "maxTotalBytes": 1
                 },
-                "sessionLog": {
-                    "retentionDays": -10,
-                    "maxFileSizeMib": 999999
-                }
             },
             "sidebarUI": { "width": 9999 },
             "connectionPool": { "idleTimeoutSecs": 1 }
@@ -698,11 +694,6 @@ mod tests {
         assert_eq!(sanitized.settings.terminal.scrollback, 500);
         assert_eq!(sanitized.settings.terminal.font_size, 32);
         assert_eq!(sanitized.settings.terminal.line_height, 3.0);
-        assert_eq!(sanitized.settings.terminal.session_log.retention_days, 0);
-        assert_eq!(
-            sanitized.settings.terminal.session_log.max_file_size_mib,
-            4096
-        );
         assert_eq!(sanitized.settings.sidebar_ui.width, 600);
         assert_eq!(sanitized.settings.connection_pool.idle_timeout_secs, 1);
         assert!(!sanitized.validation_warnings.is_empty());

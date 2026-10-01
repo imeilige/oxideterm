@@ -19,7 +19,10 @@ fn main() {
 
 fn compress_maple_fonts() {
     let output = PathBuf::from(env::var_os("OUT_DIR").expect("Cargo must set OUT_DIR"));
-    for style in ["Regular", "Bold", "Italic", "BoldItalic"] {
+    // Only the regular face is registered at runtime, so compressing and
+    // embedding the bold and italic frames would spend 9.5 MiB of release DMG
+    // on faces no code path loads.
+    for style in ["Regular"] {
         let name = format!("MapleMono-NF-CN-Subset-{style}.ttf");
         let source = PathBuf::from("resources/fonts/MapleMono").join(&name);
         println!("cargo:rerun-if-changed={}", source.display());
