@@ -210,7 +210,6 @@ pub fn settings_tab_section_count(
         SettingsTab::Privilege => 1,
         SettingsTab::Network => 4,
         SettingsTab::Sftp => 3,
-        SettingsTab::Ai => ai_settings_section_count(dynamic.ai_page),
         SettingsTab::Keybindings => {
             keybinding_settings_section_count(dynamic.visible_keybinding_scope_count)
         }

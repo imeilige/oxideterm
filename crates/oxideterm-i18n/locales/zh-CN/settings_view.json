@@ -951,8 +951,6 @@
       "automatic_placeholder": "自动",
       "conversation_agents_hint": "以下选项仅作用于当前 AI 会话。子 Agent 并发上限在全局工具策略中设置。",
       "conversation_agents": "当前会话的子 Agent",
-      "title": "OxideSens",
-      "description": "配置 AI 提供商、Agent、上下文、记忆、工具和扩展。",
       "general": "常规",
       "page_general": "常规",
       "page_providers": "提供商",

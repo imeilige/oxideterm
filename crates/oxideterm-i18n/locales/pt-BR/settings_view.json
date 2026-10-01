@@ -951,8 +951,6 @@
       "automatic_placeholder": "Automático",
       "conversation_agents_hint": "Estas opções se aplicam apenas à conversa de IA atual. Defina o limite de subagentes simultâneos na política global de ferramentas.",
       "conversation_agents": "Subagentes da conversa atual",
-      "title": "OxideSens",
-      "description": "Configure provedores de IA, agentes, contexto, memória, ferramentas e extensões.",
       "general": "Geral",
       "page_general": "Geral",
       "page_providers": "Provedores",

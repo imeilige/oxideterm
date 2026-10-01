@@ -56,21 +56,6 @@ const fn terminal_search_entry(
     }
 }
 
-const fn ai_search_entry(
-    page: AiSettingsPage,
-    section_index: usize,
-    title_key: &'static str,
-    search_keys: &'static [&'static str],
-) -> SettingsSearchEntrySpec {
-    SettingsSearchEntrySpec {
-        tab: SettingsTab::Ai,
-        terminal_page: None,
-        ai_page: Some(page),
-        section_index,
-        title_key,
-        search_keys,
-    }
-}
 
 fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
     let window_behavior_sections =
@@ -540,107 +525,6 @@ fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
             2,
             "settings_view.sftp.conflict",
             &["settings_view.sftp.conflict_hint"],
-        ),
-        ai_search_entry(
-            AiSettingsPage::General,
-            1,
-            "settings_view.ai.general",
-            &["settings_view.ai.enable", "settings_view.ai.enable_hint"],
-        ),
-        ai_search_entry(
-            AiSettingsPage::General,
-            2,
-            "settings_view.ai.privacy_notice",
-            &["settings_view.ai.privacy_text"],
-        ),
-        ai_search_entry(
-            AiSettingsPage::Providers,
-            1,
-            "settings_view.ai.provider_settings",
-            &[
-                "settings_view.ai.provider_settings_summary",
-                "settings_view.ai.api_key",
-                "settings_view.ai.base_url",
-                "settings_view.ai.model",
-            ],
-        ),
-        ai_search_entry(
-            AiSettingsPage::Agents,
-            1,
-            "settings_view.ai.acp_agents",
-            &[
-                "settings_view.ai.acp_agents_summary",
-                "settings_view.ai.acp_agent_command",
-                "settings_view.ai.acp_agent_cwd",
-            ],
-        ),
-        ai_search_entry(
-            AiSettingsPage::Context,
-            1,
-            "settings_view.ai.context_controls",
-            &[
-                "settings_view.ai.max_context",
-                "settings_view.ai.context_sources",
-                "settings_view.ai.context_source_ide",
-                "settings_view.ai.context_source_sftp",
-                "settings_view.ai.context_automatic_hint",
-            ],
-        ),
-        ai_search_entry(
-            AiSettingsPage::Context,
-            2,
-            "settings_view.ai.system_prompt_title",
-            &["settings_view.ai.system_prompt_hint"],
-        ),
-        ai_search_entry(
-            AiSettingsPage::Context,
-            3,
-            "settings_view.ai.memory_title",
-            &[
-                "settings_view.ai.memory_hint",
-                "settings_view.ai.memory_enabled",
-            ],
-        ),
-        ai_search_entry(
-            AiSettingsPage::Context,
-            4,
-            "settings_view.ai.model_context_windows",
-            &["settings_view.ai.model_context_windows_hint"],
-        ),
-        ai_search_entry(
-            AiSettingsPage::Tools,
-            1,
-            "settings_view.ai.tool_use",
-            &[
-                "settings_view.ai.tool_use_enabled",
-                "settings_view.ai.tool_use_max_rounds",
-                "ai.agents.concurrency",
-            ],
-        ),
-        ai_search_entry(
-            AiSettingsPage::Tools,
-            2,
-            "settings_view.ai.conversation_agents",
-            &[
-                "settings_view.ai.conversation_agents_hint",
-                "ai.agents.allow",
-                "ai.agents.model",
-            ],
-        ),
-        ai_search_entry(
-            AiSettingsPage::Tools,
-            3,
-            "settings_view.ai.skills_title",
-            &[
-                "settings_view.ai.skills_hint",
-                "settings_view.ai.skills_enabled",
-            ],
-        ),
-        ai_search_entry(
-            AiSettingsPage::Tools,
-            4,
-            "settings_view.mcp.title",
-            &["settings_view.mcp.description"],
         ),
         settings_search_entry(
             SettingsTab::Keybindings,

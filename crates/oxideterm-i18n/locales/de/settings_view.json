@@ -951,8 +951,6 @@
       "automatic_placeholder": "Automatisch",
       "conversation_agents_hint": "Diese Optionen gelten nur für die aktuelle KI-Unterhaltung. Die maximale Anzahl paralleler Unteragenten wird in der globalen Werkzeugrichtlinie festgelegt.",
       "conversation_agents": "Unteragenten der aktuellen Unterhaltung",
-      "title": "OxideSens",
-      "description": "KI-Anbieter, Agenten, Kontext, Gedächtnis, Werkzeuge und Erweiterungen konfigurieren.",
       "general": "Allgemein",
       "page_general": "Allgemein",
       "page_providers": "Anbieter",

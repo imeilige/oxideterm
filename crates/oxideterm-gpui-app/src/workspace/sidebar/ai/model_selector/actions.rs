@@ -237,9 +237,7 @@ impl WorkspaceApp {
         let detached_settings_surface = self.tabs(cx).iter().any(|tab| {
             tab.kind == TabKind::Settings && self.tab_host.read(cx).is_outside_main_window(tab.id)
         });
-        let settings_surface = !self.app_lock.locked
-            && (main_settings_surface || detached_settings_surface)
-            && self.settings_workspace.read(cx).route_snapshot().active_tab == SettingsTab::Ai;
+        let settings_surface = false;
         let visibility = AiWorkspaceVisibility {
             model_selector_surface: !self.app_lock.locked && model_selector_surface,
             settings_surface,

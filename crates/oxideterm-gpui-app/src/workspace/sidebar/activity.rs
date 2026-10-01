@@ -17,7 +17,6 @@ impl WorkspaceApp {
             (SidebarSection::Runtime, LucideIcon::Gauge),
         ]);
         let top_items_after_plugins = [
-            (SidebarSection::Assistant, LucideIcon::Sparkles),
             (SidebarSection::HostTools, LucideIcon::Wrench),
         ];
         let bottom_items = [
@@ -226,7 +225,6 @@ impl WorkspaceApp {
             SidebarSection::Settings => self
                 .active_tab(cx)
                 .is_some_and(|tab| tab.kind == TabKind::Settings),
-            SidebarSection::Assistant => self.ai_sidebar_visible(),
             SidebarSection::HostTools => {
                 self.context_sidebar_visible()
                     && self.active_context_sidebar_panel == ContextSidebarPanel::HostTools
@@ -375,8 +373,6 @@ impl WorkspaceApp {
                         this.open_file_manager_tab(window, cx);
                     } else if section == SidebarSection::Notifications {
                         this.open_notification_center_tab(window, cx);
-                    } else if section == SidebarSection::Assistant {
-                        let _ = this.toggle_ai_sidebar(cx);
                     } else if section == SidebarSection::HostTools {
                         let _ =
                             this.toggle_context_sidebar_panel(ContextSidebarPanel::HostTools, cx);
@@ -400,7 +396,6 @@ impl WorkspaceApp {
             SidebarSection::Runtime => self.i18n.t("sidebar.panels.runtime"),
             SidebarSection::Network => self.i18n.t("sidebar.panels.connection_matrix"),
             SidebarSection::Extensions => self.i18n.t("sidebar.panels.plugins"),
-            SidebarSection::Assistant => self.i18n.t("sidebar.panels.ai"),
             SidebarSection::HostTools => self.i18n.t("sidebar.panels.host_tools"),
             SidebarSection::Automation => self.i18n.t("sidebar.panels.activity"),
             SidebarSection::Workspace => self.i18n.t("sidebar.actions.new_local_terminal"),

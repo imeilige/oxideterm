@@ -203,10 +203,6 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let active_tab = self.settings_workspace.read(cx).route_snapshot().active_tab;
-        if active_tab == SettingsTab::Ai {
-            return self.render_settings_ai_section_item(index, cx);
-        }
-
         let section_index = index.saturating_sub(SETTINGS_SECTION_HEADER_ITEM_COUNT);
         let child = if index == 0 {
             self.render_settings_virtual_header(active_tab, cx)
@@ -215,20 +211,6 @@ impl WorkspaceApp {
         };
 
         self.wrap_settings_section_list_item(index, child, cx)
-    }
-
-    pub(in crate::workspace) fn render_settings_ai_section_item(
-        &mut self,
-        index: usize,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let item = if index == 0 {
-            self.render_settings_virtual_header(SettingsTab::Ai, cx)
-        } else {
-            self.render_settings_ai_page_section(index - 1, cx)
-        };
-
-        self.wrap_settings_section_list_item(index, item, cx)
     }
 
     pub(in crate::workspace) fn render_settings_ai_page_section(
@@ -399,19 +381,12 @@ impl WorkspaceApp {
 
     pub(in crate::workspace) fn settings_section_list_spec(
         &self,
-        cx: &App,
+        _cx: &App,
     ) -> TauriVirtualListSpec {
-        if self.settings_workspace.read(cx).route_snapshot().active_tab == SettingsTab::Ai {
-            TauriVirtualListSpec::new(
-                px(AI_SETTINGS_SECTION_ESTIMATED_HEIGHT),
-                SETTINGS_SECTION_LIST_OVERSCAN,
-            )
-        } else {
-            TauriVirtualListSpec::new(
-                px(SETTINGS_SECTION_LIST_ESTIMATED_HEIGHT),
-                SETTINGS_SECTION_LIST_OVERSCAN,
-            )
-        }
+        TauriVirtualListSpec::new(
+            px(SETTINGS_SECTION_LIST_ESTIMATED_HEIGHT),
+            SETTINGS_SECTION_LIST_OVERSCAN,
+        )
     }
 
     pub(in crate::workspace) fn settings_section_list_identity(&self, cx: &App) -> String {
@@ -580,66 +555,6 @@ impl WorkspaceApp {
                     status.auto_unlock_enabled.hash(&mut hasher);
                 }
             }
-            SettingsTab::Ai => {
-                format!("{:?}", route.ai_page).hash(&mut hasher);
-                // Hash expansion state only into the virtual row whose height
-                // can change. The compact prompt and memory cards stay stable.
-                match (route.ai_page, index) {
-                    (AiSettingsPage::Providers, 2) => {
-                        settings.ai.providers.len().hash(&mut hasher);
-                        self.ai_entity
-                            .read(cx)
-                            .hash_settings_provider_layout(&mut hasher);
-                    }
-                    (AiSettingsPage::Agents, 2) => {
-                        settings.ai.acp_agents.len().hash(&mut hasher);
-                    }
-                    (AiSettingsPage::Context, 5) => {
-                        settings.ai.providers.len().hash(&mut hasher);
-                        self.ai_entity
-                            .read(cx)
-                            .hash_settings_context_layout(&mut hasher);
-                    }
-                    (AiSettingsPage::Tools, 2) => {
-                        self.ai_entity
-                            .read(cx)
-                            .settings_section_expanded(AiSettingsViewSection::ToolUse)
-                            .hash(&mut hasher);
-                    }
-                    (AiSettingsPage::Tools, 3) => {
-                        let ai = self.ai_entity.read(cx);
-                        ai.agents.settings_model_picker_open.hash(&mut hasher);
-                        ai.conversation_state()
-                            .active_conversation_id
-                            .hash(&mut hasher);
-                        if let Some(conversation) = ai.conversation_state().active_conversation() {
-                            conversation.title.hash(&mut hasher);
-                            let options = ai.agent_options(&conversation.id);
-                            options.enabled.hash(&mut hasher);
-                            options
-                                .default_model
-                                .as_ref()
-                                .map(|model| (&model.provider_id, &model.model))
-                                .hash(&mut hasher);
-                        }
-                        for provider in ai_provider_views(settings) {
-                            provider.id.hash(&mut hasher);
-                            provider.enabled.hash(&mut hasher);
-                            provider.models.hash(&mut hasher);
-                        }
-                    }
-                    (AiSettingsPage::Tools, 4) => {
-                        let registry = self.skill_registry.read();
-                        for skill in registry.records() {
-                            skill.id.hash(&mut hasher);
-                            skill.enabled.hash(&mut hasher);
-                            skill.content_hash.hash(&mut hasher);
-                        }
-                        registry.diagnostics().len().hash(&mut hasher);
-                    }
-                    _ => {}
-                }
-            }
             SettingsTab::Keybindings => {
                 // Keep the search control mounted while scope filtering replaces tables.
                 if index > 0 {
@@ -757,7 +672,6 @@ impl WorkspaceApp {
             }
             SettingsTab::Network => self.settings_network_section(section_index, cx),
             SettingsTab::Sftp => self.settings_sftp_section(section_index, cx),
-            SettingsTab::Ai => div().into_any_element(),
             SettingsTab::Keybindings => self.settings_keybindings_section(section_index, cx),
             SettingsTab::Help => self.settings_help_section(section_index, cx),
         }

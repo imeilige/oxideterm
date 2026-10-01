@@ -267,7 +267,6 @@ fn settings_tab_lucide(icon: SettingsTabIcon) -> LucideIcon {
         SettingsTabIcon::Monitor => LucideIcon::Monitor,
         SettingsTabIcon::Network => LucideIcon::Network,
         SettingsTabIcon::Shield => LucideIcon::Shield,
-        SettingsTabIcon::Sparkles => LucideIcon::Sparkles,
         SettingsTabIcon::Square => LucideIcon::Square,
         SettingsTabIcon::Terminal => LucideIcon::Terminal,
         SettingsTabIcon::WifiOff => LucideIcon::WifiOff,

@@ -328,9 +328,8 @@ impl WorkspaceApp {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.settings_workspace.update(cx, |settings, cx| {
-            settings.set_active_tab(SettingsTab::Ai, cx)
-        });
+        // The OxideSens settings tab was removed; AI settings now land on
+        // General so the workspace keeps a valid settings surface.
         self.open_settings(window, cx);
     }
 }

@@ -951,8 +951,6 @@
       "automatic_placeholder": "自動",
       "conversation_agents_hint": "以下選項僅作用於目前的 AI 對話。子 Agent 並行上限在全域工具原則中設定。",
       "conversation_agents": "目前對話的子 Agent",
-      "title": "OxideSens",
-      "description": "設定 AI 提供者、Agent、上下文、記憶、工具和擴充功能。",
       "general": "一般",
       "page_general": "一般",
       "page_providers": "供應商",

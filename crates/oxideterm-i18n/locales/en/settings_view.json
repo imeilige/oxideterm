@@ -951,8 +951,6 @@
       "automatic_placeholder": "Automatic",
       "conversation_agents_hint": "These options apply only to the current AI conversation. Set the subagent concurrency limit in the global tool policy.",
       "conversation_agents": "Current Conversation Subagents",
-      "title": "OxideSens",
-      "description": "Configure AI providers, agents, context, memory, tools, and extensions.",
       "general": "General",
       "page_general": "General",
       "page_providers": "Providers",

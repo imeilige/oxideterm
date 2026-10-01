@@ -951,8 +951,6 @@
       "automatic_placeholder": "自動",
       "conversation_agents_hint": "これらの設定は現在の AI 会話にのみ適用されます。サブエージェントの同時実行数の上限は、全体のツールポリシーで設定します。",
       "conversation_agents": "現在の会話のサブエージェント",
-      "title": "OxideSens",
-      "description": "AI プロバイダー、Agent、コンテキスト、メモリ、ツール、拡張機能を設定します。",
       "general": "一般",
       "page_general": "一般",
       "page_providers": "プロバイダー",

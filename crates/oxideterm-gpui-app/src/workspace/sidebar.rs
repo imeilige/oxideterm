@@ -49,7 +49,6 @@ pub(super) enum SidebarSection {
     Terminal,
     Network,
     Extensions,
-    Assistant,
     HostTools,
     Automation,
     Workspace,
@@ -116,7 +115,6 @@ impl SidebarSection {
             "connection_monitor" | "activity" => Self::HostTools,
             "network" | "topology" => Self::Network,
             "extensions" => Self::Extensions,
-            "ai" | "assistant" => Self::Assistant,
             "host_tools" => Self::HostTools,
             "automation" => Self::Automation,
             "workspace" => Self::Workspace,
@@ -141,7 +139,6 @@ impl SidebarSection {
             Self::Terminal => "connection_pool",
             Self::Network => "topology",
             Self::Extensions => "extensions",
-            Self::Assistant => "ai",
             Self::HostTools => "host_tools",
             Self::Automation => "automation",
             Self::Workspace => "workspace",
@@ -164,7 +161,6 @@ impl WorkspaceApp {
             | SidebarSection::Terminal
             | SidebarSection::Runtime
             | SidebarSection::Network
-            | SidebarSection::Assistant
             | SidebarSection::HostTools
             | SidebarSection::Automation
             | SidebarSection::Workspace
@@ -212,7 +208,6 @@ mod sidebar_persistence_tests {
             SidebarSection::Terminal,
             SidebarSection::Network,
             SidebarSection::Extensions,
-            SidebarSection::Assistant,
             SidebarSection::HostTools,
             SidebarSection::Automation,
             SidebarSection::Workspace,

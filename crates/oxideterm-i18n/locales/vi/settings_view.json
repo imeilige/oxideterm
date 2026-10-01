@@ -951,8 +951,6 @@
       "automatic_placeholder": "Tự động",
       "conversation_agents_hint": "Các tùy chọn này chỉ áp dụng cho cuộc hội thoại AI hiện tại. Đặt giới hạn tác tử phụ chạy đồng thời trong chính sách công cụ toàn cục.",
       "conversation_agents": "Tác tử phụ của cuộc hội thoại hiện tại",
-      "title": "OxideSens",
-      "description": "Cấu hình nhà cung cấp AI, Agent, ngữ cảnh, bộ nhớ, công cụ và phần mở rộng.",
       "general": "Chung",
       "page_general": "Chung",
       "page_providers": "Nhà cung cấp",
