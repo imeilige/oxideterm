@@ -111,19 +111,14 @@ impl WorkspaceApp {
         for (section, icon) in top_items_before_plugins {
             primary_items = primary_items.child(self.render_activity_icon(section, icon, cx));
         }
-        primary_items = primary_items.child(self.render_activity_icon(
-            SidebarSection::Extensions,
-            LucideIcon::Puzzle,
-            cx,
-        ));
         let plugin_activity_items = self
             .plugin_entity
             .read(cx)
             .registry()
             .contributions()
             .runtime_activity_bar_items();
-        // Tauri inserts plugin-provided sidebar panels as independent activity
-        // buttons immediately after the built-in Plugin Manager tab button.
+        // Plugin-provided sidebar panels render as independent activity buttons
+        // ahead of the remaining built-in entries.
         for panel in self
             .plugin_entity
             .read(cx)
@@ -219,9 +214,6 @@ impl WorkspaceApp {
             SidebarSection::Notifications => self
                 .active_tab(cx)
                 .is_some_and(|tab| tab.kind == TabKind::NotificationCenter),
-            SidebarSection::Extensions => self
-                .active_tab(cx)
-                .is_some_and(|tab| tab.kind == TabKind::PluginManager),
             SidebarSection::Settings => self
                 .active_tab(cx)
                 .is_some_and(|tab| tab.kind == TabKind::Settings),
@@ -376,8 +368,6 @@ impl WorkspaceApp {
                     } else if section == SidebarSection::HostTools {
                         let _ =
                             this.toggle_context_sidebar_panel(ContextSidebarPanel::HostTools, cx);
-                    } else if section == SidebarSection::Extensions {
-                        this.open_plugin_manager_tab(window, cx);
                     } else {
                         this.active_surface = ActiveSurface::Terminal;
                         this.toggle_sidebar_section(section, cx);
@@ -395,7 +385,6 @@ impl WorkspaceApp {
             SidebarSection::Terminal => self.i18n.t("sidebar.panels.runtime_overview"),
             SidebarSection::Runtime => self.i18n.t("sidebar.panels.runtime"),
             SidebarSection::Network => self.i18n.t("sidebar.panels.connection_matrix"),
-            SidebarSection::Extensions => self.i18n.t("sidebar.panels.plugins"),
             SidebarSection::HostTools => self.i18n.t("sidebar.panels.host_tools"),
             SidebarSection::Automation => self.i18n.t("sidebar.panels.activity"),
             SidebarSection::Workspace => self.i18n.t("sidebar.actions.new_local_terminal"),
@@ -415,12 +404,11 @@ impl WorkspaceApp {
             plugin_id: panel.plugin_id.clone(),
             panel_id: panel.panel_id.clone(),
         };
-        let active = self.active_sidebar_section == SidebarSection::Extensions
-            && self
-                .plugin_manager_state(cx)
-                .active_sidebar_panel
-                .as_ref()
-                .is_some_and(|active_panel| active_panel == &selection);
+        let active = self
+            .plugin_manager_state(cx)
+            .active_sidebar_panel
+            .as_ref()
+            .is_some_and(|active_panel| active_panel == &selection);
         let tooltip = panel.title.clone();
         let tooltip_id = format!("activity-plugin-{}-{}", panel.plugin_id, panel.panel_id);
         let tooltip_id_for_move = tooltip_id.clone();
@@ -479,7 +467,6 @@ impl WorkspaceApp {
                 MouseButton::Left,
                 cx.listener(move |this, _event, _window, cx| {
                     let requested_panel_is_visible = !this.sidebar_collapsed
-                        && this.active_sidebar_section == SidebarSection::Extensions
                         && this
                             .plugin_manager_state(cx)
                             .active_sidebar_panel
@@ -490,14 +477,13 @@ impl WorkspaceApp {
                         cx.stop_propagation();
                         return;
                     }
-                    // Mirrors Tauri's `sidebarActiveSection = "plugin:<id>:<panel>"`
-                    // path: choosing a plugin panel switches only the sidebar
-                    // content, while Plugin Manager remains a separate tab.
+                    // Choosing a plugin panel switches only the sidebar content;
+                    // Plugin Manager itself stays a separate workspace tab.
                     this.plugin_entity.update(cx, |plugins, _cx| {
                         plugins.select_sidebar_panel(selection.clone());
                     });
                     this.active_surface = ActiveSurface::Terminal;
-                    this.set_sidebar_section(SidebarSection::Extensions, cx);
+                    this.set_sidebar_section(SidebarSection::Sessions, cx);
                     cx.stop_propagation();
                 }),
             )

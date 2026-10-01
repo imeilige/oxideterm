@@ -189,9 +189,6 @@ impl WorkspaceApp {
     ) {
         self.clear_ai_sidebar_keyboard_focus(cx);
         self.active_sidebar_section = section;
-        if section == SidebarSection::Extensions {
-            self.bootstrap_native_plugin_runtime(cx);
-        }
         if self.sidebar_collapsed {
             self.set_sidebar_collapsed_with_motion(false, cx);
         }

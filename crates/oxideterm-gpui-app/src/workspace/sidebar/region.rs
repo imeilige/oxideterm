@@ -443,29 +443,25 @@ impl WorkspaceApp {
     pub(in crate::workspace) fn render_sidebar_header(&self, cx: &mut Context<Self>) -> AnyElement {
         let theme = self.tokens.ui;
         let panel_section = self.effective_sidebar_panel_section();
-        let plugin_panel_title = (panel_section == SidebarSection::Extensions)
-            .then(|| {
-                self.plugin_manager_state(cx)
-                    .active_sidebar_panel
-                    .as_ref()
-                    .and_then(|selection| {
-                        self.plugin_entity
-                            .read(cx)
-                            .registry()
-                            .contributions()
-                            .runtime_sidebar_panels()
-                            .into_iter()
-                            .find(|panel| {
-                                panel.plugin_id == selection.plugin_id
-                                    && panel.panel_id == selection.panel_id
-                            })
-                            .map(|panel| panel.title)
+        let plugin_panel_title: Option<String> = self
+            .plugin_manager_state(cx)
+            .active_sidebar_panel
+            .as_ref()
+            .and_then(|selection| {
+                self.plugin_entity
+                    .read(cx)
+                    .registry()
+                    .contributions()
+                    .runtime_sidebar_panels()
+                    .into_iter()
+                    .find(|panel| {
+                        panel.plugin_id == selection.plugin_id
+                            && panel.panel_id == selection.panel_id
                     })
-            })
-            .flatten();
+                    .map(|panel| panel.title)
+            });
         let title_key = match panel_section {
             SidebarSection::Forwards => "forwards.table.title",
-            SidebarSection::Extensions => "sidebar.panels.plugins",
             SidebarSection::Notifications => "sidebar.panels.event_log",
             _ => "sidebar.panels.sessions",
         };
@@ -675,9 +671,6 @@ impl WorkspaceApp {
                         .child(sftp),
                 )
                 .into_any_element();
-        }
-        if panel_section == SidebarSection::Extensions {
-            return self.render_native_plugin_sidebar_content(cx);
         }
         if panel_section == SidebarSection::Forwards {
             // Tauri only persists these command-palette section keys here; it

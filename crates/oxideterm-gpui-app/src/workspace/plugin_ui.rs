@@ -1405,17 +1405,14 @@ impl WorkspaceApp {
                         if plugin_id == &context.plugin_id && tab_id == &context.surface_id
                 )
             }),
-            "sidebarPanel" => {
-                self.effective_sidebar_panel_section() == SidebarSection::Extensions
-                    && self
-                        .plugin_manager_state(cx)
-                        .active_sidebar_panel
-                        .as_ref()
-                        .is_some_and(|selection| {
-                            selection.plugin_id == context.plugin_id
-                                && selection.panel_id == context.surface_id
-                        })
-            }
+            "sidebarPanel" => self
+                .plugin_manager_state(cx)
+                .active_sidebar_panel
+                .as_ref()
+                .is_some_and(|selection| {
+                    selection.plugin_id == context.plugin_id
+                        && selection.panel_id == context.surface_id
+                }),
             _ => false,
         }
     }

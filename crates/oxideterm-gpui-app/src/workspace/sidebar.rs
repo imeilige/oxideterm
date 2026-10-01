@@ -48,7 +48,6 @@ pub(super) enum SidebarSection {
     Runtime,
     Terminal,
     Network,
-    Extensions,
     HostTools,
     Automation,
     Workspace,
@@ -114,7 +113,6 @@ impl SidebarSection {
             // Retired health-page keys now restore the Host Tools replacement.
             "connection_monitor" | "activity" => Self::HostTools,
             "network" | "topology" => Self::Network,
-            "extensions" => Self::Extensions,
             "host_tools" => Self::HostTools,
             "automation" => Self::Automation,
             "workspace" => Self::Workspace,
@@ -138,7 +136,6 @@ impl SidebarSection {
             Self::Runtime => "runtime",
             Self::Terminal => "connection_pool",
             Self::Network => "topology",
-            Self::Extensions => "extensions",
             Self::HostTools => "host_tools",
             Self::Automation => "automation",
             Self::Workspace => "workspace",
@@ -152,9 +149,7 @@ impl SidebarSection {
 impl WorkspaceApp {
     pub(in crate::workspace) fn effective_sidebar_panel_section(&self) -> SidebarSection {
         match self.active_sidebar_section {
-            SidebarSection::Sessions
-            | SidebarSection::Forwards
-            | SidebarSection::Extensions => self.active_sidebar_section,
+            SidebarSection::Sessions | SidebarSection::Forwards => self.active_sidebar_section,
             // Tauri separates activity-bar tab buttons from sidebar sections.
             // Keep tab-only entries from replacing the Sessions sidebar body.
             SidebarSection::Connections
@@ -207,7 +202,6 @@ mod sidebar_persistence_tests {
             SidebarSection::Runtime,
             SidebarSection::Terminal,
             SidebarSection::Network,
-            SidebarSection::Extensions,
             SidebarSection::HostTools,
             SidebarSection::Automation,
             SidebarSection::Workspace,
