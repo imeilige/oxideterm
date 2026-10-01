@@ -75,8 +75,7 @@
       "reconnect": "自動再接続",
       "help": "ヘルプと詳細",
       "keybindings": "キーバインド",
-      "graphics": "グラフィックス",
-      "network": "ネットワークと外部アクセス"
+      "graphics": "グラフィックス"
     },
     "general": {
       "portable_status_unlocked": "ロック解除済み",
@@ -1772,8 +1771,6 @@
       "pending_approvals_hint": "Approve only the frozen action shown here; clients cannot replace its parameters after approval.",
       "approval_notice_title": "External MCP action needs approval",
       "approval_notice_description": "{{client}} requested {{tool}}. Review it under Network & Proxy → External MCP Control.",
-      "title": "ネットワークと外部アクセス",
-      "description": "プロキシ経路、外部からの接続リンク、MCP クライアントのアクセス、操作の承認を設定します。",
       "shared_proxy": "共有プロキシ",
       "shared_proxy_hint": "SSH 接続とアプリケーション通信で再利用するプロキシ設定です。",
       "shared_proxy_empty_hint": "先に共有プロキシを追加してから、使用する通信を選択してください。",

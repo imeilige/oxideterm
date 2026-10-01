@@ -75,8 +75,7 @@
       "reconnect": "自動重連",
       "help": "說明與關於",
       "keybindings": "快捷鍵",
-      "graphics": "圖形",
-      "network": "網路與外部存取"
+      "graphics": "圖形"
     },
     "general": {
       "portable_status_unlocked": "已解鎖",
@@ -1772,8 +1771,6 @@
       "pending_approvals_hint": "只核准此處顯示的凍結操作；核准後用戶端無法替換操作參數。",
       "approval_notice_title": "外部 MCP 操作等待核准",
       "approval_notice_description": "{{client}} 請求執行 {{tool}}。請前往「網路與外部存取 → 外部 MCP 控制」檢查。",
-      "title": "網路與外部存取",
-      "description": "設定代理路由、外部連線連結、MCP 用戶端存取與操作授權。",
       "shared_proxy": "共用代理",
       "shared_proxy_hint": "供 SSH 連線與應用程式流量重複使用的一份代理設定。",
       "shared_proxy_empty_hint": "請先新增共用代理，再決定哪些流量使用它。",

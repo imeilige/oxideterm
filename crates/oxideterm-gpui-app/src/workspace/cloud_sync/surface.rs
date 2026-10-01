@@ -45,37 +45,6 @@ impl WorkspaceApp {
         cx.notify();
     }
 
-    pub(in crate::workspace) fn render_cloud_sync_sidebar_content(
-        &self,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let theme = self.tokens.ui;
-        cloud_sync_sidebar_empty(
-            &self.tokens,
-            Self::render_lucide_icon(
-                LucideIcon::Cloud,
-                self.tokens.metrics.empty_sidebar_icon_size,
-                rgb(theme.text_muted),
-            ),
-            self.render_display_text_with_role(
-                SelectableTextRole::NonSelectable,
-                "cloud-sync-sidebar-empty",
-                "title",
-                self.i18n.t("plugin.cloud_sync.panel_title"),
-                theme.text_muted,
-                cx,
-            ),
-            self.render_display_text_with_role(
-                SelectableTextRole::NonSelectable,
-                "cloud-sync-sidebar-empty",
-                "description",
-                self.i18n.t("plugin.cloud_sync.native_description"),
-                theme.text_muted,
-                cx,
-            ),
-        )
-    }
-
     pub(in crate::workspace) fn render_cloud_sync_surface(
         &mut self,
         cx: &mut Context<Self>,

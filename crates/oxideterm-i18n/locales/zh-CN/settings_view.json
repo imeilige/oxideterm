@@ -75,8 +75,7 @@
       "reconnect": "自动重连",
       "help": "帮助与关于",
       "keybindings": "快捷键",
-      "graphics": "图形",
-      "network": "网络与外部访问"
+      "graphics": "图形"
     },
     "general": {
       "portable_status_unlocked": "已解锁",
@@ -1772,8 +1771,6 @@
       "pending_approvals_hint": "只批准此处展示的冻结操作；批准后客户端无法替换操作参数。",
       "approval_notice_title": "外部 MCP 操作等待批准",
       "approval_notice_description": "{{client}} 请求执行 {{tool}}。请前往“网络与外部访问 → 外部 MCP 控制”检查。",
-      "title": "网络与外部访问",
-      "description": "配置代理路由、外部连接链接、MCP 客户端访问与操作授权。",
       "shared_proxy": "共享代理",
       "shared_proxy_hint": "供 SSH 连接和应用流量复用的一份代理配置。",
       "shared_proxy_empty_hint": "请先添加共享代理，再决定哪些流量使用它。",

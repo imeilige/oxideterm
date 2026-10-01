@@ -585,97 +585,6 @@ impl WorkspaceApp {
         text
     }
 
-    pub(in crate::workspace) fn ssh_algorithm_diagnostic_parts(
-        &self,
-        error: &str,
-    ) -> Option<(String, String)> {
-        let diagnostic = oxideterm_ssh::parse_algorithm_negotiation_error(error)?;
-        let kind_label = self.i18n.t(ssh_algorithm_kind_label_key(diagnostic.kind));
-        let summary_key = ssh_algorithm_summary_key(diagnostic.kind, &diagnostic.server_algorithms);
-        let summary = self.i18n.t(summary_key).replace("{{kind}}", &kind_label);
-        let no_common = self
-            .i18n
-            .t("connections.trace.diagnostics.no_common")
-            .replace("{{kind}}", &kind_label);
-        let detail = [
-            self.i18n_with(
-                "connections.trace.diagnostics.client_offered",
-                &[(
-                    "algorithms",
-                    format_algorithm_list(&diagnostic.client_algorithms),
-                )],
-            ),
-            self.i18n_with(
-                "connections.trace.diagnostics.server_offered",
-                &[(
-                    "algorithms",
-                    format_algorithm_list(&diagnostic.server_algorithms),
-                )],
-            ),
-            self.i18n_with(
-                "connections.trace.diagnostics.missing_match",
-                &[("reason", no_common)],
-            ),
-        ]
-        .join("\n");
-        Some((summary, detail))
-    }
-
-    pub(in crate::workspace) fn ssh_algorithm_diagnostic_message(
-        &self,
-        error: &str,
-    ) -> Option<String> {
-        let (summary, detail) = self.ssh_algorithm_diagnostic_parts(error)?;
-        Some(format!("{summary}\n{detail}"))
-    }
-
-    pub(in crate::workspace) fn connection_failure_notice_for_node(
-        &self,
-        node_id: &NodeId,
-        error: &str,
-        cx: &App,
-    ) -> Option<(String, Option<String>)> {
-        if connection_error_is_cancelled(error) {
-            return None;
-        }
-
-        if connection_error_is_proxy_hop_unsupported(error) {
-            return Some((
-                self.i18n.t("connections.toast.proxy_chain_invalid"),
-                Some(self.i18n.t("connections.toast.proxy_hop_kbi_unsupported")),
-            ));
-        }
-
-        if let Some((position, total)) = self
-            .workspace_runtime
-            .read(cx)
-            .connection_chain_position(node_id)
-        {
-            let description = self
-                .ssh_algorithm_diagnostic_message(error)
-                .unwrap_or_else(|| error.to_string());
-            return Some((
-                self.i18n.t("ssh.errors.chain_failed_title"),
-                Some(self.i18n_with(
-                    "ssh.errors.chain_failed_desc",
-                    &[
-                        ("position", (position + 1).to_string()),
-                        ("total", total.to_string()),
-                        ("error", description),
-                    ],
-                )),
-            ));
-        }
-
-        Some((
-            self.i18n.t("ssh.errors.generic_title"),
-            Some(
-                self.ssh_algorithm_diagnostic_message(error)
-                    .unwrap_or_else(|| error.to_string()),
-            ),
-        ))
-    }
-
     pub(in crate::workspace) fn connection_trace_node_is_ready(&self, node_id: &NodeId) -> bool {
         self.node_router
             .node_state(node_id)
@@ -1086,22 +995,6 @@ pub(in crate::workspace) fn inject_session_tree_replace_failure() {
     FAIL_NEXT_SESSION_TREE_REPLACE.with(|fail| fail.set(true));
 }
 
-pub(in crate::workspace) fn connection_error_is_cancelled(error: &str) -> bool {
-    let error = error.to_ascii_lowercase();
-    error.contains("cancelled")
-        || error.contains("user_cancelled")
-        || error.contains("manual disconnect")
-        || error.contains("explicit disconnect")
-}
-
-pub(in crate::workspace) fn connection_error_is_proxy_hop_unsupported(error: &str) -> bool {
-    let error = error.to_ascii_lowercase();
-    error.contains("proxy")
-        && (error.contains("keyboard-interactive")
-            || error.contains("2fa")
-            || error.contains("unsupported auth"))
-}
-
 pub(in crate::workspace) fn saved_origin_config(
     store: &ConnectionStore,
     settings: &PersistedSettings,
@@ -1124,54 +1017,5 @@ pub(in crate::workspace) fn saved_origin_config(
             )
         }
         NodeOrigin::AutoRoute { .. } | NodeOrigin::DrillDown { .. } | NodeOrigin::Direct => None,
-    }
-}
-
-pub(in crate::workspace) fn ssh_algorithm_kind_label_key(
-    kind: SshAlgorithmDiagnosticKind,
-) -> &'static str {
-    match kind {
-        SshAlgorithmDiagnosticKind::KeyExchange => {
-            "connections.trace.diagnostics.kind.key_exchange"
-        }
-        SshAlgorithmDiagnosticKind::HostKey => "connections.trace.diagnostics.kind.host_key",
-        SshAlgorithmDiagnosticKind::Cipher => "connections.trace.diagnostics.kind.cipher",
-        SshAlgorithmDiagnosticKind::Mac => "connections.trace.diagnostics.kind.mac",
-        SshAlgorithmDiagnosticKind::Compression => "connections.trace.diagnostics.kind.compression",
-    }
-}
-
-pub(in crate::workspace) fn ssh_algorithm_summary_key(
-    kind: SshAlgorithmDiagnosticKind,
-    server_algorithms: &[String],
-) -> &'static str {
-    match kind {
-        SshAlgorithmDiagnosticKind::KeyExchange => {
-            "connections.trace.diagnostics.summary.key_exchange"
-        }
-        SshAlgorithmDiagnosticKind::HostKey
-            if oxideterm_ssh::server_only_offers_ssh_rsa(server_algorithms) =>
-        {
-            "connections.trace.diagnostics.summary.host_key_ssh_rsa"
-        }
-        SshAlgorithmDiagnosticKind::HostKey => "connections.trace.diagnostics.summary.host_key",
-        SshAlgorithmDiagnosticKind::Cipher
-            if oxideterm_ssh::server_offers_legacy_cipher(server_algorithms) =>
-        {
-            "connections.trace.diagnostics.summary.cipher_legacy"
-        }
-        SshAlgorithmDiagnosticKind::Cipher => "connections.trace.diagnostics.summary.cipher",
-        SshAlgorithmDiagnosticKind::Mac => "connections.trace.diagnostics.summary.mac",
-        SshAlgorithmDiagnosticKind::Compression => {
-            "connections.trace.diagnostics.summary.compression"
-        }
-    }
-}
-
-pub(in crate::workspace) fn format_algorithm_list(algorithms: &[String]) -> String {
-    if algorithms.is_empty() {
-        "-".to_string()
-    } else {
-        algorithms.join(", ")
     }
 }

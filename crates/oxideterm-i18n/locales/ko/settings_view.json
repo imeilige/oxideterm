@@ -75,8 +75,7 @@
       "reconnect": "자동 재연결",
       "help": "도움말 및 정보",
       "keybindings": "키 바인딩",
-      "graphics": "그래픽",
-      "network": "네트워크 및 외부 접근"
+      "graphics": "그래픽"
     },
     "general": {
       "portable_status_unlocked": "잠금 해제됨",
@@ -1772,8 +1771,6 @@
       "pending_approvals_hint": "Approve only the frozen action shown here; clients cannot replace its parameters after approval.",
       "approval_notice_title": "External MCP action needs approval",
       "approval_notice_description": "{{client}} requested {{tool}}. Review it under Network & Proxy → External MCP Control.",
-      "title": "네트워크 및 외부 접근",
-      "description": "프록시 경로, 외부 연결 링크, MCP 클라이언트 접근 및 작업 승인을 설정합니다.",
       "shared_proxy": "공유 프록시",
       "shared_proxy_hint": "SSH 연결과 애플리케이션 트래픽에서 재사용하는 프록시 설정입니다.",
       "shared_proxy_empty_hint": "먼저 공유 프록시를 추가한 다음 사용할 트래픽을 선택하세요.",

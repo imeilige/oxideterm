@@ -157,20 +157,6 @@
     "no": "No",
     "yes": "Sí"
   },
-  "topology": {
-    "button_title": "Vista de topología",
-    "system_status": "Estado del sistema: En línea",
-    "legend_title": "Estado de señal",
-    "status_active": "Activo",
-    "status_connecting": "Conectando",
-    "status_idle": "Inactivo",
-    "stats_single": "1 conexión activa",
-    "stats_multiple": "{{count}} conexiones activas, profundidad máx: {{depth}}",
-    "view": {
-      "no_matrix": "No hay matriz activa",
-      "connect_to_populate": "Conecta a un servidor para poblar"
-    }
-  },
   "shortcuts_modal": {
     "title": "Atajos de teclado",
     "search_placeholder": "Buscar atajos...",
@@ -179,12 +165,6 @@
     "shortcut_count": "atajos"
   },
   "plugin": {
-    "native_description": "El alojamiento nativo de plugins aún no está activado.",
-    "native_empty_title": "Sistema de plugins no disponible en native",
-    "native_empty_description": "OxideTerm native conserva la entrada de plugins mientras se diseña la API sin WebView. Aún no hay instalación, activación, mercado ni acciones de runtime.",
-    "native_runtime_note": "Runtime: host nativo de plugins desactivado",
-    "native_webview_note": "WebView: no se usa en la ruta nativa de plugins",
-    "native_api_note": "API: contrato de extensión aún en diseño",
     "cloud_sync": {
       "panel_title": "Oxide sincronización en la nube",
       "backend": {
@@ -207,13 +187,10 @@
         "error": "Error de sincronización"
       },
       "actions": {
-        "open_tab": "Abrir sincronización en la nube",
         "upload_now": "Subir ahora",
         "check_remote": "Comprobar remoto",
-        "recheck_remote": "Volver a comprobar remoto",
         "pull_preview": "Descargar y previsualizar",
         "force_upload": "Forzar subida",
-        "pull_first": "Descargar primero",
         "import_preview": "Vista previa de importación",
         "cancel_preview": "Cancelar vista previa",
         "restore_backup": "Restaurar copia de seguridad",
@@ -223,7 +200,6 @@
         "clear_history": "Borrar historial",
         "clear_secret": "Borrar valor almacenado",
         "save_settings": "Guardar ajustes",
-        "saving": "Guardando…",
         "enable_sensitive_sync": "Activar sincronización sensible",
         "github_oauth_login": "Iniciar sesión en GitHub",
         "microsoft_oauth_login": "Iniciar sesión con Microsoft",
@@ -240,11 +216,6 @@
         "remote_device": "Dispositivo remoto",
         "remote_updated_at": "Última actualización remota",
         "local_counts": "Conexiones / Reenvíos",
-        "rollback_backup_at": "Copia de respaldo",
-        "last_error": "Último error",
-        "connections": "Connections Snapshot",
-        "forwards": "Forwards Snapshot",
-        "upload_units": "Upload Units",
         "last_upload": "Last Upload",
         "last_check": "Last Check",
         "remote_format": "Formato remoto",
@@ -259,7 +230,6 @@
         "quick_start": "Inicio rápido",
         "connection_settings": "Ajustes de conexión",
         "sync_scope": "Alcance de sincronización",
-        "conflict_recovery": "Recuperación ante conflictos",
         "import_preview": "Vista previa de importación",
         "export_preview": "Vista previa de exportación",
         "upload_preview": "Vista previa de subida",
@@ -269,8 +239,6 @@
         "sync_coverage": "Cobertura de sincronización",
         "sync_preflight": "Comprobación previa",
         "sync_health": "Salud de sincronización",
-        "local_backup": "Copia de seguridad y restauración local",
-        "local_backup_description": "Crea o restaura una copia cifrada .oxide sin configurar la sincronización en la nube.",
         "notes": "Notas",
         "version_info": "Información de versión"
       },
@@ -293,8 +261,6 @@
         "http_json_example_endpoint": "https://example.com/oxideterm-sync",
         "http_json_example_namespace": "personal",
         "webdav_duplicate_warning": "No utilice la misma ruta de carpeta tanto en el Endpoint como en el Namespace. Si el Endpoint ya termina con su carpeta de sincronización, elija un Namespace diferente en lugar de duplicar la misma ruta.",
-        "backend_github_gist": "GitHub Gist guarda los objetos de sincronización de OxideTerm como archivos codificados dentro de un Gist privado existente o creado automáticamente. Pegue un ID de Gist o déjelo vacío para crearlo en la primera subida; use un token de GitHub con acceso gist, o inicie sesión con un OAuth Client ID configurado.",
-        "backend_onedrive": "OneDrive usa la carpeta de aplicación de Microsoft Graph. Inicia sesión con un ID de cliente OAuth de Microsoft con Files.ReadWrite.AppFolder; OxideTerm escribirá metadata.json y objects/*.oxide dentro de esa carpeta.",
         "onedrive_title": "Configuración de la carpeta de app de OneDrive",
         "onedrive_description": "Registra una aplicación de Microsoft Entra para inicio de sesión de escritorio/dispositivo, concede el ámbito de carpeta de aplicación y pega aquí su ID de cliente. OxideTerm solo guarda objetos de sincronización cifrados dentro de esa carpeta.",
         "onedrive_example_account_type_label": "Cuentas admitidas",
@@ -306,7 +272,6 @@
         "onedrive_example_storage_label": "Rutas de almacenamiento",
         "onedrive_example_storage": "/me/drive/special/approot/metadata.json y /objects/*.oxide",
         "onedrive_permission_warning": "Si Microsoft informa invalid_scope, consent_required o insufficient privileges, revisa permisos de API, consentimiento, tipos de cuenta admitidos y configuración de flujo de cliente público.",
-        "backend_google_drive": "Google Drive usa el Drive appDataFolder oculto con el alcance drive.appdata. Inicia sesión con un ID de cliente OAuth de escritorio; OxideTerm escribe metadata.json y archivos planos objects__*.oxide.",
         "google_drive_title": "Configuración de datos de app en Google Drive",
         "google_drive_description": "Crea un cliente OAuth de escritorio de Google, habilita la API de Drive, configura la pantalla de consentimiento y pega aquí el ID de cliente. OxideTerm solo solicita drive.appdata y guarda objetos de sincronización cifrados en la carpeta oculta de datos de la app.",
         "google_drive_example_client_type_label": "Tipo de cliente OAuth",
@@ -321,7 +286,6 @@
       },
       "settings": {
         "sync_method": "Método de sincronización",
-        "backend_type": "Tipo de backend",
         "auth_mode": "Autenticación",
         "endpoint": "Endpoint",
         "namespace": "Namespace",
@@ -371,7 +335,6 @@
         "replace": "Reemplazar",
         "skip": "Omitir",
         "rename": "Renombrar",
-        "blocked_description": "Los cambios remotos son más recientes que la última revisión sincronizada, mientras que los cambios locales siguen pendientes. Vuelva a comprobar el remoto, descargue primero o fuerce la sobrescritura.",
         "details_title": "Detalles del conflicto",
         "plain_summary": "{{remoteDevice}} modificó los datos remotos a las {{remoteTime}}. Tu última subida local fue {{localTime}}; subir ahora puede sobrescribir esos cambios remotos.",
         "detail_recommendation": "Descargue y previsualice el snapshot remoto antes de volver a subir. Fuerce la sobrescritura solo después de revisar los cambios locales."
@@ -401,19 +364,12 @@
         "sensitive_credentials_disabled_detail": "Las contraseñas de conexión, frases de clave, claves privadas administradas, claves de IA y credenciales de privilegios se excluyen hasta activar la sincronización de credenciales sensibles."
       },
       "notes": {
-        "upload_only": "La sincronización automática solo sube datos. Las actualizaciones remotas siempre requieren confirmación del usuario.",
-        "untrusted_remote": "El almacenamiento remoto debe considerarse como no confiable. El servidor solo almacena blobs .oxide cifrados.",
-        "secrets_not_synced": "Las contraseñas, frases de paso y secretos de plugins nunca se suben como texto plano legible por el servidor.",
-        "secrets_leave_blank": "Los campos de secretos aparecen vacíos al cargar. Déjelos vacíos para mantener los valores almacenados, o introduzca un nuevo valor para reemplazar el secreto almacenado.",
         "backend_dropbox": "Dropbox utiliza el campo Namespace como ruta de carpeta y requiere un token de acceso de aplicación.",
         "backend_git": "Git utiliza un endpoint compatible con la API GitHub Contents. Configure el Endpoint con la raíz de su API, el repositorio como owner/repo, la rama como la rama de destino y el Namespace como ruta de carpeta opcional dentro del repositorio.",
         "backend_s3": "S3 Compatible utiliza el Endpoint como raíz del servicio, el Bucket como contenedor y el Namespace como prefijo de objeto opcional.",
-        "backend_github_gist": "GitHub Gist guarda los objetos de sincronización de OxideTerm como archivos codificados dentro de un Gist existente. Pegue el ID de Gist y un token de GitHub con acceso gist; Namespace se usa como prefijo de nombre de archivo.",
-        "backend_onedrive": "OneDrive usa la carpeta de aplicación de Microsoft Graph y requiere inicio de sesión de dispositivo Microsoft. Los archivos quedan aislados como metadata.json y objects/*.oxide.",
-        "backend_google_drive": "Google Drive usa el appDataFolder oculto y OAuth de escritorio con PKCE. Los archivos quedan aislados como metadata.json y objects__*.oxide; no se solicita acceso completo a Drive."
+        "backend_github_gist": "GitHub Gist guarda los objetos de sincronización de OxideTerm como archivos codificados dentro de un Gist existente. Pegue el ID de Gist y un token de GitHub con acceso gist; Namespace se usa como prefijo de nombre de archivo."
       },
       "backup": {
-        "description": "Copia de respaldo de Oxide Cloud Sync",
         "summary_line": "{{connections}} conexiones, {{forwards}} reenvíos, {{quickCommands}} comandos rápidos, {{serialProfiles}} perfiles serie, {{telnetProfiles}} perfiles Telnet, {{pluginSettingsCount}} ajustes de plugins, {{size}}, {{sensitiveCredentials}} credenciales sensibles"
       },
       "history": {
@@ -441,7 +397,6 @@
         "etag_conflict_detected": "El snapshot remoto cambió durante la subida. Compruebe los cambios remotos antes de reintentar.",
         "snapshot_too_large": "El snapshot remoto excede el límite de seguridad de {{limit}}.",
         "remote_not_found": "Aún no hay ningún snapshot remoto disponible.",
-        "rollback_backup_too_large": "La copia de respaldo local es demasiado grande para almacenarla de forma segura ({{size}}, límite {{limit}}).",
         "rollback_backup_missing": "No hay ninguna copia de respaldo local disponible.",
         "secret_unlock_required": "Los secretos de sincronización almacenados deben desbloquearse una vez con una acción manual antes de que la subida automática pueda continuar.",
         "secret_access_cancelled": "El acceso al llavero fue cancelado. Reintente la acción y apruebe Touch ID o la autenticación del sistema.",
@@ -504,7 +459,6 @@
         "google_oauth_timeout": "El inicio de sesión con Google agotó el tiempo de espera. Inicia sesión de nuevo."
       },
       "toast": {
-        "check_failed_title": "La comprobación remota falló",
         "upload_success_title": "Snapshot subido",
         "upload_failed_title": "La subida falló",
         "pull_success_title": "Snapshot remoto importado",
@@ -512,7 +466,6 @@
         "sensitive_restore_description": "Se restauraron {{passwords}} contraseña(s), {{keyPassphrases}} frase(s) de contraseña de clave, {{managedKeys}} clave(s) gestionada(s), {{managedKeyPassphrases}} frase(s) de contraseña de clave gestionada, {{privilegeCredentials}} credencial(es) de privilegios y {{aiKeys}} clave(s) de IA. Se omitieron {{skippedCredentials}} credencial(es) y {{skippedAiKeys}} clave(s) de IA. Credenciales de sesión y proxy: {{profileCredentials}} restauradas, {{clearedProfileCredentials}} eliminadas, {{skippedProfileCredentials}} omitidas.",
         "pull_failed_title": "La descarga falló",
         "secret_cleared_title": "Secreto almacenado borrado",
-        "secret_cleared_description": "Se eliminó el valor almacenado para {{label}}.",
         "secret_cleared_failed_title": "No se pudo borrar el secreto almacenado",
         "rollback_backup_available": "Hay una copia de respaldo local disponible si desea restaurar el estado anterior.",
         "restore_success_title": "Copia de seguridad local restaurada",
@@ -537,11 +490,7 @@
         "google_oauth_failed_title": "Falló el inicio de sesión con Google"
       },
       "progress": {
-        "checking": "Comprobando snapshot remoto",
-        "uploading": "Subiendo snapshot cifrado",
-        "previewing": "Previsualizando snapshot remoto",
         "creating_backup": "Creando copia de respaldo local",
-        "restoring_backup": "Restaurando copia de respaldo local",
         "fetch_metadata": "Obteniendo metadatos remotos",
         "preflight": "Ejecutando verificación previa a la exportación",
         "exporting": "Exportando snapshot .oxide",
@@ -550,12 +499,10 @@
         "previewing_import": "Preparando vista previa de importación",
         "importing": "Importando snapshot remoto",
         "done": "Hecho",
-        "cancelled": "Cancelado",
         "downloading": "Downloading objects"
       },
       "preview": {
         "standalone_sftp_profiles": "Conexiones de transferencia de archivos ({{count}})",
-        "summary_header": "Resumen de la vista previa remota",
         "apply_plan_title": "Plan de aplicación",
         "upload_scope_title": "Alcance de subida",
         "item_count": "{{count}} elemento(s)",
@@ -570,9 +517,6 @@
         "will_replace": "Se reemplazará",
         "will_skip": "Se omitirá",
         "will_rename": "Se renombrará",
-        "embedded_keys": "Las claves integradas se extraerán durante la importación.",
-        "no_embedded_keys": "No se encontraron claves integradas en el snapshot remoto.",
-        "app_settings": "Este snapshot incluye la configuración global de OxideTerm.",
         "plugin_settings": "Preferencias de plugins incluidas: {{count}}",
         "plugin_settings_label": "Ajustes de plugins",
         "embedded_keys_label": "Claves integradas",
@@ -629,7 +573,6 @@
         "enable_sensitive_sync_title": "¿Activar la sincronización de credenciales sensibles?",
         "enable_sensitive_sync_description": "Las contraseñas de conexión, frases de paso de claves, claves privadas administradas, claves de IA y credenciales de elevación se subirán dentro de un objeto cifrado de Cloud Sync. Mantén esta opción desactivada en almacenamiento compartido o no confiable."
       },
-      "snapshot_description": "Snapshot de Oxide Cloud Sync",
       "placeholders": {
         "token": "Pegue un token Bearer",
         "secret_stored": "Almacenado de forma segura. Introduzca un nuevo valor para reemplazarlo.",
@@ -658,8 +601,6 @@
       "history_empty": "Aún no hay historial de sincronización.",
       "native_description": "Sincronización cifrada y autohospedada para OxideTerm.",
       "native_scope_summary": "Secciones de la app sincronizadas de forma predeterminada: {{sections}}.",
-      "native_service_pending": "El servicio de sincronización integrado se está conectando a la capa de compatibilidad.",
-      "native_service_ready": "El servicio de sincronización integrado está conectado a la capa de compatibilidad.",
       "health": {
         "title": "Comprobaciones previas",
         "status_pass": "Listo",
@@ -690,8 +631,6 @@
         "upload_diff_title": "Impacto de subida",
         "apply_diff_title": "Impacto de aplicación",
         "plugin_settings_item": "Ajustes del plugin: {{plugin}}",
-        "diff_detail": "Local: {{local}} · Remoto: {{remote}}",
-        "diff_detail_with_count": "Local: {{local}} · Remoto: {{remote}} · Elementos: {{count}}",
         "local_added": "Añadido",
         "local_modified": "Modificado",
         "local_deleted": "Eliminado",
@@ -762,12 +701,6 @@
         "parity": "Paridad",
         "flow_control": "Control de flujo",
         "connect_on_open": "Conectar al abrir",
-        "line_ending": "Fin de línea",
-        "display_mode": "Modo de visualización",
-        "send_mode": "Modo de envío",
-        "tls_mode": "Modo TLS",
-        "tls_verification": "Verificación TLS",
-        "tls_server_name": "Nombre de servidor TLS",
         "setting_field": "Campo de ajuste"
       },
       "tabs": {
@@ -779,31 +712,7 @@
         "recent_history": "Actividad reciente",
         "view_all_history": "Ver todo el historial"
       }
-    },
-    "show_details": "Detalles",
-    "hide_details": "Ocultar",
-    "reload": "Recargar",
-    "disable": "Desactivar",
-    "enable": "Activar",
-    "uninstall": "Desinstalar",
-    "registry_empty": "No hay complementos disponibles en el registro.",
-    "url_checksum_result_label": "SHA-256 del paquete instalado",
-    "url_conflict_cancelled": "Instalación cancelada. Se mantuvo el plugin existente.",
-    "create_plugin": "Nuevo plugin",
-    "create_plugin_title": "Crear nuevo plugin",
-    "create_plugin_id": "ID del plugin",
-    "create_plugin_id_hint": "Letras minúsculas, números, guiones (ej: my-plugin)",
-    "create_plugin_name": "Nombre visible",
-    "create_plugin_name_hint": "Nombre legible del plugin",
-    "create_plugin_submit": "Crear",
-    "create_plugin_cancel": "Cancelar",
-    "create_plugin_success": "Plugin \"{{name}}\" creado exitosamente",
-    "create_plugin_error": "Error al crear plugin: {{error}}",
-    "view_logs": "Registros",
-    "clear_logs": "Limpiar",
-    "no_logs": "Sin registros",
-    "tab_not_available": "Vista de pestaña del plugin no disponible",
-    "tab_crashed": "La pestaña del plugin ha fallado"
+    }
   },
   "onboarding": {
     "welcome": "Bienvenido a OxideTerm",

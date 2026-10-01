@@ -139,14 +139,6 @@ pub(crate) fn load_terminal_cjk_fallback_regular(
     register_faces(text_system, &[BundledTerminalFace::MapleRegular])
 }
 
-pub(crate) fn load_terminal_font_explicit_secondary_faces(
-    settings: &PersistedSettings,
-    text_system: &TextSystem,
-) -> Result<()> {
-    let faces = secondary_faces_for_explicit_settings(settings);
-    register_faces(text_system, &faces)
-}
-
 fn critical_faces_for_family(family: FontFamily) -> &'static [BundledTerminalFace] {
     match family {
         // Tauri prepares regular+bold for Latin bundled fonts before open.
@@ -194,23 +186,6 @@ fn critical_faces_for_settings(settings: &PersistedSettings) -> Vec<BundledTermi
 fn should_load_terminal_cjk_fallback(cjk_font_family: &str) -> bool {
     let cjk_font_family = cjk_font_family.trim();
     cjk_font_family.is_empty() || cjk_font_family == oxideterm_settings::MAPLE_MONO_SUBSET_FAMILY
-}
-
-fn secondary_faces_for_explicit_settings(settings: &PersistedSettings) -> Vec<BundledTerminalFace> {
-    let uses_maple_terminal = settings.terminal.font_family == FontFamily::Maple;
-    let uses_maple_cjk =
-        settings.terminal.cjk_font_family.trim() == oxideterm_settings::MAPLE_MONO_SUBSET_FAMILY;
-    if !uses_maple_terminal && !uses_maple_cjk {
-        return Vec::new();
-    }
-
-    // These CJK faces are large, so idle startup loads only regular fallback.
-    // Explicit Maple settings can pay the cost to keep bold and italic text faithful.
-    vec![
-        BundledTerminalFace::MapleBold,
-        BundledTerminalFace::MapleItalic,
-        BundledTerminalFace::MapleBoldItalic,
-    ]
 }
 
 fn register_faces(text_system: &TextSystem, faces: &[BundledTerminalFace]) -> Result<()> {

@@ -227,9 +227,9 @@ use oxideterm_ssh::{
     NodeTreeExpansion, NodeTreePersistenceSnapshot, NodeTreeSnapshot, NodeTreeSnapshotNode,
     PhaseResult, ProbeConnectionStatus, ProxyHopConfig, ReconnectForwardRuleSnapshot,
     ReconnectNodeConnectionSnapshot, ReconnectNodeTerminalSnapshot, ReconnectNodeTransferSnapshot,
-    ReconnectOrchestratorStore, ReconnectPhase, ReconnectProgress, ReconnectSnapshot,
-    SshAlgorithmDiagnosticKind, SshConfig, SshConnectionHandle, SshConnectionRegistry,
-    SshPromptHandler, SshTransportClient, TerminalEndpoint,
+    ReconnectOrchestratorStore, ReconnectPhase, ReconnectProgress, ReconnectSnapshot, SshConfig,
+    SshConnectionHandle, SshConnectionRegistry, SshPromptHandler, SshTransportClient,
+    TerminalEndpoint,
 };
 use oxideterm_ssh_launch::{
     NativeConnectionLaunch, TemporaryMoshLaunch, TemporarySshLaunch, TemporaryTelnetLaunch,
@@ -364,9 +364,6 @@ const FORWARDS_SECTION_LIST_OVERSCAN: usize = 2;
 const FORWARDS_TABLE_ROW_LIST_INITIAL_ITEM_COUNT: usize = 0;
 const FORWARDS_TABLE_ROW_LIST_ESTIMATED_HEIGHT: f32 = 42.0;
 const FORWARDS_TABLE_ROW_LIST_OVERSCAN: usize = 8;
-const QUICK_COMMAND_LIST_INITIAL_ITEM_COUNT: usize = 0;
-const QUICK_COMMAND_LIST_ESTIMATED_HEIGHT: f32 = 56.0;
-const QUICK_COMMAND_LIST_OVERSCAN: usize = 6;
 const DETACHED_LOCAL_TERMINAL_LIST_INITIAL_ITEM_COUNT: usize = 0;
 const DETACHED_LOCAL_TERMINAL_LIST_ESTIMATED_HEIGHT: f32 = 56.0;
 const DETACHED_LOCAL_TERMINAL_LIST_OVERSCAN: usize = 4;
@@ -455,11 +452,6 @@ fn ai_chat_virtual_list_spec() -> TauriVirtualListSpec {
     )
 }
 
-// Tauri NotificationsPanel uses variable-height grouped rows. Keep the native
-// estimate/overscan as a virtual-list spec instead of a raw overdraw number so
-// notification/event-log surfaces share the same browser virtualizer contract.
-const NOTIFICATION_SIDEBAR_ROW_HEIGHT_ESTIMATE: f32 = 72.0;
-const NOTIFICATION_SIDEBAR_VIRTUAL_OVERSCAN: usize = 10;
 const AI_MARKDOWN_WINDOW_OVERDRAW_PX: f32 = 720.0;
 const AI_MARKDOWN_CONTENT_OFFSET_PX: f32 = 56.0;
 

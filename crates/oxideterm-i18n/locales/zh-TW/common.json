@@ -157,20 +157,6 @@
     "no": "否",
     "yes": "是"
   },
-  "topology": {
-    "button_title": "拓撲檢視",
-    "system_status": "系統狀態：線上",
-    "legend_title": "訊號狀態",
-    "status_active": "使用中",
-    "status_connecting": "連線中",
-    "status_idle": "閒置",
-    "stats_single": "1 個使用中的連線",
-    "stats_multiple": "{{count}} 個使用中的連線，最大深度：{{depth}}",
-    "view": {
-      "no_matrix": "沒有使用中的矩陣",
-      "connect_to_populate": "連線至伺服器以填充"
-    }
-  },
   "shortcuts_modal": {
     "title": "鍵盤快捷鍵",
     "search_placeholder": "搜尋快捷鍵...",
@@ -179,12 +165,6 @@
     "shortcut_count": "個快捷鍵"
   },
   "plugin": {
-    "native_description": "native 外掛宿主尚未啟用。",
-    "native_empty_title": "native 暫未啟用外掛系統",
-    "native_empty_description": "OxideTerm native 會保留外掛入口，但非 WebView 外掛 API 仍在設計中。這裡暫不提供安裝、啟用、市集或執行階段操作。",
-    "native_runtime_note": "執行階段：native 外掛宿主未啟用",
-    "native_webview_note": "WebView：native 外掛路徑不使用 WebView",
-    "native_api_note": "API：擴充契約仍在設計中",
     "cloud_sync": {
       "panel_title": "Oxide 雲端同步",
       "backend": {
@@ -207,13 +187,10 @@
         "error": "同步錯誤"
       },
       "actions": {
-        "open_tab": "開啟雲端同步",
         "upload_now": "立即上傳",
         "check_remote": "檢查遠端",
-        "recheck_remote": "重新檢查遠端",
         "pull_preview": "拉取並預覽",
         "force_upload": "強制上傳",
-        "pull_first": "先拉取",
         "import_preview": "匯入預覽",
         "cancel_preview": "取消預覽",
         "restore_backup": "還原備份",
@@ -223,7 +200,6 @@
         "clear_history": "清除歷史",
         "clear_secret": "清除已儲存值",
         "save_settings": "儲存設定",
-        "saving": "儲存中...",
         "enable_sensitive_sync": "啟用敏感同步",
         "github_oauth_login": "GitHub 登入",
         "microsoft_oauth_login": "Microsoft 登入",
@@ -240,11 +216,6 @@
         "remote_device": "遠端裝置",
         "remote_updated_at": "遠端更新時間",
         "local_counts": "連線數 / 轉送數",
-        "rollback_backup_at": "回滾備份",
-        "last_error": "最近錯誤",
-        "connections": "連線快照",
-        "forwards": "連接埠轉發快照",
-        "upload_units": "上傳單元",
         "last_upload": "上次上傳",
         "last_check": "上次檢查",
         "remote_format": "遠端格式",
@@ -259,7 +230,6 @@
         "quick_start": "使用方法",
         "connection_settings": "連線設定",
         "sync_scope": "同步範圍",
-        "conflict_recovery": "衝突復原",
         "import_preview": "匯入預覽",
         "export_preview": "匯出預覽",
         "upload_preview": "上傳預覽",
@@ -269,8 +239,6 @@
         "sync_coverage": "同步覆蓋範圍",
         "sync_preflight": "同步前檢查",
         "sync_health": "同步健康狀態",
-        "local_backup": "本機備份與還原",
-        "local_backup_description": "無需設定雲端同步，即可透過加密的 .oxide 檔案備份或還原資料。",
         "notes": "注意事項",
         "version_info": "版本資訊"
       },
@@ -293,8 +261,6 @@
         "http_json_example_endpoint": "https://example.com/oxideterm-sync",
         "http_json_example_namespace": "personal",
         "webdav_duplicate_warning": "不要把同一個目錄路徑同時寫進 Endpoint 和命名空間。如果 Endpoint 已經以同步目錄結尾，就不要在命名空間裡再重複同一路徑。",
-        "backend_github_gist": "GitHub Gist 會把 OxideTerm 同步物件作為編碼後的檔案存放在既有或自動建立的私有 Gist 中。可以填入 Gist ID，也可以留空並在首次上傳時自動建立；請提供具 gist 權限的 GitHub token，或設定 OAuth Client ID 後登入。",
-        "backend_onedrive": "OneDrive 使用 Microsoft Graph 應用程式資料夾。請使用具備 Files.ReadWrite.AppFolder 權限的 Microsoft OAuth Client ID 登入；OxideTerm 會在應用程式資料夾中寫入 metadata.json 和 objects/*.oxide。",
         "onedrive_title": "OneDrive 應用程式資料夾設定",
         "onedrive_description": "在 Microsoft Entra 中註冊用於桌面/裝置登入的應用程式，授予應用程式資料夾權限，然後把 Client ID 填到這裡。OxideTerm 只會把加密同步物件寫入應用程式資料夾。",
         "onedrive_example_account_type_label": "支援的帳戶",
@@ -306,7 +272,6 @@
         "onedrive_example_storage_label": "儲存路徑",
         "onedrive_example_storage": "/me/drive/special/approot/metadata.json 和 /objects/*.oxide",
         "onedrive_permission_warning": "如果 Microsoft 回傳 invalid_scope、consent_required 或 insufficient privileges，請檢查 API 權限、授權同意、支援的帳戶類型和 public client flow 設定。",
-        "backend_google_drive": "Google Drive 使用隱藏的 Drive appDataFolder 與 drive.appdata scope。請使用桌面 OAuth Client ID 登入；OxideTerm 會寫入 metadata.json 與扁平的 objects__*.oxide 檔案。",
         "google_drive_title": "Google Drive 應用程式資料設定",
         "google_drive_description": "建立 Google OAuth 桌面用戶端，啟用 Drive API，設定同意畫面，然後在此貼上 Client ID。OxideTerm 只要求 drive.appdata，並將加密同步物件存入隱藏的應用程式資料資料夾。",
         "google_drive_example_client_type_label": "OAuth 用戶端類型",
@@ -321,7 +286,6 @@
       },
       "settings": {
         "sync_method": "同步方式",
-        "backend_type": "後端類型",
         "auth_mode": "驗證方式",
         "endpoint": "Endpoint",
         "namespace": "命名空間",
@@ -371,7 +335,6 @@
         "replace": "取代",
         "skip": "略過",
         "rename": "重新命名",
-        "blocked_description": "遠端變更比你上次同步的版本更新，而本機仍有待同步的變更。請重新檢查遠端、先拉取，或強制覆寫遠端。",
         "details_title": "衝突詳情",
         "plain_summary": "遠端資料由 {{remoteDevice}} 於 {{remoteTime}} 修改。本機上次上傳時間是 {{localTime}}；現在上傳可能會覆寫那些遠端變更。",
         "detail_recommendation": "再次上傳前請先拉取並預覽遠端快照；如果確認要覆寫，請在檢查本機變更後再主動強制覆寫。"
@@ -401,19 +364,12 @@
         "sensitive_credentials_disabled_detail": "連線密碼、金鑰密碼、託管私鑰、AI 金鑰和提權憑據會被排除，直到啟用敏感憑據同步。"
       },
       "notes": {
-        "upload_only": "自動同步只會自動上傳。發現遠端更新後，仍然需要使用者明確確認。",
-        "untrusted_remote": "遠端儲存預設視為不可信。伺服器只保存加密後的 .oxide blob。",
-        "secrets_not_synced": "密碼、passphrase 和外掛程式 secret 不會以伺服器可讀明文形式上傳。",
-        "secrets_leave_blank": "面板載入時不會主動回填 secret。保持為空表示沿用已儲存的值，輸入新值則會取代已儲存的 secret。",
         "backend_dropbox": "Dropbox 會把命名空間欄位當作資料夾路徑使用，並要求提供應用程式存取權杖。",
         "backend_git": "Git 後端使用相容 GitHub Contents API 的介面。Endpoint 填 API 根網址，儲存庫填 owner/repo，分支填目標分支，命名空間則作為儲存庫內的選用資料夾前綴。",
         "backend_s3": "S3 相容後端會把 Endpoint 當作服務根網址，Bucket 當作容器，命名空間則作為選用物件前綴。",
-        "backend_github_gist": "GitHub Gist 會把 OxideTerm 同步物件作為編碼後的檔案存放在既有 Gist 中。填入 Gist ID，並提供具 gist 權限的 GitHub token；命名空間會作為檔名前綴使用。",
-        "backend_onedrive": "OneDrive 使用 Microsoft Graph 應用程式資料夾並需要 Microsoft 裝置登入。檔案會隔離存放在應用程式資料夾下的 metadata.json 和 objects/*.oxide。",
-        "backend_google_drive": "Google Drive 使用隱藏 appDataFolder 與含 PKCE 的桌面 OAuth。檔案隔離為 metadata.json 與 objects__*.oxide；不會要求完整 Drive 存取權。"
+        "backend_github_gist": "GitHub Gist 會把 OxideTerm 同步物件作為編碼後的檔案存放在既有 Gist 中。填入 Gist ID，並提供具 gist 權限的 GitHub token；命名空間會作為檔名前綴使用。"
       },
       "backup": {
-        "description": "Oxide 雲端同步回滾備份",
         "summary_line": "{{connections}} 個連線，{{forwards}} 個轉送，{{quickCommands}} 條快捷命令，{{serialProfiles}} 個序列埠設定，{{telnetProfiles}} 個 Telnet 設定，{{pluginSettingsCount}} 項外掛偏好設定，{{size}}，{{sensitiveCredentials}} 個敏感憑證"
       },
       "history": {
@@ -441,7 +397,6 @@
         "etag_conflict_detected": "上傳過程中遠端快照已變化。請先檢查遠端再重試。",
         "snapshot_too_large": "遠端快照超過安全上限 {{limit}}。",
         "remote_not_found": "遠端還沒有可用快照。",
-        "rollback_backup_too_large": "本機回滾備份過大，無法安全儲存（目前 {{size}}，上限 {{limit}}）。",
         "rollback_backup_missing": "目前沒有可還原的本機回滾備份。",
         "secret_unlock_required": "自動上傳繼續前，需要先透過一次手動操作解鎖已儲存的同步 secret。",
         "secret_access_cancelled": "存取系統鑰匙圈時被取消。請重試該操作，並完成 Touch ID 或系統驗證。",
@@ -504,7 +459,6 @@
         "google_oauth_timeout": "Google 登入逾時。請重新登入。"
       },
       "toast": {
-        "check_failed_title": "檢查遠端失敗",
         "upload_success_title": "快照上傳成功",
         "upload_failed_title": "上傳失敗",
         "pull_success_title": "遠端快照已匯入",
@@ -512,7 +466,6 @@
         "sensitive_restore_description": "已還原 {{passwords}} 個密碼、{{keyPassphrases}} 個金鑰密碼、{{managedKeys}} 個託管金鑰、{{managedKeyPassphrases}} 個託管金鑰密碼、{{privilegeCredentials}} 個提權憑證和 {{aiKeys}} 個 AI 金鑰。已略過 {{skippedCredentials}} 個憑證和 {{skippedAiKeys}} 個 AI 金鑰。 工作階段與代理憑證：還原 {{profileCredentials}} 項、清除 {{clearedProfileCredentials}} 項、略過 {{skippedProfileCredentials}} 項。",
         "pull_failed_title": "拉取失敗",
         "secret_cleared_title": "已清除已儲存的 secret",
-        "secret_cleared_description": "已刪除 {{label}} 的已儲存值。",
         "secret_cleared_failed_title": "清除已儲存的 secret 失敗",
         "rollback_backup_available": "目前保留了一份本機回滾備份，如有需要可以還原之前的狀態。",
         "restore_success_title": "本機備份已還原",
@@ -537,11 +490,7 @@
         "google_oauth_failed_title": "Google 登入失敗"
       },
       "progress": {
-        "checking": "正在檢查遠端快照",
-        "uploading": "正在上傳加密快照",
-        "previewing": "正在預覽遠端快照",
         "creating_backup": "正在建立本機回滾備份",
-        "restoring_backup": "正在還原本機回滾備份",
         "fetch_metadata": "讀取遠端中繼資料",
         "preflight": "執行匯出預檢查",
         "exporting": "匯出 .oxide 快照",
@@ -550,12 +499,10 @@
         "previewing_import": "產生匯入預覽",
         "importing": "匯入遠端快照",
         "done": "完成",
-        "cancelled": "已取消",
         "downloading": "下載物件"
       },
       "preview": {
         "standalone_sftp_profiles": "檔案傳輸連線（{{count}}）",
-        "summary_header": "遠端預覽摘要",
         "apply_plan_title": "本次套用計畫",
         "upload_scope_title": "上傳範圍",
         "item_count": "{{count}} 項",
@@ -570,9 +517,6 @@
         "will_replace": "將取代",
         "will_skip": "將略過",
         "will_rename": "將重新命名",
-        "embedded_keys": "匯入時會擷取內嵌金鑰。",
-        "no_embedded_keys": "遠端快照中不包含內嵌金鑰。",
-        "app_settings": "此快照包含全域 OxideTerm 設定。",
         "plugin_settings": "此快照包含 {{count}} 項外掛偏好設定。",
         "plugin_settings_label": "外掛設定",
         "embedded_keys_label": "內嵌金鑰",
@@ -629,7 +573,6 @@
         "enable_sensitive_sync_title": "要啟用敏感憑證同步嗎？",
         "enable_sensitive_sync_description": "這會將連線密碼、金鑰密碼、受管理私鑰、AI 金鑰和提權憑證放入加密的雲端同步物件中上傳。共用或不可信的同步儲存空間建議保持關閉。"
       },
-      "snapshot_description": "Oxide 雲端同步快照",
       "placeholders": {
         "token": "貼上 Bearer Token",
         "secret_stored": "已安全儲存。如需取代，請輸入新值。",
@@ -658,8 +601,6 @@
       "history_empty": "尚無同步記錄。",
       "native_description": "用於 OxideTerm 的加密自託管同步。",
       "native_scope_summary": "預設同步的應用程式區段：{{sections}}。",
-      "native_service_pending": "正在將內建同步服務連接到相容層。",
-      "native_service_ready": "內建同步服務已連接到相容層。",
       "health": {
         "title": "同步前檢查",
         "status_pass": "可用",
@@ -690,8 +631,6 @@
         "upload_diff_title": "上傳影響",
         "apply_diff_title": "套用影響",
         "plugin_settings_item": "外掛設定：{{plugin}}",
-        "diff_detail": "本機：{{local}} · 遠端：{{remote}}",
-        "diff_detail_with_count": "本機：{{local}} · 遠端：{{remote}} · 項目：{{count}}",
         "local_added": "新增",
         "local_modified": "修改",
         "local_deleted": "刪除",
@@ -762,12 +701,6 @@
         "parity": "同位檢查",
         "flow_control": "流量控制",
         "connect_on_open": "開啟後連線",
-        "line_ending": "換行方式",
-        "display_mode": "顯示模式",
-        "send_mode": "傳送模式",
-        "tls_mode": "TLS 模式",
-        "tls_verification": "TLS 驗證",
-        "tls_server_name": "TLS 伺服器名稱",
         "setting_field": "設定欄位"
       },
       "tabs": {
@@ -779,31 +712,7 @@
         "recent_history": "近期活動",
         "view_all_history": "查看所有歷史"
       }
-    },
-    "show_details": "詳情",
-    "hide_details": "收起",
-    "reload": "重新載入",
-    "disable": "停用",
-    "enable": "啟用",
-    "uninstall": "解除安裝",
-    "registry_empty": "倉庫中暫無可用外掛。",
-    "url_checksum_result_label": "已安裝套件 SHA-256",
-    "url_conflict_cancelled": "已取消安裝，保留現有外掛。",
-    "create_plugin": "新建外掛",
-    "create_plugin_title": "建立新外掛",
-    "create_plugin_id": "外掛 ID",
-    "create_plugin_id_hint": "小寫字母、數字、連字號（例如 my-plugin）",
-    "create_plugin_name": "顯示名稱",
-    "create_plugin_name_hint": "外掛的可讀名稱",
-    "create_plugin_submit": "建立",
-    "create_plugin_cancel": "取消",
-    "create_plugin_success": "外掛「{{name}}」建立成功",
-    "create_plugin_error": "建立外掛失敗：{{error}}",
-    "view_logs": "日誌",
-    "clear_logs": "清除",
-    "no_logs": "暫無日誌",
-    "tab_not_available": "外掛分頁檢視不可用",
-    "tab_crashed": "外掛分頁已崩潰"
+    }
   },
   "migration": {
     "backup_notice": "OxideTerm 已為 2.0 之前的資料建立一次性快照。這是復原用副本，不會自動回復版本。",

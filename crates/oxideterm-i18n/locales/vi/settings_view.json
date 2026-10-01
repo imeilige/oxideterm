@@ -75,8 +75,7 @@
       "reconnect": "Tự động kết nối lại",
       "help": "Trợ giúp & Giới thiệu",
       "keybindings": "Phím tắt",
-      "graphics": "Đồ họa",
-      "network": "Mạng và truy cập bên ngoài"
+      "graphics": "Đồ họa"
     },
     "general": {
       "portable_status_unlocked": "Đã mở khóa",
@@ -1772,8 +1771,6 @@
       "pending_approvals_hint": "Approve only the frozen action shown here; clients cannot replace its parameters after approval.",
       "approval_notice_title": "External MCP action needs approval",
       "approval_notice_description": "{{client}} requested {{tool}}. Review it under Network & Proxy → External MCP Control.",
-      "title": "Mạng và truy cập bên ngoài",
-      "description": "Cấu hình tuyến proxy, liên kết kết nối bên ngoài, quyền truy cập của máy khách MCP và phê duyệt thao tác.",
       "shared_proxy": "Proxy dùng chung",
       "shared_proxy_hint": "Một cấu hình proxy có thể dùng lại cho kết nối SSH và lưu lượng ứng dụng.",
       "shared_proxy_empty_hint": "Hãy thêm proxy dùng chung trước rồi chọn lưu lượng sẽ sử dụng proxy đó.",

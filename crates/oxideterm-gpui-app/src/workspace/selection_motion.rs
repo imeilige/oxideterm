@@ -5,8 +5,6 @@ pub(in crate::workspace) const TERMINAL_SETTINGS_SWITCHER_ID: &str =
 pub(in crate::workspace) const AI_SETTINGS_SWITCHER_ID: &str = "ai-settings-page-switcher";
 pub(in crate::workspace) const CLOUD_SYNC_SWITCHER_ID: &str = "cloud-sync-tab-bar";
 pub(in crate::workspace) const HOST_TOOLS_SWITCHER_ID: &str = "host-tools-tab-bar";
-pub(in crate::workspace) const NOTIFICATION_CENTER_SWITCHER_ID: &str =
-    "notification-center-tab-bar";
 pub(in crate::workspace) const SETTINGS_NAVIGATION_ID: &str = "settings-navigation";
 pub(in crate::workspace) const FILE_MANAGER_NAVIGATION_ID: &str = "file-manager-navigation";
 pub(in crate::workspace) const NEW_CONNECTION_TRANSPORT_SELECTOR_ID: &str =

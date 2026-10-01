@@ -157,20 +157,6 @@
     "no": "아니요",
     "yes": "예"
   },
-  "topology": {
-    "button_title": "토폴로지 뷰",
-    "system_status": "시스템_상태: 온라인",
-    "legend_title": "신호 상태",
-    "status_active": "활성",
-    "status_connecting": "연결 중",
-    "status_idle": "유휴",
-    "stats_single": "1개의 활성 연결",
-    "stats_multiple": "{{count}}개의 활성 연결, 최대 깊이: {{depth}}",
-    "view": {
-      "no_matrix": "활성 매트릭스 없음",
-      "connect_to_populate": "서버에 연결하여 채우기"
-    }
-  },
   "shortcuts_modal": {
     "title": "키보드 단축키",
     "search_placeholder": "단축키 검색...",
@@ -179,12 +165,6 @@
     "shortcut_count": "개의 단축키"
   },
   "plugin": {
-    "native_description": "native 플러그인 호스트는 아직 활성화되지 않았습니다.",
-    "native_empty_title": "native에서 플러그인 시스템을 사용할 수 없음",
-    "native_empty_description": "OxideTerm native는 플러그인 진입점을 유지하지만 WebView 없는 플러그인 API는 아직 설계 중입니다. 설치, 활성화, 마켓, 런타임 동작은 아직 제공하지 않습니다.",
-    "native_runtime_note": "런타임: native 플러그인 호스트 비활성화",
-    "native_webview_note": "WebView: native 플러그인 경로에서 사용하지 않음",
-    "native_api_note": "API: 확장 계약 설계 중",
     "cloud_sync": {
       "panel_title": "Oxide 클라우드 동기화",
       "backend": {
@@ -207,13 +187,10 @@
         "error": "동기화 오류"
       },
       "actions": {
-        "open_tab": "클라우드 동기화 열기",
         "upload_now": "지금 업로드",
         "check_remote": "원격 확인",
-        "recheck_remote": "원격 다시 확인",
         "pull_preview": "가져와서 미리보기",
         "force_upload": "강제 업로드",
-        "pull_first": "먼저 가져오기",
         "import_preview": "가져오기 미리보기",
         "cancel_preview": "미리보기 취소",
         "restore_backup": "백업 복원",
@@ -223,7 +200,6 @@
         "clear_history": "기록 비우기",
         "clear_secret": "저장된 값 지우기",
         "save_settings": "설정 저장",
-        "saving": "저장 중...",
         "enable_sensitive_sync": "민감 동기화 켜기",
         "github_oauth_login": "GitHub 로그인",
         "microsoft_oauth_login": "Microsoft 로그인",
@@ -240,11 +216,6 @@
         "remote_device": "원격 기기",
         "remote_updated_at": "원격 업데이트 시간",
         "local_counts": "연결 수 / 포워딩 수",
-        "rollback_backup_at": "롤백 백업",
-        "last_error": "최근 오류",
-        "connections": "Connections Snapshot",
-        "forwards": "Forwards Snapshot",
-        "upload_units": "Upload Units",
         "last_upload": "Last Upload",
         "last_check": "Last Check",
         "remote_format": "원격 형식",
@@ -259,7 +230,6 @@
         "quick_start": "사용 방법",
         "connection_settings": "연결 설정",
         "sync_scope": "동기화 범위",
-        "conflict_recovery": "충돌 복구",
         "import_preview": "가져오기 미리보기",
         "export_preview": "내보내기 미리보기",
         "upload_preview": "업로드 미리보기",
@@ -269,8 +239,6 @@
         "sync_coverage": "동기화 범위 상세",
         "sync_preflight": "동기화 전 점검",
         "sync_health": "동기화 상태 점검",
-        "local_backup": "로컬 백업 및 복원",
-        "local_backup_description": "클라우드 동기화를 구성하지 않고 암호화된 .oxide 파일을 백업하거나 복원합니다.",
         "notes": "참고 사항",
         "version_info": "버전 정보"
       },
@@ -293,8 +261,6 @@
         "http_json_example_endpoint": "https://example.com/oxideterm-sync",
         "http_json_example_namespace": "personal",
         "webdav_duplicate_warning": "같은 폴더 경로를 Endpoint와 Namespace에 동시에 입력하지 마세요. Endpoint가 이미 동기화 폴더로 끝나는 경우, Namespace에 같은 경로를 반복하지 말고 다른 값을 사용하세요.",
-        "backend_github_gist": "GitHub Gist는 기존 또는 자동 생성된 비공개 Gist 안에 OxideTerm 동기화 객체를 인코딩된 파일로 저장합니다. Gist ID를 입력하거나 비워 두면 첫 업로드 때 생성할 수 있습니다. gist 권한이 있는 GitHub token을 사용하거나 OAuth Client ID를 설정해 로그인하세요.",
-        "backend_onedrive": "OneDrive는 Microsoft Graph 앱 폴더를 사용합니다. Files.ReadWrite.AppFolder 권한이 있는 Microsoft OAuth 클라이언트 ID로 로그인하면 OxideTerm이 앱 폴더 안에 metadata.json 및 objects/*.oxide를 씁니다.",
         "onedrive_title": "OneDrive 앱 폴더 설정",
         "onedrive_description": "Microsoft Entra에서 데스크톱/디바이스 로그인용 앱을 등록하고 앱 폴더 scope를 부여한 뒤, 여기에 클라이언트 ID를 붙여 넣으세요. OxideTerm은 암호화된 동기화 객체만 앱 폴더에 저장합니다.",
         "onedrive_example_account_type_label": "지원 계정",
@@ -306,7 +272,6 @@
         "onedrive_example_storage_label": "저장 경로",
         "onedrive_example_storage": "/me/drive/special/approot/metadata.json 및 /objects/*.oxide",
         "onedrive_permission_warning": "Microsoft가 invalid_scope, consent_required 또는 insufficient privileges를 반환하면 API 권한, 동의, 지원 계정 유형, public client flow 설정을 다시 확인하세요.",
-        "backend_google_drive": "Google Drive는 숨겨진 Drive appDataFolder와 drive.appdata 범위를 사용합니다. 데스크톱 OAuth 클라이언트 ID로 로그인하면 OxideTerm이 metadata.json과 평면 objects__*.oxide 파일을 씁니다.",
         "google_drive_title": "Google Drive 앱 데이터 설정",
         "google_drive_description": "Google OAuth 데스크톱 클라이언트를 만들고 Drive API를 활성화한 뒤 동의 화면을 구성하고 클라이언트 ID를 여기에 붙여 넣으세요. OxideTerm은 drive.appdata만 요청하며 암호화된 동기화 객체를 숨겨진 앱 데이터 폴더에 저장합니다.",
         "google_drive_example_client_type_label": "OAuth 클라이언트 유형",
@@ -321,7 +286,6 @@
       },
       "settings": {
         "sync_method": "동기화 방식",
-        "backend_type": "백엔드 유형",
         "auth_mode": "인증 방식",
         "endpoint": "Endpoint",
         "namespace": "Namespace",
@@ -371,7 +335,6 @@
         "replace": "대체",
         "skip": "건너뛰기",
         "rename": "이름 변경",
-        "blocked_description": "로컬에 아직 동기화되지 않은 변경 사항이 남아 있는 동안, 원격 변경 내용은 마지막으로 동기화한 리비전보다 더 최신입니다. 원격을 다시 확인하거나, 먼저 가져오거나, 강제로 덮어쓰세요.",
         "details_title": "충돌 상세",
         "plain_summary": "원격 데이터는 {{remoteDevice}}에서 {{remoteTime}}에 변경되었습니다. 로컬의 마지막 업로드는 {{localTime}}입니다. 지금 업로드하면 해당 원격 변경 사항을 덮어쓸 수 있습니다.",
         "detail_recommendation": "다시 업로드하기 전에 원격 스냅샷을 가져와 미리 보세요. 덮어쓰려면 로컬 변경 사항을 검토한 뒤 명시적으로 강제 덮어쓰기를 실행하세요."
@@ -401,19 +364,12 @@
         "sensitive_credentials_disabled_detail": "연결 비밀번호, 키 암호, 관리형 개인 키, AI 키, 권한 상승 자격 증명은 민감한 자격 증명 동기화를 켤 때까지 제외됩니다."
       },
       "notes": {
-        "upload_only": "자동 동기화는 업로드만 수행합니다. 원격 업데이트는 항상 사용자 확인이 필요합니다.",
-        "untrusted_remote": "원격 저장소는 신뢰할 수 없는 것으로 취급합니다. 서버에는 암호화된 .oxide blob만 저장됩니다.",
-        "secrets_not_synced": "비밀번호, 패스프레이즈 및 플러그인 시크릿은 서버에서 읽을 수 있는 평문으로 업로드되지 않습니다.",
-        "secrets_leave_blank": "패널 로드 시 시크릿 값은 자동으로 채워지지 않습니다. 빈칸으로 두면 저장된 값이 유지되고, 새 값을 입력하면 기존 시크릿이 교체됩니다.",
         "backend_dropbox": "Dropbox는 Namespace 필드를 폴더 경로로 사용하며, 앱 액세스 토큰이 필요합니다.",
         "backend_git": "Git 백엔드는 GitHub Contents API 호환 인터페이스를 사용합니다. Endpoint에 API 루트를, 저장소에 owner/repo를, 브랜치에 대상 브랜치를, Namespace에 저장소 내 선택적 폴더 경로를 지정합니다.",
         "backend_s3": "S3 호환 백엔드는 Endpoint를 서비스 루트로, Bucket을 컨테이너로, Namespace를 선택적 오브젝트 접두사로 사용합니다.",
-        "backend_github_gist": "GitHub Gist는 기존 Gist 안에 OxideTerm 동기화 객체를 인코딩된 파일로 저장합니다. Gist ID와 gist 권한이 있는 GitHub token을 입력하세요. Namespace는 파일 이름 접두사로 사용됩니다.",
-        "backend_onedrive": "OneDrive는 Microsoft Graph 앱 폴더를 사용하며 Microsoft 디바이스 로그인이 필요합니다. 파일은 앱 폴더의 metadata.json 및 objects/*.oxide에 격리되어 저장됩니다.",
-        "backend_google_drive": "Google Drive는 숨겨진 appDataFolder와 PKCE 기반 데스크톱 OAuth를 사용합니다. 파일은 metadata.json 및 objects__*.oxide로 격리되며 전체 Drive 접근은 요청하지 않습니다."
+        "backend_github_gist": "GitHub Gist는 기존 Gist 안에 OxideTerm 동기화 객체를 인코딩된 파일로 저장합니다. Gist ID와 gist 권한이 있는 GitHub token을 입력하세요. Namespace는 파일 이름 접두사로 사용됩니다."
       },
       "backup": {
-        "description": "Oxide 클라우드 동기화 롤백 백업",
         "summary_line": "연결 {{connections}}개, 포워딩 {{forwards}}개, 빠른 명령 {{quickCommands}}개, 시리얼 프로필 {{serialProfiles}}개, Telnet 프로필 {{telnetProfiles}}개, 플러그인 설정 {{pluginSettingsCount}}개, {{size}}, 민감한 자격 증명 {{sensitiveCredentials}}개"
       },
       "history": {
@@ -441,7 +397,6 @@
         "etag_conflict_detected": "업로드 중에 원격 스냅샷이 변경되었습니다. 원격을 확인한 후 다시 시도하세요.",
         "snapshot_too_large": "원격 스냅샷이 안전 상한 {{limit}}을(를) 초과했습니다.",
         "remote_not_found": "원격에 아직 스냅샷이 없습니다.",
-        "rollback_backup_too_large": "로컬 롤백 백업이 너무 커서 안전하게 저장할 수 없습니다 (현재 {{size}}, 상한 {{limit}}).",
         "rollback_backup_missing": "복원할 수 있는 로컬 롤백 백업이 없습니다.",
         "secret_unlock_required": "자동 업로드를 계속하려면 수동 작업으로 저장된 동기화 시크릿을 한 번 잠금 해제해야 합니다.",
         "secret_access_cancelled": "키체인 접근이 취소되었습니다. 작업을 다시 시도하고 Touch ID 또는 시스템 인증을 승인하세요.",
@@ -504,7 +459,6 @@
         "google_oauth_timeout": "Google 로그인이 시간 초과되었습니다. 다시 로그인하세요."
       },
       "toast": {
-        "check_failed_title": "원격 확인 실패",
         "upload_success_title": "스냅샷 업로드 성공",
         "upload_failed_title": "업로드 실패",
         "pull_success_title": "원격 스냅샷을 가져왔습니다",
@@ -512,7 +466,6 @@
         "sensitive_restore_description": "비밀번호 {{passwords}}개, 키 암호문 {{keyPassphrases}}개, 관리형 키 {{managedKeys}}개, 관리형 키 암호문 {{managedKeyPassphrases}}개, 권한 자격 증명 {{privilegeCredentials}}개, AI 키 {{aiKeys}}개를 복원했습니다. 자격 증명 {{skippedCredentials}}개와 AI 키 {{skippedAiKeys}}개는 건너뛰었습니다. 세션 및 프록시 자격 증명: 복원 {{profileCredentials}}개, 삭제 {{clearedProfileCredentials}}개, 건너뜀 {{skippedProfileCredentials}}개.",
         "pull_failed_title": "가져오기 실패",
         "secret_cleared_title": "저장된 시크릿을 지웠습니다",
-        "secret_cleared_description": "{{label}}의 저장된 값을 삭제했습니다.",
         "secret_cleared_failed_title": "저장된 시크릿 제거 실패",
         "rollback_backup_available": "로컬에 롤백 백업이 저장되어 있습니다. 필요하면 이전 상태로 복원할 수 있습니다.",
         "restore_success_title": "로컬 백업을 복원했습니다",
@@ -537,11 +490,7 @@
         "google_oauth_failed_title": "Google 로그인 실패"
       },
       "progress": {
-        "checking": "원격 스냅샷 확인 중",
-        "uploading": "암호화 스냅샷 업로드 중",
-        "previewing": "원격 스냅샷 미리보기 중",
         "creating_backup": "로컬 롤백 백업 생성 중",
-        "restoring_backup": "로컬 롤백 백업 복원 중",
         "fetch_metadata": "원격 메타데이터 가져오는 중",
         "preflight": "내보내기 사전 검사 실행 중",
         "exporting": ".oxide 스냅샷 내보내는 중",
@@ -550,12 +499,10 @@
         "previewing_import": "가져오기 미리보기 준비 중",
         "importing": "원격 스냅샷 가져오는 중",
         "done": "완료",
-        "cancelled": "취소됨",
         "downloading": "Downloading objects"
       },
       "preview": {
         "standalone_sftp_profiles": "파일 전송 연결 ({{count}})",
-        "summary_header": "원격 미리보기 요약",
         "apply_plan_title": "적용 계획",
         "upload_scope_title": "업로드 범위",
         "item_count": "{{count}}개 항목",
@@ -570,9 +517,6 @@
         "will_replace": "대체 대상",
         "will_skip": "건너뛸 대상",
         "will_rename": "이름 변경 대상",
-        "embedded_keys": "가져오기 시 내장 키가 추출됩니다.",
-        "no_embedded_keys": "원격 스냅샷에 내장 키가 없습니다.",
-        "app_settings": "이 스냅샷에는 OxideTerm 전역 설정이 포함되어 있습니다.",
         "plugin_settings": "포함된 플러그인 설정: {{count}}",
         "plugin_settings_label": "플러그인 설정",
         "embedded_keys_label": "내장 키",
@@ -629,7 +573,6 @@
         "enable_sensitive_sync_title": "민감한 자격 증명 동기화를 켤까요?",
         "enable_sensitive_sync_description": "연결 비밀번호, 키 암호, 관리형 개인 키, AI 키, 권한 상승 자격 증명을 암호화된 클라우드 동기화 객체에 넣어 업로드합니다. 공유되거나 신뢰할 수 없는 동기화 저장소에서는 꺼 두는 것이 좋습니다."
       },
-      "snapshot_description": "Oxide 클라우드 동기화 스냅샷",
       "placeholders": {
         "token": "Bearer Token 붙여넣기",
         "secret_stored": "안전하게 저장되었습니다. 교체하려면 새 값을 입력하세요.",
@@ -658,8 +601,6 @@
       "history_empty": "아직 동기화 기록이 없습니다.",
       "native_description": "OxideTerm용 암호화된 자체 호스팅 동기화입니다.",
       "native_scope_summary": "기본으로 동기화되는 앱 섹션: {{sections}}.",
-      "native_service_pending": "내장 동기화 서비스를 호환성 계층에 연결하는 중입니다.",
-      "native_service_ready": "내장 동기화 서비스가 호환성 계층에 연결되었습니다.",
       "health": {
         "title": "사전 점검",
         "status_pass": "준비됨",
@@ -690,8 +631,6 @@
         "upload_diff_title": "업로드 영향",
         "apply_diff_title": "적용 영향",
         "plugin_settings_item": "플러그인 설정: {{plugin}}",
-        "diff_detail": "로컬: {{local}} · 원격: {{remote}}",
-        "diff_detail_with_count": "로컬: {{local}} · 원격: {{remote}} · 항목: {{count}}",
         "local_added": "추가",
         "local_modified": "수정",
         "local_deleted": "삭제",
@@ -762,12 +701,6 @@
         "parity": "패리티",
         "flow_control": "흐름 제어",
         "connect_on_open": "열 때 연결",
-        "line_ending": "줄 끝",
-        "display_mode": "표시 모드",
-        "send_mode": "전송 모드",
-        "tls_mode": "TLS 모드",
-        "tls_verification": "TLS 검증",
-        "tls_server_name": "TLS 서버 이름",
         "setting_field": "설정 필드"
       },
       "tabs": {
@@ -779,31 +712,7 @@
         "recent_history": "최근 활동",
         "view_all_history": "모든 기록 보기"
       }
-    },
-    "show_details": "상세",
-    "hide_details": "숨기기",
-    "reload": "다시 로드",
-    "disable": "비활성화",
-    "enable": "활성화",
-    "uninstall": "제거",
-    "registry_empty": "레지스트리에 사용 가능한 플러그인이 없습니다.",
-    "url_checksum_result_label": "설치된 패키지 SHA-256",
-    "url_conflict_cancelled": "설치가 취소되었습니다. 기존 플러그인은 유지되었습니다.",
-    "create_plugin": "새 플러그인",
-    "create_plugin_title": "새 플러그인 만들기",
-    "create_plugin_id": "플러그인 ID",
-    "create_plugin_id_hint": "소문자, 숫자, 하이픈 (예: my-plugin)",
-    "create_plugin_name": "표시 이름",
-    "create_plugin_name_hint": "플러그인의 표시 이름",
-    "create_plugin_submit": "만들기",
-    "create_plugin_cancel": "취소",
-    "create_plugin_success": "플러그인 \"{{name}}\" 생성 완료",
-    "create_plugin_error": "플러그인 생성 실패: {{error}}",
-    "view_logs": "로그",
-    "clear_logs": "지우기",
-    "no_logs": "로그 없음",
-    "tab_not_available": "플러그인 탭 뷰를 사용할 수 없습니다",
-    "tab_crashed": "플러그인 탭이 충돌했습니다"
+    }
   },
   "migration": {
     "backup_notice": "OxideTerm이 2.0 이전 데이터의 일회성 스냅샷을 만들었습니다. 이 스냅샷은 복구용 사본이며 자동 롤백이 아닙니다.",

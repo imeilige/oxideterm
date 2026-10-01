@@ -75,8 +75,7 @@
       "reconnect": "Reconnect",
       "help": "Help & About",
       "keybindings": "Keybindings",
-      "graphics": "Graphics",
-      "network": "Network & External Access"
+      "graphics": "Graphics"
     },
     "general": {
       "portable_status_unlocked": "Unlocked",
@@ -1772,8 +1771,6 @@
       "pending_approvals_hint": "Approve only the frozen action shown here; clients cannot replace its parameters after approval.",
       "approval_notice_title": "External MCP action needs approval",
       "approval_notice_description": "{{client}} requested {{tool}}. Review it under Network & External Access → External MCP Control.",
-      "title": "Network & External Access",
-      "description": "Configure proxy routing, external connection links, MCP client access, and operation approvals.",
       "shared_proxy": "Shared Proxy",
       "shared_proxy_hint": "One reusable proxy profile for SSH connections and application traffic.",
       "shared_proxy_empty_hint": "Add a shared proxy before assigning traffic to it.",

@@ -2183,22 +2183,6 @@ impl WorkspaceApp {
         .detach();
     }
 
-    fn send_terminal_command_to_pane(
-        &self,
-        pane_id: PaneId,
-        command: &str,
-        mark_source: TerminalCommandMarkDetectionSource,
-        parent_id: Option<&str>,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        if let Some(pane) = self.tab_host.read(cx).panes().get(&pane_id).cloned() {
-            return pane.update(cx, |pane, cx| {
-                pane.send_command_line_with_mark(command, mark_source, parent_id, cx)
-            });
-        }
-        false
-    }
-
     pub(super) fn terminal_broadcast_target_panes(
         &self,
         source_pane_id: PaneId,
@@ -2217,14 +2201,6 @@ impl WorkspaceApp {
         self.terminal
             .read(cx)
             .filter_broadcast_targets(source_pane_id, candidates)
-    }
-
-    fn retain_live_terminal_broadcast_targets(&mut self, cx: &mut Context<Self>) {
-        let tab_host = self.tab_host.read(cx);
-        let live_panes = tab_host.panes().keys().copied().collect::<HashSet<_>>();
-        self.terminal.update(cx, |terminal, _cx| {
-            terminal.retain_live_broadcast_targets(&live_panes);
-        });
     }
 
     pub(in crate::workspace) fn terminal_broadcast_entries(
@@ -2475,19 +2451,6 @@ impl WorkspaceApp {
             );
         }
         cx.notify();
-    }
-
-    fn terminal_command_should_handoff_focus(&self, command: &str) -> bool {
-        let Some(command_name) = terminal_command_executable(command) else {
-            return false;
-        };
-        self.settings_store
-            .settings()
-            .terminal
-            .command_bar
-            .focus_handoff_commands
-            .iter()
-            .any(|candidate| candidate == &command_name)
     }
 
     pub(super) fn switch_locale(&mut self, locale: Locale, cx: &mut Context<Self>) {
