@@ -339,12 +339,21 @@ mod tests {
     fn navigation_groups_can_be_added_removed_and_reordered() {
         let mut layout = SettingsNavigationLayout::default();
         let original_first_group = layout.groups()[0].clone();
+        // The default grouping is a product decision that moves whenever a
+        // settings tab is added or removed, so assert the deltas this test is
+        // actually about instead of an absolute count that goes stale.
+        let baseline = layout.group_count();
 
         layout.add_group();
-        assert_eq!(layout.group_count(), 6);
+        assert_eq!(layout.group_count(), baseline + 1);
         assert!(layout.move_group_to_end(0));
         assert_eq!(layout.groups().last(), Some(&original_first_group));
-        assert!(layout.remove_empty_group(4));
-        assert_eq!(layout.group_count(), 5);
+        let empty = layout
+            .groups()
+            .iter()
+            .position(|group| group.is_empty())
+            .expect("the group just added");
+        assert!(layout.remove_empty_group(empty));
+        assert_eq!(layout.group_count(), baseline);
     }
 }

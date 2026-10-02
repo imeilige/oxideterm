@@ -58,7 +58,7 @@
       "ai": "OxideSens",
       "local": "Local Terminal",
       "reconnect": "Reconnect",
-      "help": "Help & About",
+      "help": "Diagnostics",
       "keybindings": "Keybindings",
       "graphics": "Graphics",
       "remote_desktop": "Remote Desktop"
@@ -1032,8 +1032,8 @@
       "enable": "Enable"
     },
     "help": {
-      "title": "Help & About",
-      "description": "Application information, keyboard shortcuts, and resources.",
+      "title": "Diagnostics",
+      "description": "Debug logging, the terminal performance overlay, and the log directory.",
       "shortcuts": "Keyboard Shortcuts",
       "category_app": "Application",
       "category_terminal": "Terminal",

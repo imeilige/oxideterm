@@ -1738,14 +1738,17 @@ mod tests {
     ) {
         let detached = cx.add_window(|_, _| TabHostTestRoot);
         let mut host = WorkspaceTabHostEntity::new();
-        let ids = [TabKind::Sftp, TabKind::Forwards].map(|kind| {
+        // A page stops being combinable once a previous merge embedded it, so
+        // the second merge has to start from a page that is still top-level.
+        // Every kind here is one `pages_fit_together` accepts as a page.
+        let ids = [TabKind::Sftp, TabKind::Forwards, TabKind::Forwards].map(|kind| {
             let id = host.alloc_tab_id();
             let mut tab = test_tab(id, None);
             tab.kind = kind;
             host.insert_tab(tab);
             id
         });
-        let [sftp, forwards] = ids;
+        let [sftp, forwards, spare] = ids;
         let mut ai = crate::workspace::ai_runtime_context::AiRuntimeContextEntity::new();
         let tools = ai.begin_tool_session(1);
         let handles = ids.map(|id| {
@@ -1756,7 +1759,7 @@ mod tests {
             .combine_pages(sftp, forwards, SplitDirection::Horizontal)
             .unwrap();
         let (combined, removed) = host
-            .combine_pages(forwards, first.id, SplitDirection::Vertical)
+            .combine_pages(spare, first.id, SplitDirection::Vertical)
             .unwrap();
         assert_eq!(removed, vec![first.id]);
         let terminal = host.alloc_tab_id();
@@ -1813,8 +1816,10 @@ mod tests {
             .as_ref()
             .unwrap()
             .collect_page_ids(&mut remaining);
-        assert_eq!(remaining, vec![forwards]);
-        assert_eq!(host.focused_page_id(combined.id), forwards);
+        // The workspace tab keeps only the page that was never unembedded or
+        // removed, and focus falls to it once the focused page is gone.
+        assert_eq!(remaining, vec![spare]);
+        assert_eq!(host.focused_page_id(combined.id), spare);
         assert_eq!(host.tab_by_id(sftp).unwrap().kind, TabKind::Sftp);
         assert_eq!(
             host.terminal_location(session),

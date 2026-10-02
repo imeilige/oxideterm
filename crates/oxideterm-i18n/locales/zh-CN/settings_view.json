@@ -58,7 +58,7 @@
       "ai": "OxideSens",
       "local": "本地终端",
       "reconnect": "自动重连",
-      "help": "帮助与关于",
+      "help": "诊断",
       "keybindings": "快捷键",
       "graphics": "图形",
       "remote_desktop": "远程桌面"
@@ -1032,8 +1032,8 @@
       "enable": "启用"
     },
     "help": {
-      "title": "帮助与关于",
-      "description": "应用程序信息、键盘快捷键和资源。",
+      "title": "诊断",
+      "description": "调试日志、终端性能浮层和日志目录。",
       "shortcuts": "键盘快捷键",
       "shortcut_new_tab": "新建终端标签页",
       "shortcut_shell_launcher": "Shell选择器",
