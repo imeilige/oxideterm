@@ -115,7 +115,7 @@ OxideTerm mantém conexões, arquivos, encaminhamentos, ferramentas do host, aut
 | **Arquivos e edição remota** | SFTP, filas de transferência, favoritos, gravação segura, árvores de projeto e edição em abas |
 | **Encaminhamento e rede** | Encaminhamento local, remoto e SOCKS5 dinâmico, regras salvas e depuração de sockets |
 | **Operações do host e desktop remoto** | Monitoramento, processos, serviços, logs, portas, tarefas, discos, pacotes, contêineres, tmux, RDP e VNC |
-| **OxideSens e automação** | Provedores de IA próprios, MCP, RAG local, Agent Skills, ações aprovadas, sincronização criptografada e CLI |
+| **OxideSens e automação** | Provedores de IA próprios, MCP, RAG local, Agent Skills, ações aprovadas, e CLI |
 | **Extensões e personalização** | Plugins manifest-only, WASM e de processo, abas personalizadas, comandos rápidos, temas, fundos, atalhos e 11 idiomas |
 
 ---
@@ -163,7 +163,7 @@ Domain Crates
   NodeRouter → SshConnectionRegistry
   TerminalState ← SSH PTY channel
   SftpSession / ForwardingRuntime / IdeWorkspace
-  Ai/ACP Entities / CloudSync / Plugin Runtimes
+  Ai/ACP Entities / Plugin Runtimes
 ```
 
 Não existe fronteira de serialização entre UI e backend SSH/terminal. Os bytes do terminal modificam `TerminalState` diretamente; GPUI lê o estado e emite draw calls GPU.
@@ -283,7 +283,6 @@ cargo run -p oxideterm-cli -- doctor --strict
 cargo run -p oxideterm-cli -- settings validate --strict --json
 cargo run -p oxideterm-cli -- connections search prod
 cargo run -p oxideterm-cli -- forwards list --format json
-cargo run -p oxideterm-cli -- cloud-sync push --dry-run --json
 cargo run -p oxideterm-cli -- oxide export ./profile.oxide --connection prod --password-stdin
 cargo run -p oxideterm-cli -- report --bundle ./oxideterm-report.zip
 cargo run -p oxideterm-cli -- completion install zsh --force

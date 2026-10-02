@@ -342,7 +342,6 @@ impl WorkspaceApp {
                     tab_id,
                     node_id.clone(),
                     "forwards.messages.deleted",
-                    true,
                     ForwardingRuntimeOperation::Delete {
                         forward_id: confirm_id.clone(),
                     },

@@ -1,6 +1,6 @@
 # Secrets And Sensitive Data
 
-Treat passwords, passphrases, private-key bytes, MFA responses, SSH-agent data, API keys, proxy credentials, cookies, authorization headers, cloud-sync credentials, and secret-bearing terminal content as sensitive data.
+Treat passwords, passphrases, private-key bytes, MFA responses, SSH-agent data, API keys, proxy credentials, cookies, authorization headers, and secret-bearing terminal content as sensitive data.
 
 ## Ownership Model
 
@@ -33,7 +33,7 @@ Keyboard-interactive authentication is sensitive even when the prompt text looks
 
 Ordinary settings, connection labels, group names, and notes must not become alternate credential storage. A saved connection can retain a safe credential reference, while the secret itself remains in the secret store.
 
-Portable `.oxide` export and cloud sync have explicit credential inclusion choices. Do not silently expand an export, backup, or background sync to include managed keys, passphrases, or portable secrets. See the [user-facing portable bundle contract](../user-guide/en/portable-oxide.md) before changing those paths.
+Portable `.oxide` export has explicit credential inclusion choices. Do not silently expand an export or backup to include managed keys, passphrases, or portable secrets. See the [user-facing portable bundle contract](../user-guide/en/portable-oxide.md) before changing those paths.
 
 ## Review Checklist
 

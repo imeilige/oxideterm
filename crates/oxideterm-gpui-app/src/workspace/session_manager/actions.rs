@@ -382,7 +382,6 @@ impl WorkspaceApp {
                     session_manager.focused_basic_dialog_footer_action = None;
                     cx.notify();
                 });
-                self.queue_cloud_sync_dirty_refresh(cx);
             }
             Err(error) => {
                 let status = format!(
@@ -479,8 +478,6 @@ impl WorkspaceApp {
                     session_manager.focused_basic_dialog_footer_action = None;
                     cx.notify();
                 });
-                // Group metadata is persisted independently from live node ownership.
-                self.queue_cloud_sync_dirty_refresh(cx);
             }
             Err(error) => {
                 let status = format!(
@@ -546,8 +543,6 @@ impl WorkspaceApp {
                     session_manager.group_manager_error = None;
                     cx.notify();
                 });
-                // Deleting a group only reassigns saved metadata; active nodes keep running.
-                self.queue_cloud_sync_dirty_refresh(cx);
             }
             Err(error) => {
                 let status = format!(
@@ -594,7 +589,6 @@ impl WorkspaceApp {
                 session_manager.status = Some(status);
                 cx.notify();
             });
-            self.queue_cloud_sync_dirty_refresh(cx);
         }
     }
 
@@ -828,9 +822,6 @@ impl WorkspaceApp {
             }
             session_manager.set_status(Some(status), cx)
         });
-        if changed {
-            self.queue_cloud_sync_dirty_refresh(cx);
-        }
     }
 
     pub(super) fn delete_local_terminal_profile(&mut self, id: &str, cx: &mut Context<Self>) {
@@ -861,9 +852,6 @@ impl WorkspaceApp {
             }
             session_manager.set_status(Some(status), cx)
         });
-        if changed {
-            self.queue_cloud_sync_dirty_refresh(cx);
-        }
     }
 
     pub(super) fn delete_telnet_profile(&mut self, id: &str, cx: &mut Context<Self>) {
@@ -889,10 +877,6 @@ impl WorkspaceApp {
             }
             session_manager.set_status(Some(status), cx)
         });
-        if deleted {
-            // Telnet profiles participate in the same Cloud Sync snapshot as other saved sessions.
-            self.queue_cloud_sync_dirty_refresh(cx);
-        }
     }
 
     pub(super) fn delete_mosh_profile(&mut self, id: &str, cx: &mut Context<Self>) {
@@ -918,9 +902,6 @@ impl WorkspaceApp {
             }
             session_manager.set_status(Some(status), cx)
         });
-        if changed {
-            self.queue_cloud_sync_dirty_refresh(cx);
-        }
     }
 
     pub(super) fn delete_standalone_sftp_profile(&mut self, id: &str, cx: &mut Context<Self>) {
@@ -952,9 +933,6 @@ impl WorkspaceApp {
             }
             session_manager.set_status(Some(status), cx)
         });
-        if changed {
-            self.queue_cloud_sync_dirty_refresh(cx);
-        }
     }
 
     pub(super) fn delete_remote_desktop_profile(&mut self, id: &str, cx: &mut Context<Self>) {
@@ -985,9 +963,6 @@ impl WorkspaceApp {
             }
             session_manager.set_status(Some(status), cx);
         });
-        if deleted {
-            self.queue_cloud_sync_dirty_refresh(cx);
-        }
     }
 
     pub(in crate::workspace) fn open_saved_serial_profile(
@@ -1029,7 +1004,6 @@ impl WorkspaceApp {
                     cx,
                 );
                 let _ = self.connection_store.mark_serial_profile_used(id);
-                self.queue_cloud_sync_dirty_refresh(cx);
             }
             Err(error) => {
                 let status = format!(
@@ -1260,7 +1234,6 @@ impl WorkspaceApp {
             cx,
         );
         let _ = self.connection_store.mark_remote_desktop_profile_used(id);
-        self.queue_cloud_sync_dirty_refresh(cx);
     }
 
     pub(super) fn open_saved_remote_desktop_profile_editor(
@@ -1413,9 +1386,6 @@ impl WorkspaceApp {
             session_manager.status = Some(status);
             cx.notify();
         });
-        if deleted > 0 {
-            self.queue_cloud_sync_dirty_refresh(cx);
-        }
     }
 
     pub(super) fn duplicate_connection(
@@ -1605,9 +1575,6 @@ impl WorkspaceApp {
                     }
                     cx.notify();
                 });
-                if count > 0 {
-                    self.queue_cloud_sync_dirty_refresh(cx);
-                }
             }
             Err(error) => {
                 let status = error.to_string();

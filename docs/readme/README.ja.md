@@ -111,7 +111,7 @@ OxideTerm は接続、ファイル、転送、ホストツール、自動化、A
 | **ファイルとリモート編集** | SFTP、転送キュー、ブックマーク、安全な書き込み、プロジェクトツリー、タブ編集 |
 | **転送とネットワーク** | ローカル・リモート・動的 SOCKS5 転送、保存ルール、ソケットデバッグ |
 | **ホスト運用とリモートデスクトップ** | 監視、プロセス、サービス、ログ、ポート、タスク、ディスク、パッケージ、コンテナ、tmux、RDP、VNC |
-| **OxideSens と自動化** | 自分の AI プロバイダー、MCP、ローカル RAG、Agent Skills、プロバイダー対応の推論コントロール、承認済み操作、暗号化同期、CLI |
+| **OxideSens と自動化** | 自分の AI プロバイダー、MCP、ローカル RAG、Agent Skills、プロバイダー対応の推論コントロール、承認済み操作、CLI |
 | **拡張とカスタマイズ** | manifest-only、WASM、プロセス型プラグイン、カスタムタブ、クイックコマンド、テーマ、背景、ショートカット、11 言語 |
 
 ---
@@ -159,7 +159,7 @@ GPUI 描画ループ
   NodeRouter → SshConnectionRegistry
   TerminalState ← SSH PTY channel
   SftpSession / ForwardingRuntime / IdeWorkspace
-  Ai/ACP Entities / CloudSync / Plugin Runtimes
+  Ai/ACP Entities / Plugin Runtimes
 ```
 
 UI と SSH/ターミナルバックエンドの間にシリアライズ境界はありません。ターミナルのバイト列は `TerminalState` を直接変更し、GPUI が状態を読み取って GPU 描画命令を発行します。
@@ -278,7 +278,6 @@ cargo run -p oxideterm-cli -- doctor --strict
 cargo run -p oxideterm-cli -- settings validate --strict --json
 cargo run -p oxideterm-cli -- connections search prod
 cargo run -p oxideterm-cli -- forwards list --format json
-cargo run -p oxideterm-cli -- cloud-sync push --dry-run --json
 cargo run -p oxideterm-cli -- oxide export ./profile.oxide --connection prod --password-stdin
 cargo run -p oxideterm-cli -- report --bundle ./oxideterm-report.zip
 cargo run -p oxideterm-cli -- completion install zsh --force

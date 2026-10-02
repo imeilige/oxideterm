@@ -87,11 +87,10 @@ struct SftpRuntimeOwner       { key, generation, connection_id, session_generati
 | `remote_desktop/session.rs` | 1 | 4 |
 | `history_quit.rs` | 1 | 4 |
 | `connection_monitor/health/` | 8 | 8 |
-| `cloud_sync/` | 2 | 3 |
 | `tabs/` | 3 | 3 |
 | 其它 | 5 | 7 |
 
-**外部引用合计约 178 处，分布在 30 多个文件。**
+**外部引用合计约 175 处，分布在 30 多个文件。**
 
 ### 4.1 外部依赖的具体用途
 

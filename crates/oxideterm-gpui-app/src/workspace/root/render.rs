@@ -129,7 +129,6 @@ impl WorkspaceApp {
         self.begin_selectable_text_frame();
         self.schedule_pending_auto_close_terminal_sessions(window, cx);
         self.sync_ai_workspace_visibility(cx);
-        let cloud_sync_confirm_open = self.cloud_sync.read(cx).view.confirm.is_some();
         // Confirmation snapshots are immutable frame inputs. Sampling each
         // owner once avoids repeatedly cloning typed payloads during render.
         let ai_chat_confirm_snapshot = self.ai_entity.read(cx).chat_confirm_snapshot();
@@ -157,7 +156,6 @@ impl WorkspaceApp {
                         | TabKind::SessionManager
                         | TabKind::FileManager
                         | TabKind::Graphics
-                        | TabKind::CloudSync
                         | TabKind::RemoteDesktop
                 )
             })
@@ -181,7 +179,6 @@ impl WorkspaceApp {
                 (TabKind::Sftp, _) => self.render_sftp_surface(window, cx),
                 (TabKind::Forwards, _) => self.render_forwards_surface(window, cx),
                 (TabKind::SessionManager, _) => self.render_session_manager_surface(window, cx),
-                (TabKind::CloudSync, _) => self.render_cloud_sync_surface(cx),
                 (TabKind::RemoteDesktop, _) => {
                     self.render_remote_desktop_surface(*tab_id, window, cx)
                 }
@@ -400,9 +397,6 @@ impl WorkspaceApp {
                     window.prevent_default();
                     cx.stop_propagation();
                 } else if this.handle_host_package_search_key(event, cx) {
-                    window.prevent_default();
-                    cx.stop_propagation();
-                } else if this.handle_cloud_sync_select_key(event, cx) {
                     window.prevent_default();
                     cx.stop_propagation();
                 } else if !this.command_palette.read(cx).is_open()
@@ -1016,9 +1010,6 @@ impl WorkspaceApp {
                 self.render_remote_shell_integration_confirm(cx),
                 |root, dialog| root.child(dialog),
             )
-            .when(cloud_sync_confirm_open, |root| {
-                root.child(self.render_cloud_sync_confirm_dialog(cx))
-            })
             .when(
                 matches!(
                     overlay_confirm_snapshot

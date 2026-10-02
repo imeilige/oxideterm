@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Start troubleshooting from the desktop app. The visible app state usually tells you whether the problem is a saved profile, a live SSH node, a terminal session, Host Tools, graphics/VNC, SFTP, forwarding, sync, settings, or a plugin.
+Start troubleshooting from the desktop app. The visible app state usually tells you whether the problem is a saved profile, a live SSH node, a terminal session, Host Tools, graphics/VNC, SFTP, forwarding, settings, or a plugin.
 
 ## First Checks In The App
 
@@ -12,7 +12,7 @@ Check the relevant surface before editing files or running repair commands:
 - Terminal tab: confirm the shell accepts input, whether a command is still running, and whether a terminal helper prompt is active.
 - Graphics/VNC: confirm the saved profile/provider or owning node is live and the viewer is connected.
 - SFTP or File Manager: confirm the target node is live before retrying directory reads or transfers.
-- Settings: check recent changes to SSH, AI, cloud sync, or plugin settings.
+- Settings: check recent changes to SSH, AI, or plugin settings.
 - Notifications: review recent warnings and errors.
 
 If a connection or surface is stale, try reconnecting from the app before changing configuration.
@@ -35,8 +35,6 @@ For X/Y/ZMODEM transfer issues, cancel unexpected prompts. Retry with an explici
 
 For privilege credential issues, check the dedicated Settings page and the active terminal pane. Do not paste sudo/su passwords into logs, AI prompts, support bundles, quick commands, or connection notes while debugging.
 
-For cloud sync issues, open Cloud Sync, inspect status, and review conflicts before choosing a direction.
-
 For serial terminal issues, start from the device and permission boundary:
 
 - No ports listed: enter `/dev/cu.*`, `/dev/ttyUSB*`, `/dev/ttyACM*`, or `COMx` manually and confirm the OS can see the device.
@@ -46,7 +44,7 @@ For serial terminal issues, start from the device and permission boundary:
 
 ## Backups First
 
-Before applying a restore, import, sync apply, or manual file repair, create or verify a backup from the app. Review the restore plan and apply the smallest section that solves the issue.
+Before applying a restore, import, or manual file repair, create or verify a backup from the app. Review the restore plan and apply the smallest section that solves the issue.
 
 ## CLI Companion Diagnostics
 
@@ -66,7 +64,6 @@ For focused checks:
 ```sh
 oxideterm settings validate --strict
 oxideterm connections validate --strict
-oxideterm cloud-sync status --json
 ```
 
 ## Bug Reports

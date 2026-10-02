@@ -555,19 +555,6 @@ impl WorkspaceApp {
                 .connection_form_state(cx)
                 .open_select
                 .is_some_and(|select| Self::new_connection_select_anchor_id(select) == anchor.id)
-            || matches!(
-                (self.cloud_sync.read(cx).view.open_select, anchor.id),
-                (
-                    Some(crate::workspace::cloud_sync::CloudSyncSelect::Backend),
-                    SelectAnchorId::CloudSyncBackend
-                ) | (
-                    Some(crate::workspace::cloud_sync::CloudSyncSelect::AuthMode),
-                    SelectAnchorId::CloudSyncAuthMode
-                ) | (
-                    Some(crate::workspace::cloud_sync::CloudSyncSelect::ConflictStrategy),
-                    SelectAnchorId::CloudSyncConflictStrategy
-                )
-            )
             || (matches!(
                 anchor.id,
                 SelectAnchorId::AiPanelRoot
@@ -739,11 +726,7 @@ impl WorkspaceApp {
                 true
             }
             "escape" => {
-                if self.commit_focused_cloud_sync_input(input, cx) {
-                    self.focused_settings_input = None;
-                } else {
-                    self.clear_settings_input_draft(input);
-                }
+                self.clear_settings_input_draft(input);
                 self.show_active_input_caret(cx);
                 cx.notify();
                 true
@@ -754,11 +737,8 @@ impl WorkspaceApp {
                     self.apply_settings_input_draft(input, cx);
                     return true;
                 }
-                if self.commit_focused_cloud_sync_input(input, cx) {
-                } else {
-                    self.focused_settings_input = None;
-                    self.clear_settings_input_draft(input);
-                }
+                self.focused_settings_input = None;
+                self.clear_settings_input_draft(input);
                 self.show_active_input_caret(cx);
                 cx.notify();
                 true
@@ -804,12 +784,7 @@ impl WorkspaceApp {
             changed = true;
         }
         if let Some(input) = self.focused_settings_input.take() {
-            if self.commit_focused_cloud_sync_input(input, cx) {
-                // Cloud Sync fields move out of their Entity while focused, so
-                // every blur boundary must return the owned draft before release.
-            } else {
-                self.clear_settings_input_draft(input);
-            }
+            self.clear_settings_input_draft(input);
             self.ime_marked_text = None;
             self.clear_ime_selection();
             changed = true;
@@ -1048,41 +1023,15 @@ impl WorkspaceApp {
         self.ai_entity.update(cx, |ai, cx| {
             ai.blur_settings_input(cx);
         });
-        let cloud_sync_input = {
-            let cloud_sync = self.cloud_sync.read(cx);
-            cloud_sync_form_input_value_ref(&cloud_sync.view.form, input).is_some()
-        };
-        if cloud_sync_input && self.focused_settings_input == Some(input) {
-            // Repositioning the caret in a manually owned input must preserve
-            // the active draft instead of taking the now-empty backing field.
-            self.clear_ime_selection();
-            self.show_active_input_caret(cx);
-            cx.notify();
-            return;
-        }
         if let Some(previous_input) = self
             .focused_settings_input
             .filter(|previous| *previous != input)
         {
-            if self.commit_focused_cloud_sync_input(previous_input, cx) {
-                self.focused_settings_input = None;
-            } else {
-                self.clear_settings_input_draft(previous_input);
-            }
+            self.clear_settings_input_draft(previous_input);
         }
         self.focused_settings_input = Some(input);
         self.clear_ime_selection();
-        self.settings_input_draft = if cloud_sync_input {
-            // Cloud Sync form values move into the root only while it acts as
-            // the focused IME adapter. No second secret buffer is created.
-            self.cloud_sync
-                .update(cx, |cloud_sync, _cx| {
-                    take_cloud_sync_form_input_value(&mut cloud_sync.view.form, input)
-                })
-                .unwrap_or_default()
-        } else {
-            current_value
-        };
+        self.settings_input_draft = current_value;
         self.show_active_input_caret(cx);
         cx.notify();
     }
@@ -1116,45 +1065,6 @@ impl WorkspaceApp {
         self.settings_input_draft.clear();
     }
 
-    pub(in crate::workspace) fn apply_focused_cloud_sync_input_draft(
-        &mut self,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        let Some(input) = self.focused_settings_input else {
-            return false;
-        };
-        if !self.commit_focused_cloud_sync_input(input, cx) {
-            return false;
-        }
-        // Cloud Sync configuration commits can be triggered by tab/action
-        // changes, so release the manually owned input after its latest draft
-        // has been copied into the form.
-        self.focused_settings_input = None;
-        self.clear_settings_input_draft(input);
-        true
-    }
-
-    fn commit_focused_cloud_sync_input(
-        &mut self,
-        input: SettingsInput,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        let draft = std::mem::take(&mut self.settings_input_draft);
-        match self.cloud_sync.update(cx, |cloud_sync, cx| {
-            let result = apply_cloud_sync_form_input_owned(&mut cloud_sync.view.form, input, draft);
-            if result.is_ok() {
-                cx.notify();
-            }
-            result
-        }) {
-            Ok(()) => true,
-            Err(draft) => {
-                self.settings_input_draft = draft;
-                false
-            }
-        }
-    }
-
     pub(in crate::workspace) fn current_settings_input_value(
         &self,
         input: SettingsInput,
@@ -1183,18 +1093,6 @@ impl WorkspaceApp {
             // This copy is only made at an explicit focus/action boundary;
             // render paths borrow the Entity-owned theme draft directly.
             return value.to_owned();
-        }
-        if let Some(value) =
-            cloud_sync_form_input_value_ref(&self.cloud_sync.read(cx).view.form, input)
-        {
-            // Secret fields are moved into the focused IME adapter through
-            // `focus_settings_input`; this generic snapshot path must not copy
-            // their contents.
-            return if input.is_secret() {
-                String::new()
-            } else {
-                value.to_owned()
-            };
         }
         match input {
             SettingsInput::TerminalCommandSpecsJson => {
@@ -1241,16 +1139,6 @@ impl WorkspaceApp {
         }
         let terminal_trigger_input_draft = self.settings_input_draft.clone();
         if self.apply_terminal_trigger_settings_input(input, &terminal_trigger_input_draft) {
-            cx.notify();
-            return;
-        }
-        let cloud_sync_input = {
-            let cloud_sync = self.cloud_sync.read(cx);
-            cloud_sync_form_input_value_ref(&cloud_sync.view.form, input).is_some()
-        };
-        if cloud_sync_input {
-            // The root draft remains the only owner while the IME is focused;
-            // persistence moves it back through `apply_focused_*`.
             cx.notify();
             return;
         }
@@ -1401,10 +1289,7 @@ pub(in crate::workspace) fn select_anchor_tracks_while_closed(anchor_id: SelectA
     // opening click. GPUI portals cannot, so modal select triggers keep a
     // closed-state anchor cache without notifying; that makes first-click open
     // immediate while scroll handlers still clear stale coordinates.
-    if anchor_id.is_settings_select_trigger()
-        || anchor_id.is_new_connection_select_trigger()
-        || anchor_id.is_cloud_sync_select_trigger()
-    {
+    if anchor_id.is_settings_select_trigger() || anchor_id.is_new_connection_select_trigger() {
         return true;
     }
 

@@ -30,8 +30,7 @@ OxideTerm 应当作为 **MCP 服务端**，让经过用户授权的 Codex、Clau
 2. 打开终端或 SFTP 消费者，读取所需结果并发送实际输入；
 3. 上传、验证、原子替换一个远端配置文件，获得可用时的撤销句柄；
 4. 建立一个端口转发，使其在终端消费者关闭后继续运行；
-5. 预览云同步差异、在应用内确认后应用或回滚；
-6. 查看 RDP/VNC 帧、发送键鼠输入及按授权同步剪贴板。
+5. 查看 RDP/VNC 帧、发送键鼠输入及按授权同步剪贴板。
 
 安全控制不能把这些已获授权的核心工作流删成只读演示。它们使用默认关闭的工具组、按客户端授权、不可变操作确认、可审计结果和可撤销句柄来约束。
 
@@ -39,7 +38,7 @@ OxideTerm 应当作为 **MCP 服务端**，让经过用户授权的 Codex、Clau
 
 以下边界不提供例外授权：
 
-- 不返回已存在的密码、私钥、口令、令牌、认证头、受保护存储的原值或云同步密钥。
+- 不返回已存在的密码、私钥、口令、令牌、认证头、受保护存储的原值。
 - 不暴露 `NodeId`、连接池键、`TabId`、GPUI `Entity`、Tokio task、helper PID、SSH/SFTP transport、OS keychain account 等内部身份或对象。
 - 不提供“调用任意内部函数”“执行任意插件方法”“转发任意 helper JSON”的工具。插件能力只经产品级、声明式的适配器暴露。
 - 不把外部客户端的文件路径、命令文字、终端内容、剪贴板、截图或错误对象直接写入日志、遥测、诊断包或审计正文。
@@ -58,11 +57,11 @@ OxideTerm 应当作为 **MCP 服务端**，让经过用户授权的 Codex、Clau
 
 - 设置页可创建、停用和撤销独立外部客户端；一次性 Bearer 凭据只向用户显示一次，设备端只持久化 SHA-256 摘要。
 - 每个客户端独立选择普通模式或完全权限模式，并逐项启用工具组。普通模式保留应用内动作批准；完全权限模式只跳过已勾选工具组的逐动作批准，不会绕过 Bearer 认证、应用锁、秘密硬边界、审计或未授权工具组。
-- `tools/list` 按客户端工具组裁剪；当前实际发布基础、连接目录/详情/管理、凭据管理、节点租约、真实终端会话/观察/输入/录制、RDP/VNC 会话/画面/键鼠/剪贴板、命令执行/观察、临时 artifact、后台 SFTP 传输、远端 IDE 工作区、当前客户端审计、类型化 Host Tools、快速命令、插件生命周期、端口转发、SFTP 文件和云同步工具。
+- `tools/list` 按客户端工具组裁剪；当前实际发布基础、连接目录/详情/管理、凭据管理、节点租约、真实终端会话/观察/输入/录制、RDP/VNC 会话/画面/键鼠/剪贴板、命令执行/观察、临时 artifact、后台 SFTP 传输、远端 IDE 工作区、当前客户端审计、类型化 Host Tools、快速命令、插件生命周期、端口转发和 SFTP 文件工具。
 - `connections_browse` 已覆盖保存的 SSH、串口、Telnet、Mosh、RDP 和 VNC 配置，只返回目录投影；精确端点及协议选项由单独授权的 `connections_describe` 返回，既有凭据只显示存在性。
 - `connections_save` 使用严格 tagged profile 写入上述六类真实保存配置，更新必须携带 `connections_describe` 返回的 revision；schema 不包含秘密字段，本地终端没有保存分支。`connections_remove` 遇到受保护凭据时要求显式 `forget_credentials=true`，因此不会静默删除秘密或制造无法管理的孤儿引用。
 - `credentials_status` 只返回槽位、认证类型、可写性和存在标记；`credentials_store` 把新的零化输入直接交给连接受保护存储，`credentials_forget` 删除指定槽位。三者都不返回既有值或内部存储引用，更新凭据也不会污染最近连接顺序。
-- Telnet profile 已作为独立分区进入 `.oxide` 预览/导入/导出和结构化云同步。SSH 上游代理的设备本地受保护存储引用在构造云快照时剥离，应用远端记录时只保留本机目标完全匹配的引用。
+- Telnet profile 已作为独立分区进入 `.oxide` 预览、导入和导出。
 - 连接、节点和命令句柄均为随机且绑定客户端的外部引用；首个切片会在应用重启后重新生成连接引用，客户端需要重新浏览目录，不能缓存或构造内部连接身份。
 - `nodes_connect` 使用保存的 SSH 配置和现有受保护凭据，通过 NodeRouter 建立或复用物理节点；代理链也沿用现有节点树展开与连接顺序。
 - `commands_start` 使用当前物理 SSH 连接的独立 exec channel，返回真实退出码、有界输出和可取消 `command_ref`。
@@ -71,16 +70,15 @@ OxideTerm 应当作为 **MCP 服务端**，让经过用户授权的 Codex、Clau
 - `hosttools_catalog`/`hosttools_capture`/`hosttools_operate` 只接产品已有的类型化资源与固定动作，不暴露自由 shell 或插件调用。
 - 快速命令目录和正文分别授权；保存和删除采用存储 revision 冲突检查并刷新应用内状态。执行只读取已保存的精确命令，并再次校验 revision、节点所有权和 `host_pattern`。当前模型没有参数 schema，因此 `arguments` 必须为空；当前执行目标仅支持 `node_ref`，在交互终端拥有可靠命令完成标记前不宣称支持 terminal exec。
 - 插件目录和插件管理分别授权。插件安装只接受客户端自己的临时 artifact、必填 SHA-256 和预期插件身份，在 staging 阶段核对身份后才替换安装目录；启停和卸载复用应用已有注册表及运行时停用路径。返回值只含 manifest 公开身份、状态、权限请求和声明式贡献数量，绝不返回安装路径、配置路径、任意 `api.invoke`、运行时命令或 Host Monitor 命令正文。
-- 端口转发读取和管理分别授权。`forwards_*` 复用应用唯一的 `ForwardingRuntimeService` 和独立 `PortForward` 消费者，支持类型化创建、带 revision 的受控修改、停止、重启、删除、统计和单次端口发现。保存定义的创建、修改、重启和删除在后台完成后回到工作区失效 `.oxide`/云同步快照。关闭终端或释放 Public MCP 节点租约不会停止转发；显式物理节点断开、客户端撤销或关闭转发管理授权才按所有权清理。外部只看到客户端作用域的 `forward_ref`。
+- 端口转发读取和管理分别授权。`forwards_*` 复用应用唯一的 `ForwardingRuntimeService` 和独立 `PortForward` 消费者，支持类型化创建、带 revision 的受控修改、停止、重启、删除、统计和单次端口发现。保存定义的创建、修改、重启和删除在后台完成后回到工作区失效 `.oxide` 快照。关闭终端或释放 Public MCP 节点租约不会停止转发；显式物理节点断开、客户端撤销或关闭转发管理授权才按所有权清理。外部只看到客户端作用域的 `forward_ref`。
 - SFTP 文件读取和修改分别授权。`files_open` 为规范化远端根目录登记独立 SFTP 消费者，后续列表、元数据、分段读取、比较、写入、移动和删除都重新校验规范化路径边界。正文只经客户端自己的有界 artifact 传递；重连时先取得当前连接的消费者再释放旧消费者，`files_close` 不断开共享 SSH 节点。
 - `transfers_start` 在同一授权根内启动真实后台 SFTP 单文件上传或下载，除传输数据组外，上传还要求远端文件写入组，下载还要求远端文件读取组。进度和取消复用应用的传输控制器。上传源与下载产物都只能是客户端私有 artifact，本机临时路径不会进入结果；客户端撤销、工具组关闭、文件会话关闭或物理节点断开会取消仍在运行的传输。当前 artifact 数据面上限为 64 MiB，尚未保留可跨请求重启的部分文件，因此 `resume=true` 会明确拒绝；上传失败或取消时会如实报告可能存在远端部分文件。
 - IDE 工作区读取和结构化编辑分别授权。`workspaces_mount` 必须从客户端已有的 `file_session_ref` 派生，并再次规范化项目根；它创建独立的 Node Agent/SFTP IDE owner，不借用可见编辑器标签页，也不暴露 NodeId、TabId 或 GPUI Entity。树、文本读取和搜索都有硬上限；编辑使用编辑器核心校验 UTF-8 字节区间，并将客户端先前观察到的 revision 映射回真实 `SavedFileVersion` 做冲突检测。多文件写入不是服务端原子事务，后续文件失败或任务在写入期间被取消时，会尝试用刚写入的版本回滚前项，并明确报告回滚是否完整，不虚构持久 `undo_ref`。关闭工作区、父文件会话、客户端授权或物理节点只释放该工作区自己的 IDE consumer。
 - `oxideterm mcp bridge` 已提供受管 stdio 入口：它只把逐行 JSON-RPC 转交给正在运行的回环 HTTP 服务，不拥有业务权限。端点默认从应用生成的非秘密 discovery record 取得；Bearer 凭据只从用户指定的环境变量读取，绝不接受命令行明文。bridge 拒绝非回环 URL、代理、重定向、超限消息和未认证响应；应用未运行时，保留的端口记录只用于下次优先复用，连接仍会明确失败。
-- 回环监听端口支持设备本地配置：`0` 保持自动选择，`1..=65535` 固定端口。应用新端口时必须先成功绑定并持久化 discovery record，再释放旧监听器；固定端口失败不得静默退回随机端口。该偏好不进入普通设置、`.oxide` 或云同步。
+- 回环监听端口支持设备本地配置：`0` 保持自动选择，`1..=65535` 固定端口。应用新端口时必须先成功绑定并持久化 discovery record，再释放旧监听器；固定端口失败不得静默退回随机端口。该偏好不进入普通设置或 `.oxide`。
 - 终端会话、内容观察和输入控制分别授权。`terminals_open` 只创建应用真实持有的可见终端页：SSH 必须使用已取得的 `node_ref`，保存的 Mosh、Telnet 和串口使用 `connection_ref`，本地终端只允许一次性启动且不会进入保存、导出或同步。公共终端最多全局 128 个、每客户端 32 个（含等待认证的 Mosh）；读取仅返回有界屏幕快照与 generation cursor；搜索复用终端后端；输入正文不进入审计，普通模式批准页只显示输入类型、长度与回车意图。用户从界面关闭 pane 时对应句柄同步失效；SSH 节点重连换 pane 时句柄迁移到新会话。关闭 SSH 终端只关闭自己的 terminal consumer，不等同于物理节点断开。
 - 终端录制控制和录制内容分别授权。`recordings_control` 复用真实 `TerminalPane` recorder，同一终端不会覆盖既有应用录制；当前后端只支持 output-only，因此 `capture_input=true` 会明确拒绝。停止时保留十五分钟有效的有界 asciicast 正文，搜索只给有界片段，导出只生成客户端私有且会独立过期的 artifact，不接受任意本机路径。终端关闭或控制授权关闭会先停止活动录制；客户端撤销会零化保留正文并撤销导出 artifact。
 - 远程桌面会话、画面观察、键鼠控制和剪贴板分别授权。`desktops_open` 只解析保存的 RDP/VNC `connection_ref`，凭据由设备受保护存储直接移交真实 provider，会话仍由可见标签页和 `RemoteDesktopSessionEntity` 持有，最多全局 32 个、每客户端 8 个。隐藏标签页只有在客户端启用画面观察时才继续消费最新帧；`desktops_frame` 把有界 CPU framebuffer 在后台编码成客户端私有 PNG artifact。输入必须携带当前 graphics epoch，坐标按 server framebuffer 校验；远端剪贴板来自会话内零化缓存，绝不读取系统剪贴板冒充远端内容。关闭、撤权或用户从界面关闭对应 tab 时会释放所有输入、关闭 helper，并撤销该桌面的句柄、帧和剪贴板 artifact。
-- 云同步按配置范围或调用方显式选择的分区冻结 pull/publish 预览；`sync_plan_ref` 绑定客户端、十分钟过期且只能消费一次。应用前同时比较完整本地状态和远端 revision/etag/content hash，任一变化都会拒绝陈旧计划。pull 只在能精确恢复的分区返回十五分钟有效的 `undo_ref`；SSH、Mosh 和凭据分区仍可保留产品已有的加密本地恢复备份，但不会把它伪装成严格撤销。publish 是远端写入，成功后明确不返回撤销句柄。撤权或断线可取消尚在远端一致性检查阶段的请求；进入本地 apply 或远端 upload 提交段后必须完成真实状态收尾，已撤权客户端不会因此重新获得 `undo_ref`。
 - 连接和命令执行、物理节点断开先冻结原参数并进入应用内批准；批准票据绑定客户端、五分钟过期且只能消费一次。批准界面显示实际客户端、目标和命令，但命令不进入 MCP 批准结果或审计。
 - 停用或撤销客户端会撤销待批准动作、取消命令并释放其 Public MCP 消费者；`nodes_release` 不会把其他终端、SFTP 或转发消费者仍在使用的物理节点断开。
 - 应用锁定时会拒绝新的 MCP 领域请求、撤销待批准动作、取消 MCP 命令并释放 MCP 节点消费者；解锁后客户端凭据仍有效，但必须重新取得运行时句柄。
@@ -102,7 +100,7 @@ OxideTerm 应当作为 **MCP 服务端**，让经过用户授权的 Codex、Clau
 
 MCP `2026-07-28` 请求使用 `server/discover` 做可选发现，并在每次请求的 `_meta.io.modelcontextprotocol/*` 中携带协议版本、客户端信息和能力。Streamable HTTP 同时校验 `Mcp-Method`、`Mcp-Name` 与正文一致；回环监听必须校验 Host、Origin 和对具体客户端签发的认证材料。兼容旧版客户端时才进入 `initialize` / `initialized` 生命周期，旧连接不得改变新的授权模型。
 
-客户端声明的名称、版本、PID/启动方式等信息只能用于展示和审计，不能单独构成信任。每个请求都从认证材料解析 `client_ref`，再把声明身份与已批准客户端记录核对；首次连接或身份变化时由应用重新确认绑定。应用生成的发现记录、令牌和授权账本是设备本地安全状态，不进入 `.oxide` 导入导出、云同步、普通设置导出或支持诊断包。
+客户端声明的名称、版本、PID/启动方式等信息只能用于展示和审计，不能单独构成信任。每个请求都从认证材料解析 `client_ref`，再把声明身份与已批准客户端记录核对；首次连接或身份变化时由应用重新确认绑定。应用生成的发现记录、令牌和授权账本是设备本地安全状态，不进入 `.oxide` 导入导出、普通设置导出或支持诊断包。
 
 ### 2.2 工具发现
 
@@ -126,8 +124,8 @@ MCP `2026-07-28` 请求使用 `server/discover` 做可选发现，并在每次�
 | `request_key` | 为未来持久幂等账本保留；当前工具 schema 尚不接受，客户端不得假定网络错误后的自动重试不会重复执行。 |
 | `operation_ref` | 查询或取消后台 SSH/快速命令与 SFTP 传输的外部句柄。 |
 | `approval_ref` | 对一份不可变动作摘要的一次性批准票据；不能与新参数混用。 |
-| `expected_revision` | 乐观并发条件；文件、配置、同步计划和快速命令写入应优先使用。 |
-| `dry_run` | 为支持安全预检的后续领域保留；当前云同步使用独立 preview 工具，其他写工具不接受通用 `dry_run`。 |
+| `expected_revision` | 乐观并发条件；文件、配置和快速命令写入应优先使用。 |
+| `dry_run` | 为支持安全预检的后续领域保留；其他写工具不接受通用 `dry_run`。 |
 
 普通领域工具结果的 `structuredContent` 使用以下稳定信封；批准请求由协议层直接返回 `outcome:"approval_required"` 与 `approval` 投影：
 
@@ -143,7 +141,7 @@ MCP `2026-07-28` 请求使用 `server/discover` 做可选发现，并在每次�
 
 ### 2.5 内容传递与状态变化
 
-当前以版本 cursor、`mcp_operation` 即时查询和领域状态工具的再次读取为可靠状态获取方式；客户端不得假定自己一定能接收自定义 server notification。服务端未来可采用官方 Tasks/Subscriptions 扩展，但 `operation_ref` 始终是产品级事实来源，不依赖扩展才能查询或取消。Node、terminal、command、forward、transfer、desktop 与同步的内部事件会更新各自的 revision/cursor，但不直接把内部事件 DTO 变成公共协议。
+当前以版本 cursor、`mcp_operation` 即时查询和领域状态工具的再次读取为可靠状态获取方式；客户端不得假定自己一定能接收自定义 server notification。服务端未来可采用官方 Tasks/Subscriptions 扩展，但 `operation_ref` 始终是产品级事实来源，不依赖扩展才能查询或取消。Node、terminal、command、forward、transfer 和 desktop 的内部事件会更新各自的 revision/cursor，但不直接把内部事件 DTO 变成公共协议。
 
 二进制和大内容必须作为 MCP image content 或带大小/过期限制的 `artifact_ref` 返回。画面、录制、文件和剪贴板不能以无限制 base64 JSON 塞入普通结果。`artifacts_read` 分段读取，且所有 artifact 都继承产生它的客户端和内容授权范围。
 
@@ -153,7 +151,7 @@ MCP `2026-07-28` 请求使用 `server/discover` 做可选发现，并在每次�
 
 批准票据默认五分钟有效、仅能提交一次，并在客户端断开、权限撤销、目标 revision 变化或应用锁定时失效。`mcp_commit_action` 不接受替换后的命令、路径、内容或目标，因此不能把一次确认挪作另一项操作。
 
-可真实回滚的副作用才返回 `undo_ref`；`mcp_revert` 会按原工具组和批准模式再次检查。不能可靠回滚的操作不返回句柄，并在结果或确认语义中说明。例如已经发送的终端输入、命令、SFTP 写入或远端发布不能假装可撤销；当前只有云同步本地 apply 的严格 checkpoint 进入通用撤销入口。
+可真实回滚的副作用才返回 `undo_ref`；`mcp_revert` 会按原工具组和批准模式再次检查。不能可靠回滚的操作不返回句柄，并在结果或确认语义中说明。例如已经发送的终端输入、命令或 SFTP 写入不能假装可撤销。
 
 ## 3. 外部句柄与生命周期
 
@@ -172,7 +170,6 @@ MCP `2026-07-28` 请求使用 `server/discover` 做可选发现，并在每次�
 | `transfer_ref` | 有进度、可取消的传输 | 完成后保留只读状态至审计保留期 | 传输的文件数据另由 artifact 句柄管理。 |
 | `forward_ref` | 端口转发规则和其 listener/bridge 所有者 | 删除、所属节点断开或撤销时失效 | 终端关闭后仍存活；显式停止或节点断开才终止。 |
 | `desktop_ref` | RDP/VNC 实时会话 | 关闭、provider 终止或授权撤销时失效 | 不暴露 helper 进程或 framebuffer 内部对象。 |
-| `sync_plan_ref` | 带远端 revision 的同步预览 | 远端/本地变更、过期或应用后失效 | 只能按预览内容应用。 |
 | `artifact_ref` | 有大小和时间限制的临时输入/输出内容 | 消费、过期或客户端撤销时删除 | 用于大文件、导出和截图，不能指向任意本地路径。 |
 | `approval_ref` / `undo_ref` | 不可变待批准动作 / 可回滚记录 | 单次、过期、对象变更或撤销时失效 | 只适用于原动作与原客户端。 |
 | `operation_ref` | 后台操作状态 | 取消、完成并过期或客户端撤销时失效 | 可查询、等待、取消；不是系统任务 ID。 |
@@ -214,7 +211,7 @@ NodeRouter / connection registry ── 物理 SSH node
 | `mcp_commit_action` | 基础 / X / 已批准票据 | `approval_ref` | 提交一份不可变高风险动作；返回 `operation_ref`、结果或 `undo_ref`。 |
 | `mcp_operation` | 基础 / D / 否 | `operation_ref` | 查询后台命令或 SFTP 传输的阶段、进度、可取消性、脱敏错误与产出句柄；仍会重新检查创建该操作的原工具组。 |
 | `mcp_cancel_operation` | 基础 / W / 否 | `operation_ref` | 请求取消后台命令或 SFTP 传输；返回是否可能已产生外部副作用，不把取消伪装成回滚。 |
-| `mcp_revert` | 基础 + 原工具组 / X / 必须 | `undo_ref` | 复用当前真实可撤销领域的精确反向操作；现阶段只接受云同步本地 apply 返回的 `undo_ref`，并再次要求云同步组。目标 revision 不匹配时返回冲突。 |
+| `mcp_revert` | 基础 + 原工具组 / X / 必须 | `undo_ref` | 复用当前真实可撤销领域的精确反向操作；只接受该领域返回的 `undo_ref`，并再次要求原工具组。目标 revision 不匹配时返回冲突。 |
 | `mcp_audit_search` | 审计读取 / R / 否 | `time_range`、`tool?`、`target_ref?`、`cursor?` | 客户端自身的审计记录：动作、批准、状态、参数摘要哈希和结果摘要；不返回秘密或原始终端/文件内容。 |
 
 ### 4.2 连接、凭据和 SSH 节点
@@ -323,15 +320,10 @@ Host Tools 的已安装插件扩展不能通过 Public MCP 取得任意调用入
 
 RDP/VNC helper 的 JSON line、二进制帧、证书材料、凭据和进程控制都是内部实现。Public MCP 只看到版本化 DTO、图像/ artifact 和严格输入事件。若会话借助 SSH tunnel，tunnel 仍归相应 SSH node/forward owner 所有，而非远程桌面视图或 MCP HTTP 请求。
 
-### 4.7 云同步、插件、快速命令和终端录制
+### 4.7 插件、快速命令和终端录制
 
 | 工具 | 权限 | 关键参数 | 关键结果与约束 |
 |---|---|---|---|
-| `sync_status` | 云同步 / D / 否 | 无 | 后端类型、是否配置、最近 revision、是否有本地脏数据和秘密存在标记；不返回 token、密码、远端 URL 或受保护引用。 |
-| `sync_pull_preview` | 云同步 / R / 否 | `selection.sections?`、`conflict_strategy` | 下载并构造结构化预览，返回客户端私有、十分钟有效且只可消费一次的 `sync_plan_ref`、分区和冲突摘要；凭据引用在预览前剥离。 |
-| `sync_publish_preview` | 云同步 / R / 否 | `selection.sections?`、`force?` | 生成本地上传预检、脏分区、冲突和预期远端 revision；返回与 pull 相同生命周期的 `sync_plan_ref`。 |
-| `sync_apply_plan` | 云同步 / X / 必须 | `sync_plan_ref` | 应用已预览的 pull 或 publish 计划；再次比较完整本地状态和远端 revision/etag/content hash，失配即拒绝。只有能精确恢复的本地 pull 分区返回 `undo_ref`；publish 不可撤销。 |
-| `sync_restore` | 云同步 / X / 必须 | `undo_ref` | 在本地状态仍等于 apply 后快照时恢复严格 checkpoint；句柄绑定客户端、十五分钟过期且只可消费一次。不把远端写入或无法恢复的密钥删除伪装成可恢复；`mcp_revert` 是保持相同工具组与检查的通用入口。 |
 | `addons_list` | 插件管理 / D / 否 | `include_disabled?` | 插件 ID、版本、来源类别、启用状态、声明能力和公开适配器摘要；不列出任意内部 host function。 |
 | `addons_install` | 插件管理 + 传输数据 / X / 必须 | `artifact_ref`、`expected_identity`、`checksum`、`replace_existing?` | 从客户端私有 artifact 安装 ZIP，先核对 SHA-256 与 manifest 身份，再经应用插件 owner 完成安装和运行时 bootstrap；同步返回公开 addon 投影，不返回虚假 operation/undo。不执行客户端提供的任意命令。撤权发生在工作线程启动前会取消；原子文件替换已经开始时会完成磁盘一致性收尾，但不会在撤权后启动插件运行时或返回成功。 |
 | `addons_set_enabled` | 插件管理 / X / 必须 | `addon_ref`、`enabled` | 启用或禁用，重新核对所需权限并返回状态。 |
@@ -360,7 +352,6 @@ RDP/VNC helper 的 JSON line、二进制帧、证书材料、凭据和进程控�
 | Host Tools 观察、Host Tools 操作 | 关闭 | 客户端 + 指定 node | 操作必须来自固定 typed catalog。 |
 | 转发 | 关闭 | 客户端 + 指定 node | 公网/非回环 bind 和保存规则加重确认。 |
 | 远程桌面观察、控制、剪贴板 | 关闭 | 客户端 + 指定 desktop/profile | 画面、输入、双向剪贴板独立授予。 |
-| 云同步 | 关闭 | 客户端 + 当前账户 | 任何应用、上传、恢复都再确认。 |
 | 插件、快速命令 | 关闭 | 客户端 + 资源范围 | 不给任意插件调用权。 |
 | 审计读取 | 关闭 | 当前客户端自身 | 不允许跨客户端审计浏览。 |
 
@@ -375,7 +366,6 @@ RDP/VNC helper 的 JSON line、二进制帧、证书材料、凭据和进程控�
 - 文件写入、覆盖、移动、删除、递归删除和目录传输覆盖；
 - Host Tools 的状态改变、公开或持久化端口转发；
 - RDP/VNC 会话打开、键鼠/剪贴板写入、重连；
-- 云同步应用、发布、恢复；
 - 安装、启用、卸载插件；
 - 创建/编辑/运行/删除快速命令；
 - 开始含内容的录制与导出。
@@ -389,15 +379,15 @@ RDP/VNC helper 的 JSON line、二进制帧、证书材料、凭据和进程控�
 审计策略还必须做到：
 
 - 已进入工具执行/批准路径的请求与结果在构造记录前脱敏；认证失败和底层 MCP protocol error 当前不进入这份产品审计；
-- 凭据写入和云同步的秘密只记录“使用了受保护输入”，不记录值、存储账户或密文；
+- 凭据写入的秘密只记录“使用了受保护输入”，不记录值、存储账户或密文；
 - `mcp_audit_search` 只能查询当前授权客户端自己的记录，且再做字段投影；
 - 句柄撤销、客户端停用、服务关闭、耗时和审批引用仍属于后续持久审计系统范围，当前不会伪装成已有字段。
 
 ## 6. 数据与秘密规则
 
 1. 所有保存的连接和远程桌面 DTO 都使用专门的 Public MCP 投影；绝不序列化现有 Rust domain struct。
-2. `credentials_store`、连接、RDP/VNC、代理、云同步等含新秘密输入的工具，在网关边界转为 `Zeroizing` 所有者，交给 `oxideterm-secret-store` 或现有受保护连接存储后即清空。不会为审计、重试或异步任务克隆普通 `String`。
-3. 对现有秘密只能做存在性检查、选择受保护槽、删除，或由应用 broker 在认证动作中消费。没有 `credentials_read`、`secret_export`、`sync_key_read` 等工具。
+2. `credentials_store`、连接、RDP/VNC、代理等含新秘密输入的工具，在网关边界转为 `Zeroizing` 所有者，交给 `oxideterm-secret-store` 或现有受保护连接存储后即清空。不会为审计、重试或异步任务克隆普通 `String`。
+3. 对现有秘密只能做存在性检查、选择受保护槽、删除，或由应用 broker 在认证动作中消费。没有 `credentials_read`、`secret_export` 等工具。
 4. SFTP 文件、终端、录制、日志、截图和剪贴板不是“秘密字段”，但可能包含秘密；它们一律是需要显式读取许可的敏感内容，并受大小、分页、过期和审计摘要限制。
 5. Public MCP 事件、通知、工具结果、错误、遥测、诊断和插件边界均在发送前做同一份红线检查。
 
@@ -417,7 +407,6 @@ RDP/VNC helper 的 JSON line、二进制帧、证书材料、凭据和进程控�
 | Host Tools | `oxideterm-connection-monitor`、`oxideterm-acp-host-tools`、插件 host-tools adapter | 映射为固定 catalog/capture/operate；禁止把 `runExtension` 或 shell command 原样公开。 |
 | 转发 | `oxideterm-forwarding::ForwardingManager`、registry、事件、profiler | `forward_ref` 映射到规则所有者；listener/bridge 的取消路径归 forward owner，节点断开时级联。 |
 | RDP/VNC | `oxideterm-remote-desktop`、`oxideterm-gpui-remote-desktop`、RDP/VNC helper | 提取应用拥有的会话 broker，向 MCP 投影 frame、状态、严格 input 和剪贴板；不穿透 helper 协议。 |
-| 云同步 | `oxideterm-cloud-sync` 的 preview/apply/upload、`oxideterm-gpui-cloud-sync` | 将 preview 固化为带 revision 的 `sync_plan_ref`，应用前比较 revision，保留实际存在的 checkpoint。 |
 | 插件 | plugin manifest/registry/runtime/host API crate | 仅管理插件生命周期和已审核声明式 adapter；绝不暴露 `api.invoke` 或插件自定义方法。 |
 | 快速命令 | `oxideterm-quick-commands`、应用内存 store | 公开目录、独立正文读取、revision 保护的保存/删除；运行已保存的无参数命令时复用 SSH command owner，不建立任意函数调用通道。 |
 | 录制 | `oxideterm-terminal-recording` | `recording_ref` 管理状态、搜索与有明确内容授权的 export artifact。 |
@@ -437,7 +426,7 @@ RDP/VNC helper 的 JSON line、二进制帧、证书材料、凭据和进程控�
 | 3. 终端、命令与文件 | `terminals_*`、SSH `commands_*`、真实 SFTP、artifact、transfer、IDE 与 revision 检查 | SSH exec 返回真实退出码；交互终端只提供精确输入而不伪造完成状态；Mosh、Telnet、串口和本地 terminal 只报告真实能力；本地 terminal 保存被拒绝；文件覆盖冲突、取消和多文件编辑的补偿回滚结果可验证。 |
 | 4. Host Tools 与转发 | typed Host Tools catalog、操作确认、forward 生命周期/统计/端口发现 | 无自由 shell/plugin RPC；forward 在 terminal 关闭后仍存活，在节点断开时停止；公开 bind 的确认信息正确。 |
 | 5. 远程桌面 | desktop session broker、frame artifact、input epoch、剪贴板方向授权 | 不泄露 helper protocol；过期 frame epoch 不接受坐标输入；关闭会话销毁 helper、frame 与 clipboard 句柄。 |
-| 6. 同步和产品资产 | sync plan/apply/restore、插件生命周期、快速命令、录制 export | 同步 preview 与 apply revision 不一致时拒绝；秘密引用不出现在 preview；无法真实回滚的外部写入不会返回 `undo_ref`。 |
+| 6. 产品资产 | 插件生命周期、快速命令、录制 export | 秘密引用不进入对外预览；无法真实回滚的外部写入不会返回 `undo_ref`。 |
 | 7. 稳定化 | schema versioning、迁移、压力/断线测试、跨平台 credential 验证、文档和客户端配置向导 | 每组工具都有授权拒绝、批准、取消、撤销、客户端断线、应用退出、重连和审计脱敏测试；在 macOS/Windows/Linux 实际验证受保护存储路径。 |
 
 每一阶段都必须先实现相应的 ownership、撤销和审计，再放开工具组。当前 `mcp_catalog` 只发布已启用工具和全部可选组的启用状态；尚未实现的目标或参数不进入 schema，调用已接入工具但请求不受支持的真实动作时会明确拒绝，而不是伪造成功、降级为未声明 shell 路径或暴露内部实现。

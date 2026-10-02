@@ -126,7 +126,7 @@ impl WorkspaceApp {
                 }
             }
             TerminalPaneEvent::SerialLineEndingsChanged { input, output } => {
-                self.persist_serial_line_endings(session_id, input, output, cx);
+                self.persist_serial_line_endings(session_id, input, output);
             }
             TerminalPaneEvent::PrivilegePromptStateChanged => {
                 if self.active_pane_id(cx) == Some(pane_id)
@@ -156,7 +156,6 @@ impl WorkspaceApp {
         session_id: TerminalSessionId,
         input: Option<oxideterm_terminal::SerialLineEnding>,
         output: Option<oxideterm_terminal::SerialLineEnding>,
-        cx: &mut Context<Self>,
     ) {
         let Some(saved_connection) = self.terminal_saved_connection_refs.get(&session_id) else {
             return;
@@ -172,8 +171,7 @@ impl WorkspaceApp {
             input_line_ending,
             output_line_ending,
         ) {
-            Ok(true) => self.queue_cloud_sync_dirty_refresh(cx),
-            Ok(false) => {}
+            Ok(_) => {}
             Err(error) => {
                 tracing::warn!(%profile_id, %error, "failed to persist serial line endings");
             }

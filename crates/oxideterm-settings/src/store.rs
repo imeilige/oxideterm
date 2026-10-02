@@ -274,25 +274,12 @@ pub fn save_settings_to_path(
     path: &Path,
     settings: PersistedSettings,
 ) -> Result<SettingsSaveResult> {
-    let mut audit = if oxideterm_audit::AuditContext::current_request()
-        .as_ref()
-        .is_some_and(|context| context.protocol.as_deref() == Some("cloud_sync_apply"))
-    {
-        // The cross-store transaction reports the final result after commit or rollback.
-        oxideterm_audit::AuditOperation::in_context(
-            None,
-            oxideterm_audit::AuditCategory::Configuration,
-            "settings_save",
-            None,
-        )
-    } else {
-        oxideterm_audit::AuditOperation::begin(
-            oxideterm_audit::AuditCategory::Configuration,
-            "settings_save",
-            None,
-            None,
-        )
-    };
+    let mut audit = oxideterm_audit::AuditOperation::begin(
+        oxideterm_audit::AuditCategory::Configuration,
+        "settings_save",
+        None,
+        None,
+    );
     let audit_result = (|| {
         // Non-GPUI writers share the same sanitize-and-envelope path as SettingsStore::save.
         let sanitized = sanitize_settings_value(settings.to_value())?;

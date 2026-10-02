@@ -1616,7 +1616,6 @@ impl WorkspaceApp {
             (TabKind::FileManager, _) => self.render_file_manager_surface(window, cx),
             (TabKind::Graphics, _) => self.render_graphics_surface(window, cx),
             (TabKind::SessionManager, _) => self.render_session_manager_surface(window, cx),
-            (TabKind::CloudSync, _) => self.render_cloud_sync_surface(cx),
             (TabKind::RemoteDesktop, _) => self.render_remote_desktop_surface(tab_id, window, cx),
             (_, Some(root_pane)) => {
                 self.render_detached_terminal_surface(tab_id, root_pane, window, cx)

@@ -6961,35 +6961,6 @@ name = "oxideterm-backend-classification"
 version = "2.2.8"
 
 [[package]]
-name = "oxideterm-cloud-sync"
-version = "2.2.8"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "chrono",
- "hmac 0.12.1",
- "oxideterm-atomic-file",
- "oxideterm-audit",
- "oxideterm-connections",
- "oxideterm-forwarding",
- "oxideterm-network-proxy",
- "oxideterm-portable-runtime",
- "oxideterm-quick-commands",
- "oxideterm-secret-store",
- "oxideterm-settings",
- "rand 0.8.6",
- "reqwest",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror 2.0.20",
- "tokio",
- "uuid",
- "whoami",
- "zeroize",
-]
-
-[[package]]
 name = "oxideterm-connection-monitor"
 version = "2.2.8"
 dependencies = [
@@ -7144,7 +7115,6 @@ dependencies = [
  "oxideterm-atomic-file",
  "oxideterm-audit",
  "oxideterm-backend-classification",
- "oxideterm-cloud-sync",
  "oxideterm-connection-monitor",
  "oxideterm-connections",
  "oxideterm-desktop-presence",
@@ -7153,7 +7123,6 @@ dependencies = [
  "oxideterm-environment",
  "oxideterm-forwarding",
  "oxideterm-ftp",
- "oxideterm-gpui-cloud-sync",
  "oxideterm-gpui-editor",
  "oxideterm-gpui-markdown",
  "oxideterm-gpui-platform",
@@ -7206,31 +7175,6 @@ dependencies = [
  "windows 0.61.3",
  "windows-core 0.61.2",
  "x11-dl",
- "zeroize",
-]
-
-[[package]]
-name = "oxideterm-gpui-cloud-sync"
-version = "2.2.8"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "chrono",
- "gpui",
- "oxideterm-audit",
- "oxideterm-cloud-sync",
- "oxideterm-connections",
- "oxideterm-forwarding",
- "oxideterm-gpui-settings-view",
- "oxideterm-gpui-ui",
- "oxideterm-quick-commands",
- "oxideterm-settings",
- "oxideterm-settings-model",
- "oxideterm-theme",
- "serde_json",
- "tokio",
- "url",
- "uuid",
  "zeroize",
 ]
 
@@ -7601,7 +7545,6 @@ name = "oxideterm-settings-model"
 version = "2.2.8"
 dependencies = [
  "oxideterm-ai",
- "oxideterm-cloud-sync",
  "oxideterm-settings",
  "oxideterm-terminal-semantic",
  "oxideterm-theme",

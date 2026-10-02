@@ -116,7 +116,7 @@ OxideTerm keeps terminal rendering, connection state, reconnect orchestration, f
 | **Files & Remote Editing** | SFTP browsing, transfer queues, speed limits, progress and ETA, bookmarks, safe writes, local file management, remote project trees, multi-tab editing, conflict handling, and workspace restore |
 | **Forwarding & Networking** | Local, remote, and dynamic SOCKS5 forwarding, saved rules, reconnect-aware restore, remote port detection, connection topology, and ad-hoc socket debugging |
 | **Host Operations & Remote Desktop** | Host monitoring, processes, services, logs, ports, tasks, disks, packages, containers, tmux, built-in RDP and VNC, clipboard, input, reconnect, and viewport-aware sizing |
-| **OxideSens & Automation** | BYOK providers, MCP, local RAG, Agent Skills, approved workspace actions, command policy, chat history, encrypted cloud sync, portable `.oxide` bundles, and a standalone CLI for automation and diagnostics |
+| **OxideSens & Automation** | BYOK providers, MCP, local RAG, Agent Skills, approved workspace actions, command policy, chat history, portable `.oxide` bundles, and a standalone CLI for automation and diagnostics |
 | **Extensions & Personalization** | Manifest-only, capability-scoped WASM, and process plugins, custom tabs and settings, Quick Commands, themes, background images, configurable shortcuts, and 2 interface languages (Chinese and English) |
 
 ---
@@ -169,7 +169,7 @@ GPUI and the terminal/SSH backend share one Rust process; optional remote agents
 │  NodeRouter → SshConnectionRegistry             │
 │  TerminalState ← SSH PTY channel (russh)        │
 │  SftpSession · ForwardingRuntime · IdeWorkspace │
-│  Ai/ACP Entities · CloudSync · Plugin Runtimes  │
+│  Ai/ACP Entities · Plugin Runtimes · Portable   │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -225,7 +225,7 @@ OxideSens is BYOK-first, with context building performed in-process:
 The entire UI is written in Rust using GPUI (Zed's GPU-backed UI framework):
 
 - **No CSS, no DOM, no JavaScript** in the rendering pipeline
-- **Workspace tab types**: local terminal, SSH, Telnet, Serial, RDP, VNC, SFTP, IDE, port forwards, session manager, cloud sync, settings, plugins, topology, monitoring, file manager, graphics, and custom plugin tabs
+- **Workspace tab types**: local terminal, SSH, Telnet, Serial, RDP, VNC, SFTP, IDE, port forwards, session manager, settings, plugins, topology, monitoring, file manager, graphics, and custom plugin tabs
 - **Split pane system**: binary pane tree, draggable dividers, up to 4 panes per terminal tab
 - **Command palette**, global key bindings, sidebar panels — all GPUI primitives
 - **Immediate-mode rendering**: UI reflects Rust state changes without a serialization round-trip
@@ -253,7 +253,7 @@ Remote files are part of the same node workspace rather than a separate disconne
 Extension and support surfaces stay inside explicit Rust-owned boundaries:
 
 - Plugins support manifest-only, WASM, and ordinary process paths. WASM uses Wasmtime/WASI or a sidecar with controlled host calls; process plugins are local processes without an OS sandbox. Legacy Tauri ESM plugins may be shown but are not executed by Native.
-- The CLI links directly to domain crates for settings, connections, forwards, plugins, quick commands, secrets, portable bundles, diagnostics, reports, batch plans, backups, and cloud sync
+- The CLI links directly to domain crates for settings, connections, forwards, plugins, quick commands, secrets, portable bundles, diagnostics, reports, batch plans, and backups
 - Diagnostics prefer counts, paths, feature flags, and redacted hints over raw secret-bearing payloads
 - Mutating CLI flows use dry-run plans, `--yes` guards, and rollback backups where applicable
 
@@ -317,7 +317,6 @@ cargo run -p oxideterm-cli -- doctor --strict
 cargo run -p oxideterm-cli -- settings validate --strict --json
 cargo run -p oxideterm-cli -- connections search prod
 cargo run -p oxideterm-cli -- forwards list --format json
-cargo run -p oxideterm-cli -- cloud-sync push --dry-run --json
 cargo run -p oxideterm-cli -- oxide export ./profile.oxide --connection prod --password-stdin
 cargo run -p oxideterm-cli -- report --bundle ./oxideterm-report.zip
 cargo run -p oxideterm-cli -- completion install zsh --force

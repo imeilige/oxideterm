@@ -26,7 +26,7 @@ OxideTerm 是一个 Rust 原生的桌面 SSH / 终端客户端。它不是"WebVi
 
 叶子层（无人依赖，直接进二进制）：`oxideterm-gpui-app`（主程序）、`oxideterm-cli`、`oxideterm-rdp-helper`、`oxideterm-vnc-helper`、`gpui-ce`、`alacritty-terminal`、`vte`、`fernomade`。
 
-### 2.1 代码量分布（前 10）
+### 2.1 代码量分布
 
 ```
 270,936  oxideterm-gpui-app      主程序，占全仓 31%
@@ -36,8 +36,7 @@ OxideTerm 是一个 Rust 原生的桌面 SSH / 终端客户端。它不是"WebVi
  24,996  oxideterm-connections   连接存储
  21,565  oxideterm-gpui-ui       通用组件
  19,248  oxideterm-ssh           SSH 协议
- 16,201  oxideterm-cloud-sync    云同步
- 15,772  oxideterm-cli           命令行
+  15,772  oxideterm-cli           命令行
  15,186  oxideterm-connection-monitor  连接监控
 ```
 
@@ -56,7 +55,6 @@ OxideTerm 是一个 Rust 原生的桌面 SSH / 终端客户端。它不是"WebVi
 | `tabs/` | 13,059 | 标签页宿主、面板树、分离窗口 |
 | `terminal_command_bar/` | 9,224 | 命令栏补全与发送 |
 | `file_manager/` | 7,775 | 本地文件管理 |
-| `cloud_sync/` | 7,548 | 云同步 UI |
 | `remote_desktop/` | 6,346 | RDP/VNC 会话 |
 | `forwards/` | 6,233 | 端口转发 UI |
 | `root/` | 5,936 | 窗口壳层、渲染入口、模态所有权、IME 路由 |
@@ -73,7 +71,7 @@ OxideTerm 是一个 Rust 原生的桌面 SSH / 终端客户端。它不是"WebVi
 
 ```
 Workspace | LocalTerminal | SshTerminal | MoshTerminal | FileManager | Graphics
-Sftp | Forwards | SessionManager | CloudSync | RemoteDesktop | Settings
+Sftp | Forwards | SessionManager | RemoteDesktop | Settings
 ```
 
 ### 4.2 SSH 节点路由
@@ -124,7 +122,7 @@ new_connection, ssh_config, ...
 `WindowRegistry<Handle, Effect, CoalescingKey>`（`crates/oxideterm-gpui-app/src/workspace/window_registry.rs:55`）是一个泛型注册表，管理原生窗口与"窗口级效果"的对应关系。
 
 - `WindowRole` 区分主窗口和分离标签窗口
-- 效果类型是 `WorkspaceWindowEffect`（窗口意图、运行时事件、云同步、AI、公共 MCP、标签宿主、图形）
+- 效果类型是 `WorkspaceWindowEffect`（窗口意图、运行时事件、AI、公共 MCP、标签宿主、图形）
 - `coalescing_key()` 让同类效果在重绘前合并，避免事件风暴
 - 注册/释放走 `reserve_workspace_window` → `commit_workspace_window` 两阶段
 

@@ -926,33 +926,6 @@ impl WorkspaceApp {
                     "interactive",
                 )
             }
-            "get_cloud_sync_state" => {
-                let data = self.execute_ai_get_cloud_sync_state(cx);
-                current_snapshot.ok(
-                    "Cloud Sync state inspected.",
-                    serde_json::to_string_pretty(&data).unwrap_or_default(),
-                    data,
-                    "read",
-                )
-            }
-            "configure_cloud_sync" => {
-                let result = self.execute_ai_configure_cloud_sync(&args, cx);
-                ai_application_action_result(
-                    &current_snapshot,
-                    result,
-                    "Cloud Sync configuration updated.",
-                    "write",
-                )
-            }
-            "manage_cloud_sync" => {
-                let result = self.execute_ai_manage_cloud_sync(&args, window, cx);
-                ai_application_action_result(
-                    &current_snapshot,
-                    result,
-                    "Cloud Sync action accepted.",
-                    "write",
-                )
-            }
             "list_credentials" => {
                 let result = self.execute_ai_list_credentials(&args);
                 ai_application_action_result(

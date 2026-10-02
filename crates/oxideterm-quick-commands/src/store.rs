@@ -97,25 +97,12 @@ pub fn save_snapshot(settings_path: &Path, snapshot: &QuickCommandsSnapshot) -> 
 }
 
 fn quick_command_audit(action: &str) -> oxideterm_audit::AuditOperation {
-    if oxideterm_audit::AuditContext::current_request()
-        .as_ref()
-        .is_some_and(|context| context.protocol.as_deref() == Some("cloud_sync_apply"))
-    {
-        // The cross-store transaction owns the result until commit or rollback.
-        oxideterm_audit::AuditOperation::in_context(
-            None,
-            oxideterm_audit::AuditCategory::Configuration,
-            action,
-            None,
-        )
-    } else {
-        oxideterm_audit::AuditOperation::begin(
-            oxideterm_audit::AuditCategory::Configuration,
-            action,
-            None,
-            None,
-        )
-    }
+    oxideterm_audit::AuditOperation::begin(
+        oxideterm_audit::AuditCategory::Configuration,
+        action,
+        None,
+        None,
+    )
 }
 
 fn quick_command_change_summary(

@@ -38,9 +38,8 @@ use crate::{
         RecordingsStatusArgs, ReleaseNodeArgs, RemovePublicConnectionArgs, RequestAccessArgs,
         ResizeDesktopArgs, ResizeTerminalArgs, RevertArgs, RevokeAccessArgs,
         SavePublicConnectionArgs, StageArtifactArgs, StartCommandArgs, StartTransferArgs,
-        StoreCredentialArgs, SubmitTerminalArgs, SyncApplyPlanArgs, SyncPublishPreviewArgs,
-        SyncPullPreviewArgs, SyncRestoreArgs, SyncStatusArgs, TerminalHandleArgs, ToolEnvelope,
-        ToolOutcome, TransferHandleArgs, WriteDesktopClipboardArgs,
+        StoreCredentialArgs, SubmitTerminalArgs, TerminalHandleArgs, ToolEnvelope, ToolOutcome,
+        TransferHandleArgs, WriteDesktopClipboardArgs,
     },
     handles::{ApprovalRef, ClientRef, ConnectionRef, NodeRef, TerminalRef},
 };
@@ -762,41 +761,6 @@ impl ServerHandler for PublicMcpService {
                 }
                 Err(error) => *error,
             },
-            "sync_status" => match parse_arguments::<SyncStatusArgs>(arguments) {
-                Ok(args) => {
-                    self.execute_call(&client, PublicToolCall::SyncStatus(args))
-                        .await
-                }
-                Err(error) => *error,
-            },
-            "sync_pull_preview" => match parse_arguments::<SyncPullPreviewArgs>(arguments) {
-                Ok(args) => {
-                    self.execute_call(&client, PublicToolCall::SyncPullPreview(args))
-                        .await
-                }
-                Err(error) => *error,
-            },
-            "sync_publish_preview" => match parse_arguments::<SyncPublishPreviewArgs>(arguments) {
-                Ok(args) => {
-                    self.execute_call(&client, PublicToolCall::SyncPublishPreview(args))
-                        .await
-                }
-                Err(error) => *error,
-            },
-            "sync_apply_plan" => match parse_arguments::<SyncApplyPlanArgs>(arguments) {
-                Ok(args) => {
-                    self.execute_call(&client, PublicToolCall::SyncApplyPlan(args))
-                        .await
-                }
-                Err(error) => *error,
-            },
-            "sync_restore" => match parse_arguments::<SyncRestoreArgs>(arguments) {
-                Ok(args) => {
-                    self.execute_call(&client, PublicToolCall::SyncRestore(args))
-                        .await
-                }
-                Err(error) => *error,
-            },
             "nodes_connect" => match parse_arguments::<ConnectNodeArgs>(arguments) {
                 Ok(args) => {
                     self.execute_call(&client, PublicToolCall::ConnectNode(args))
@@ -1355,7 +1319,7 @@ fn tool_definitions() -> Vec<ToolDefinition> {
         ),
         define_tool::<RevertArgs>(
             "mcp_revert",
-            "Apply the exact inverse retained for a client-owned Cloud Sync undo handle.",
+            "Apply the exact inverse retained for a client-owned undo handle.",
             ToolGroup::Basic,
             false,
             true,
@@ -1413,41 +1377,6 @@ fn tool_definitions() -> Vec<ToolDefinition> {
             "credentials_forget",
             "Forget one protected credential slot without returning its previous value.",
             ToolGroup::CredentialManage,
-            false,
-            true,
-        ),
-        define_tool::<SyncStatusArgs>(
-            "sync_status",
-            "Read Cloud Sync state and configured capability without locations, tokens, or protected references.",
-            ToolGroup::CloudSync,
-            true,
-            false,
-        ),
-        define_tool::<SyncPullPreviewArgs>(
-            "sync_pull_preview",
-            "Download and freeze a bounded Cloud Sync pull plan without applying it.",
-            ToolGroup::CloudSync,
-            true,
-            false,
-        ),
-        define_tool::<SyncPublishPreviewArgs>(
-            "sync_publish_preview",
-            "Freeze a bounded Cloud Sync publish plan and check the current remote revision.",
-            ToolGroup::CloudSync,
-            true,
-            false,
-        ),
-        define_tool::<SyncApplyPlanArgs>(
-            "sync_apply_plan",
-            "Apply one frozen pull or publish plan after checking local and remote revisions.",
-            ToolGroup::CloudSync,
-            false,
-            true,
-        ),
-        define_tool::<SyncRestoreArgs>(
-            "sync_restore",
-            "Restore an exact local checkpoint returned by a prior Cloud Sync apply.",
-            ToolGroup::CloudSync,
             false,
             true,
         ),
@@ -2299,11 +2228,19 @@ mod tests {
         .unwrap();
         let clients = Arc::new(ClientRegistry::default());
         let client_a = clients
-            .register("a", ClientApprovalMode::Unattended, [ToolGroup::CloudSync])
+            .register(
+                "a",
+                ClientApprovalMode::Unattended,
+                [ToolGroup::TerminalObserve],
+            )
             .unwrap()
             .projection;
         let client_b = clients
-            .register("b", ClientApprovalMode::Unattended, [ToolGroup::CloudSync])
+            .register(
+                "b",
+                ClientApprovalMode::Unattended,
+                [ToolGroup::TerminalObserve],
+            )
             .unwrap()
             .projection;
         let (broker, mut receiver) = DomainBroker::channel(2);
@@ -2329,7 +2266,9 @@ mod tests {
                     service_a
                         .execute_call(
                             &client_a_for_task,
-                            PublicToolCall::SyncStatus(SyncStatusArgs {}),
+                            PublicToolCall::TerminalState(TerminalHandleArgs {
+                                terminal_ref: TerminalRef::new(),
+                            }),
                         )
                         .await
                 })
@@ -2341,7 +2280,9 @@ mod tests {
                     service_b
                         .execute_call(
                             &client_b_for_task,
-                            PublicToolCall::SyncStatus(SyncStatusArgs {}),
+                            PublicToolCall::TerminalState(TerminalHandleArgs {
+                                terminal_ref: TerminalRef::new(),
+                            }),
                         )
                         .await
                 })

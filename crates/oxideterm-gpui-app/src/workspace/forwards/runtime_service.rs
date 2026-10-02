@@ -710,7 +710,6 @@ impl ForwardingRuntimeService {
         node_id: NodeId,
         owner_connection_id: Option<String>,
         message_key: &'static str,
-        sync_saved_forwards_on_success: bool,
         operation: ForwardingRuntimeOperation,
         worker_tx: delivery::ActiveDeliverySender<ForwardingWorkerResult>,
     ) {
@@ -722,7 +721,6 @@ impl ForwardingRuntimeService {
             let _ = worker_tx.send(ForwardingWorkerResult::Operation {
                 tab_id,
                 message_key,
-                sync_saved_forwards_on_success,
                 binding,
                 result,
             });

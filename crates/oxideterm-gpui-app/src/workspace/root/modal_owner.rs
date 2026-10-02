@@ -60,9 +60,6 @@ pub(in crate::workspace) enum ActiveWindowModalOwner {
         phase: oxideterm_gpui_ui::motion::ExitPhase,
     },
     RemoteShellIntegration,
-    CloudSync {
-        phase: oxideterm_gpui_ui::motion::ExitPhase,
-    },
     NodeDisconnect {
         phase: oxideterm_gpui_ui::motion::ExitPhase,
     },
@@ -137,7 +134,6 @@ impl ActiveWindowModalOwner {
             Self::SettingsReset { .. } => 12,
             Self::SettingsDataDirectory { .. } => 13,
             Self::RemoteShellIntegration => 14,
-            Self::CloudSync { .. } => 16,
             Self::NodeDisconnect { .. } => 17,
             Self::TabClose { .. } => 18,
             Self::HostProcessConfirm { .. } => 19,
@@ -177,7 +173,6 @@ impl ActiveWindowModalOwner {
             | Self::AiDeleteMessage { phase }
             | Self::SettingsReset { phase }
             | Self::SettingsDataDirectory { phase }
-            | Self::CloudSync { phase }
             | Self::NodeDisconnect { phase }
             | Self::TabClose { phase }
             | Self::HostProcessConfirm { phase }
@@ -286,7 +281,6 @@ pub(in crate::workspace) struct ActiveWindowModalProjection {
     pub(in crate::workspace) settings_data_directory_phase:
         Option<oxideterm_gpui_ui::motion::ExitPhase>,
     pub(in crate::workspace) remote_shell_integration_open: bool,
-    pub(in crate::workspace) cloud_sync_phase: Option<oxideterm_gpui_ui::motion::ExitPhase>,
     pub(in crate::workspace) tab_close_phase: Option<oxideterm_gpui_ui::motion::ExitPhase>,
     pub(in crate::workspace) host_tools_modal:
         Option<connection_monitor::HostToolsWindowModalSnapshot>,
@@ -374,9 +368,6 @@ impl ActiveWindowModalProjection {
         let remote_shell_owner = self
             .remote_shell_integration_open
             .then_some(ActiveWindowModalOwner::RemoteShellIntegration);
-        let cloud_sync_owner = self
-            .cloud_sync_phase
-            .map(|phase| ActiveWindowModalOwner::CloudSync { phase });
         let host_tools_owner = self.host_tools_modal.map(|snapshot| match snapshot {
             connection_monitor::HostToolsWindowModalSnapshot::ProcessConfirm(phase) => {
                 ActiveWindowModalOwner::HostProcessConfirm { phase }
@@ -467,7 +458,6 @@ impl ActiveWindowModalProjection {
             overlay_owner,
             settings_data_owner,
             remote_shell_owner,
-            cloud_sync_owner,
             tab_owner,
             host_tools_owner,
             tab_rename_owner,
@@ -545,14 +535,6 @@ impl WorkspaceApp {
                     .then_some(settings.ssh_config_import_dialog_phase()),
             )
         };
-        let cloud_sync_phase = {
-            let cloud_sync = self.cloud_sync.read(cx);
-            cloud_sync
-                .view
-                .confirm
-                .is_some()
-                .then_some(cloud_sync.view.confirm_presence.phase())
-        };
         let (oxide_import_phase, oxide_export_phase) = {
             let session_manager = self.session_manager.read(cx);
             (
@@ -609,7 +591,6 @@ impl WorkspaceApp {
                 .workspace_runtime
                 .read(cx)
                 .remote_shell_integration_confirm_open(),
-            cloud_sync_phase,
             tab_close_phase: self.tab_host.read(cx).close_confirm_phase(),
             host_tools_modal: self.host_tools.read(cx).window_modal_snapshot(),
             tab_rename_open: self.tab_rename_dialog.is_some(),
@@ -804,9 +785,6 @@ impl WorkspaceApp {
             }
             ActiveWindowModalOwner::RemoteShellIntegration => {
                 let _ = self.handle_remote_shell_integration_confirm_key(event, cx);
-            }
-            ActiveWindowModalOwner::CloudSync { .. } => {
-                let _ = self.handle_cloud_sync_confirm_key(event, cx);
             }
             ActiveWindowModalOwner::NodeDisconnect { .. } => {
                 let _ = self.handle_node_disconnect_confirm_key(event, window, cx);

@@ -163,7 +163,7 @@ Các crate miền
   NodeRouter → SshConnectionRegistry
   TerminalState ← SSH PTY channel
   SftpSession / ForwardingRuntime / IdeWorkspace
-  Ai/ACP Entities / CloudSync / Plugin Runtimes
+  Ai/ACP Entities / Plugin Runtimes
 ```
 
 Không có ranh giới tuần tự hóa giữa giao diện và phần nền SSH/terminal. Dữ liệu terminal sửa `TerminalState` trực tiếp; GPUI đọc trạng thái và phát lệnh vẽ GPU.
@@ -283,7 +283,6 @@ cargo run -p oxideterm-cli -- doctor --strict
 cargo run -p oxideterm-cli -- settings validate --strict --json
 cargo run -p oxideterm-cli -- connections search prod
 cargo run -p oxideterm-cli -- forwards list --format json
-cargo run -p oxideterm-cli -- cloud-sync push --dry-run --json
 cargo run -p oxideterm-cli -- oxide export ./profile.oxide --connection prod --password-stdin
 cargo run -p oxideterm-cli -- report --bundle ./oxideterm-report.zip
 cargo run -p oxideterm-cli -- completion install zsh --force

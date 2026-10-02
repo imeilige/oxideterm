@@ -454,24 +454,6 @@ sequenceDiagram
 
 这个 SFTP 调用还需要 `filesystem.read` 能力。写入类操作需要 `filesystem.write`。传统 SCP 传输沿用同一组能力，并且必须指定在线节点。端口转发变更需要 `network.forward`。
 
-导入 `.oxide` 包：
-
-```json
-{
-  "type": "callHostApi",
-  "requestId": "host-6",
-  "namespace": "sync",
-  "method": "importOxide",
-  "args": {
-    "fileData": [1, 2, 3],
-    "password": "user-entered-password",
-    "conflictStrategy": "rename",
-    "importAppSettings": true,
-    "importPluginSettings": true
-  }
-}
-```
-
 不要记录或回显密码、凭据值、终端缓冲区、连接配置、原始导入/导出载荷。
 
 ## 界面与事件写法
@@ -614,7 +596,7 @@ flowchart TB
     Protocol --> HostApi["宿主 API 解析器"]
     Protocol --> RuntimeRegs["运行时注册"]
     RuntimeRegs --> UI["Native GPUI 页面"]
-    HostApi --> Domains["SSH · SFTP · 终端 · IDE · AI · 同步 · 设置"]
+    HostApi --> Domains["SSH · SFTP · 终端 · IDE · AI · 设置"]
 ```
 
 宿主持有所有持久化和安全敏感边界：
@@ -963,14 +945,12 @@ Native 插件通过带版本的结构选择 OxideTerm 组件。插件提供数�
 | `eventLog` | 读取应用事件日志 |
 | `notifications` | 读取或管理通知中心条目 |
 | `quickCommands` | 读取、管理或执行保存的快捷命令 |
-| `cloudSync` | 读取安全同步状态/历史并控制同步操作 |
 | `theme` | 读取完整有效 token 并选择已安装主题 |
 | `ide` | 观察和编辑当前 IDE 项目 |
 | `ai` | 读取已脱敏 AI 数据并控制对话或生成 |
 | `app` | 主题、平台、版本和设置快照 |
-| `settings` | 插件设置和可同步设置 |
+| `settings` | 插件设置 |
 | `storage` | 插件作用域 JSON KV |
-| `sync` | `.oxide`、保存连接、插件设置和同步元数据 |
 | `secrets` | 插件作用域凭据存储 |
 | `ui` | toast、确认对话框、布局和进度 |
 
@@ -1000,7 +980,6 @@ Native 插件通过带版本的结构选择 OxideTerm 组件。插件提供数�
 | `network.forward.read` | 读取保存和活动的转发规则 |
 | `network.forward` | 创建或管理转发/网络桥接行为 |
 | `app.settings.read` | 读取宿主设置分类 |
-| `app.sync.refresh` | 外部同步后刷新宿主状态 |
 | `connections.read` | 读取完整的保存连接和端点投影 |
 | `connections.control` | 连接、重连或显式断开产品拥有的现有节点 |
 | `sessions.read` | 读取完整会话树、活动节点投影和事件日志 |
@@ -1009,8 +988,6 @@ Native 插件通过带版本的结构选择 OxideTerm 组件。插件提供数�
 | `credentials.raw.read` | 返回插件作用域凭据原文 |
 | `credentials.manage` | 通过宿主代理保存、检查或删除插件作用域凭据 |
 | `network.http` | 允许通过旧版请求适配器发送 HTTP/HTTPS 请求 |
-| `sync.read` | 读取或导出同步数据 |
-| `sync.write` | 刷新、应用或导入同步数据 |
 | `transfers.read` | 读取和订阅传输状态 |
 | `ide.read` | 读取完整 IDE 项目和打开文件投影 |
 | `ide.write` | 在现有 IDE 项目中打开、编辑、保存、关闭文件或刷新项目 |
@@ -1026,9 +1003,6 @@ Native 插件通过带版本的结构选择 OxideTerm 组件。插件提供数�
 | `quick_commands.manage` | 创建、更新或删除快捷命令 |
 | `quick_commands.execute` | 通过常规风险确认执行保存的快捷命令 |
 | `theme.write` | 选择已安装的内置或自定义主题 |
-| `cloud_sync.read` | 读取已脱敏的云同步历史 |
-| `cloud_sync.control` | 检查、上传、预览拉取或配置自动上传 |
-| `cloud_sync.apply` | 应用当前已审阅的远端预览 |
 | `legacy.invoke` | 调用兼容层 `api.invoke` 适配器 |
 | `events.emit` | 发出插件作用域自定义事件 |
 | `plugin.settings.write` | 修改插件设置或插件作用域存储 |
@@ -1481,7 +1455,6 @@ interface HostCall {
 | `app.getLocale` | `{}` | 语言字符串 |
 | `app.getApiCatalog` | `{}` | 已实现直接 API 及其访问等级、能力和引入版本 |
 | `app.getPoolStats` | `{}` | 类似 `{ activeConnections, totalSessions }` 的统计 |
-| `app.refreshAfterExternalSync` | `{}` | 单向刷新工作区效果 |
 | `ui.getLayout` | `{}` | 布局快照 |
 | `ui.registerTabView` | `{ tabId: string, schema: NativePluginDeclarativeUiSchema }` | 声明式标签页注册结果 |
 | `ui.registerSidebarPanel` | `{ panelId: string, schema: NativePluginDeclarativeUiSchema }` | 声明式侧边栏注册结果 |
@@ -1494,8 +1467,6 @@ interface HostCall {
 | `events.emit` | `{ name: string, payload?: unknown }` | `{ emitted: true, event }` |
 | `settings.get` | `{ key: string }` | 插件设置值或 `null` |
 | `settings.set` | `{ key: string, value: unknown }` | 单向设置写入 |
-| `settings.exportSyncableSettings` | `{}` | `{ revision, exportedAt, payload, warnings }` |
-| `settings.applySyncableSettings` | `{ payload: object }` | `{ revision, appliedPayload, warnings }` |
 | `i18n.getLanguage` | `{}` | 语言字符串 |
 | `i18n.t` | `{ key: string }` | 翻译文本或回退 key |
 
@@ -1546,13 +1517,6 @@ interface HostCall {
 
 | `hostTools.terminate` | `host_tools.destructive` | `{ nodeId, osType, resource: 'process' | 'tmux', action, target }` | `{ success, exitCode, truncated }` |
 | `hostTools.runExtension` | `host_tools.custom.execute` | `{ nodeId, osType, monitorId }` | `{ monitorId, success, data, rowCount, exitCode, truncated }` |
-| `cloudSync.getSummary` | 默认 | `{}` | 安全状态、进度、脏状态和冲突元数据 |
-| `cloudSync.getHistory` | `cloud_sync.read` | `{}` | 不含错误、远端 revision、目标、凭据或载荷的历史 |
-| `cloudSync.check` | `cloud_sync.control` | `{}` | `{ queued: true }` |
-| `cloudSync.upload` | `cloud_sync.control` | `{ force?: boolean }` | `{ queued: true }` |
-| `cloudSync.pullPreview` | `cloud_sync.control` | `{}` | `{ queued: true }`；不会应用数据或保存未提交的面板草稿 |
-| `cloudSync.applyPreview` | `cloud_sync.apply` | `{}` | `{ queued: true }`；只应用当前已审阅预览 |
-| `cloudSync.setAutoUpload` | `cloud_sync.control` | `{ enabled: boolean, intervalMinutes?: number }` | `{ queued: true }`；间隔最小为五分钟 |
 
 快捷命令参数使用 `{ name, label, kind?, defaultValue?, choices?, required? }`；`kind` 可取 `text` 或 `choice`。`protocols` 支持 `local`、`ssh`、`mosh`、`telnet`、`serial` 和 `tmux`，`confirmation` 可取 `inherit` 或 `always`。模板中的 `{{param.name}}` 会原样插入；需要把值作为一个 POSIX Shell 参数引用时，请使用 `{{param.name|sh}}`。
 
@@ -1654,7 +1618,7 @@ SCP 是面向 POSIX 主机的兼容传输，不是浏览接口。SFTP 可用时�
 | `forward.stopAll` | `network.forward` | `{ nodeId?: string }` | 全部停止结果 |
 | `forward.getStats` | 只读 | `{}` | 转发统计 |
 
-### 同步、存储、凭据
+### 存储、凭据
 
 | 宿主 API | 参数 | 返回 |
 |---|---|---|
@@ -1666,16 +1630,6 @@ SCP 是面向 POSIX 主机的兼容传输，不是浏览接口。SFTP 可用时�
 | `secrets.set` | `{ key: string, value: string }` | 空值表示删除；需要 `credentials.manage` |
 | `secrets.has` | `{ key: string }` | `boolean`；需要 `credentials.manage` |
 | `secrets.delete` | `{ key: string }` | 删除结果；需要 `credentials.manage` |
-| `sync.listSavedConnections` | `{}` | 保存连接快照 |
-| `sync.refreshSavedConnections` | `{}` | 刷新后的保存连接快照 |
-| `sync.exportSavedConnectionsSnapshot` | `{}` | 保存连接同步快照 |
-| `sync.applySavedConnectionsSnapshot` | `{ snapshot: object, conflictStrategy?: 'rename' | 'skip' | 'replace' | 'merge' }` | 应用结果 |
-| `sync.getLocalSyncMetadata` | `{}` | revision 元数据 |
-| `sync.preflightExport` | `{ connectionIds?: string[], embedKeys?: boolean, includeManagedKeys?: boolean }` | 导出预检查结果。插件驱动的同步默认不包含托管密钥。 |
-| `sync.exportOxide` | `{ connectionIds?: string[], password: string, embedKeys?: boolean, includeManagedKeys?: boolean, includeManagedKeyPassphrases?: boolean, includeAppSettings?: boolean, selectedAppSettingsSections?: string[], includePluginSettings?: boolean, selectedPluginIds?: string[], progressRegistrationId?: string }` | `.oxide` 字节/元数据结果。插件驱动的同步默认不包含托管密钥。 |
-| `sync.validateOxide` | `{ fileData: number[] }` | `.oxide` 元数据 |
-| `sync.previewImport` | `{ fileData: number[], password: string, conflictStrategy?: string, progressRegistrationId?: string }` | 导入预览 |
-| `sync.importOxide` | `{ fileData: number[], password: string, conflictStrategy?: string, progressRegistrationId?: string, selectedNames?: string[], selectedForwardIds?: string[], importForwards?: boolean, importPortableSecrets?: boolean, importAppSettings?: boolean, selectedAppSettingsSections?: string[], importPluginSettings?: boolean, selectedPluginIds?: string[], importQuickCommands?: boolean }` | 导入结果 |
 
 ### IDE、AI、Profiler
 

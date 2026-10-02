@@ -90,9 +90,6 @@ pub const ORCHESTRATOR_TOOL_NAMES: &[&str] = &[
     "manage_telnet_session",
     "list_remote_desktop_sessions",
     "manage_remote_desktop_session",
-    "get_cloud_sync_state",
-    "configure_cloud_sync",
-    "manage_cloud_sync",
     "list_credentials",
     "manage_credential",
     "list_memory_entries",
@@ -249,7 +246,6 @@ pub fn orchestrator_risk_for_tool(name: &str, args: Option<&Value>) -> AiActionR
         | "open_app_surface"
         | "open_transport_profile"
         | "manage_remote_desktop_session"
-        | "configure_cloud_sync"
         | "remember_preference"
         | "manage_memory_entry"
         | "create_background_task"
@@ -290,12 +286,12 @@ pub fn orchestrator_risk_for_tool(name: &str, args: Option<&Value>) -> AiActionR
                 AiActionRisk::Write
             }
         }
-        "manage_cloud_sync" | "manage_credential" => {
+        "manage_credential" => {
             let action = args
                 .and_then(|args| args.get("action"))
                 .and_then(Value::as_str)
                 .unwrap_or_default();
-            if name == "manage_credential" && action == "delete" {
+            if action == "delete" {
                 AiActionRisk::Destructive
             } else {
                 AiActionRisk::Write
@@ -324,7 +320,6 @@ pub fn orchestrator_approval_key_for_tool(name: &str, args: Option<&Value>) -> S
             | "manage_forward"
             | "manage_plugin"
             | "manage_remote_desktop_session"
-            | "manage_cloud_sync"
             | "manage_credential"
     ) {
         let action = args

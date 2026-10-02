@@ -39,7 +39,7 @@ This avoids tests that pretend a synthetic window reproduces Win32, AppKit, X11,
 
 Use `tempfile` or the existing temporary-directory helpers for settings, export, and file fixtures. Fixture data must be deterministic, small enough for the test's purpose, and safe to include in source control.
 
-Never put production hosts, usernames, passwords, private keys, access tokens, cloud-sync endpoints, or copied terminal transcripts into fixtures. Test authentication and secret behavior with explicitly synthetic values, then assert that diagnostics, `Debug`, serialization, and user-facing errors do not reveal them.
+Never put production hosts, usernames, passwords, private keys, access tokens, or copied terminal transcripts into fixtures. Test authentication and secret behavior with explicitly synthetic values, then assert that diagnostics, `Debug`, serialization, and user-facing errors do not reveal them.
 
 For a network test, prefer a controlled local server or an existing integration fixture. Do not make unit tests depend on public hosts, a personal JumpServer, a real smart card, an attached USB device, or a developer's SSH agent.
 

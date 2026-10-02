@@ -454,24 +454,6 @@ Read a remote file through SFTP:
 
 That SFTP call also requires the `filesystem.read` capability. Write operations require `filesystem.write`. Legacy SCP transfers use the same capability pair and must target an online node. Port forwarding mutations require `network.forward`.
 
-Import an `.oxide` bundle:
-
-```json
-{
-  "type": "callHostApi",
-  "requestId": "host-6",
-  "namespace": "sync",
-  "method": "importOxide",
-  "args": {
-    "fileData": [1, 2, 3],
-    "password": "user-entered-password",
-    "conflictStrategy": "rename",
-    "importAppSettings": true,
-    "importPluginSettings": true
-  }
-}
-```
-
 Do not log or echo passwords, secret values, terminal buffers, connection config, or raw import/export payloads.
 
 ## UI And Event Recipes
@@ -614,7 +596,7 @@ flowchart TB
     Protocol --> HostApi["Host API Resolver"]
     Protocol --> RuntimeRegs["Runtime Registrations"]
     RuntimeRegs --> UI["Native GPUI Surfaces"]
-    HostApi --> Domains["SSH · SFTP · Terminal · IDE · AI · Sync · Settings"]
+    HostApi --> Domains["SSH · SFTP · Terminal · IDE · AI · Settings"]
 ```
 
 The host owns every durable and security-sensitive boundary:
@@ -967,14 +949,12 @@ Common namespaces include:
 | `eventLog` | Read app event log |
 | `notifications` | Read or manage notification-center entries |
 | `quickCommands` | Read, manage, or execute saved quick commands |
-| `cloudSync` | Read safe sync status/history and control sync operations |
 | `theme` | Read full effective tokens and select an installed theme |
 | `ide` | Observe and edit the active IDE project |
 | `ai` | Read sanitized AI data and control conversations/generation |
 | `app` | Theme, platform, version, settings snapshots |
-| `settings` | Plugin and syncable settings |
+| `settings` | Plugin settings |
 | `storage` | Plugin-scoped JSON KV |
-| `sync` | `.oxide`, saved connections, plugin settings, sync metadata |
 | `secrets` | Plugin-scoped secret storage |
 | `ui` | Toasts, confirm dialogs, layout, progress |
 
@@ -1004,7 +984,6 @@ Current capability names are:
 | `network.forward.read` | Read saved and active forwarding rules |
 | `network.forward` | Create or manage forwarding/network bridge behavior |
 | `app.settings.read` | Read host settings categories |
-| `app.sync.refresh` | Refresh host state after external synchronization |
 | `connections.read` | Read full saved-connection and endpoint projections |
 | `connections.control` | Connect, reconnect, or explicitly disconnect existing product-owned nodes |
 | `sessions.read` | Read full session trees, active-node projections, and event logs |
@@ -1013,8 +992,6 @@ Current capability names are:
 | `credentials.raw.read` | Return raw plugin-scoped secret values |
 | `credentials.manage` | Store, test, or delete plugin-scoped secrets through the host broker |
 | `network.http` | Permit HTTP/HTTPS through the legacy request adapter |
-| `sync.read` | Read/export synchronization data |
-| `sync.write` | Refresh, apply, or import synchronization data |
 | `transfers.read` | Read and subscribe to transfer state |
 | `ide.read` | Read full IDE project and open-file projections |
 | `ide.write` | Open, edit, save, close, or refresh files in an existing IDE project |
@@ -1030,9 +1007,6 @@ Current capability names are:
 | `quick_commands.manage` | Create, update, or remove quick commands |
 | `quick_commands.execute` | Execute a saved quick command through normal risk confirmation |
 | `theme.write` | Select an installed built-in or custom theme |
-| `cloud_sync.read` | Read sanitized Cloud Sync history |
-| `cloud_sync.control` | Check, upload, preview pull, or configure automatic upload |
-| `cloud_sync.apply` | Apply the currently reviewed remote preview |
 | `legacy.invoke` | Call the compatibility `api.invoke` adapter |
 | `events.emit` | Emit a plugin-scoped custom event |
 | `plugin.settings.write` | Change plugin settings or plugin-scoped storage |
@@ -1486,7 +1460,6 @@ Calls must be allowed by `allowedHostApis`. Exact names and namespace wildcards 
 | `app.getLocale` | `{}` | Locale string |
 | `app.getApiCatalog` | `{}` | Implemented direct APIs with access tier, capability, and introduction version |
 | `app.getPoolStats` | `{}` | `{ activeConnections, totalSessions }`-style stats |
-| `app.refreshAfterExternalSync` | `{}` | One-way workspace refresh effect |
 | `ui.getLayout` | `{}` | Layout snapshot |
 | `ui.registerTabView` | `{ tabId: string, schema: NativePluginDeclarativeUiSchema }` | Declarative tab registration result |
 | `ui.registerSidebarPanel` | `{ panelId: string, schema: NativePluginDeclarativeUiSchema }` | Declarative sidebar registration result |
@@ -1499,8 +1472,6 @@ Calls must be allowed by `allowedHostApis`. Exact names and namespace wildcards 
 | `events.emit` | `{ name: string, payload?: unknown }` | `{ emitted: true, event }` |
 | `settings.get` | `{ key: string }` | Plugin setting value or `null` |
 | `settings.set` | `{ key: string, value: unknown }` | One-way setting write |
-| `settings.exportSyncableSettings` | `{}` | `{ revision, exportedAt, payload, warnings }` |
-| `settings.applySyncableSettings` | `{ payload: object }` | `{ revision, appliedPayload, warnings }` |
 | `i18n.getLanguage` | `{}` | Language string |
 | `i18n.t` | `{ key: string }` | Translated string or fallback key |
 
@@ -1551,13 +1522,6 @@ Workspace mutations return `{ queued: true }` after schema and permission prefli
 
 | `hostTools.terminate` | `host_tools.destructive` | `{ nodeId, osType, resource: 'process' | 'tmux', action, target }` | `{ success, exitCode, truncated }` |
 | `hostTools.runExtension` | `host_tools.custom.execute` | `{ nodeId, osType, monitorId }` | `{ monitorId, success, data, rowCount, exitCode, truncated }` |
-| `cloudSync.getSummary` | baseline | `{}` | Safe status/progress/dirty/conflict metadata |
-| `cloudSync.getHistory` | `cloud_sync.read` | `{}` | History without errors, remote revisions, destinations, credentials, or payloads |
-| `cloudSync.check` | `cloud_sync.control` | `{}` | `{ queued: true }` |
-| `cloudSync.upload` | `cloud_sync.control` | `{ force?: boolean }` | `{ queued: true }` |
-| `cloudSync.pullPreview` | `cloud_sync.control` | `{}` | `{ queued: true }`; does not apply data or persist unsaved panel drafts |
-| `cloudSync.applyPreview` | `cloud_sync.apply` | `{}` | `{ queued: true }`; applies only the currently reviewed preview |
-| `cloudSync.setAutoUpload` | `cloud_sync.control` | `{ enabled: boolean, intervalMinutes?: number }` | `{ queued: true }`; interval is clamped to at least five minutes |
 
 Quick Command parameters use `{ name, label, kind?, defaultValue?, choices?, required? }`; `kind` is `text` or `choice`. `protocols` accepts `local`, `ssh`, `mosh`, `telnet`, `serial`, and `tmux`, while `confirmation` is `inherit` or `always`. Templates insert `{{param.name}}` verbatim; use `{{param.name|sh}}` when the value must be quoted as one POSIX shell word.
 
@@ -1659,7 +1623,7 @@ SCP is a POSIX compatibility transport, not a browsing API. Use `sftp.listDir`, 
 | `forward.stopAll` | `network.forward` | `{ nodeId?: string }` | Stop-all result |
 | `forward.getStats` | read | `{}` | Forwarding stats |
 
-### Sync, Storage, Secrets
+### Storage, Secrets
 
 | Host API | Args | Result |
 |---|---|---|
@@ -1671,16 +1635,6 @@ SCP is a POSIX compatibility transport, not a browsing API. Use `sftp.listDir`, 
 | `secrets.set` | `{ key: string, value: string }` | Empty value deletes; requires `credentials.manage` |
 | `secrets.has` | `{ key: string }` | `boolean`; requires `credentials.manage` |
 | `secrets.delete` | `{ key: string }` | Delete result; requires `credentials.manage` |
-| `sync.listSavedConnections` | `{}` | Saved connection snapshots |
-| `sync.refreshSavedConnections` | `{}` | Saved connection snapshots after refresh |
-| `sync.exportSavedConnectionsSnapshot` | `{}` | Saved connection sync snapshot |
-| `sync.applySavedConnectionsSnapshot` | `{ snapshot: object, conflictStrategy?: 'rename' | 'skip' | 'replace' | 'merge' }` | Apply result |
-| `sync.getLocalSyncMetadata` | `{}` | Revision metadata |
-| `sync.preflightExport` | `{ connectionIds?: string[], embedKeys?: boolean, includeManagedKeys?: boolean }` | Export preflight result. Managed keys are excluded by default for plugin-driven sync. |
-| `sync.exportOxide` | `{ connectionIds?: string[], password: string, embedKeys?: boolean, includeManagedKeys?: boolean, includeManagedKeyPassphrases?: boolean, includeAppSettings?: boolean, selectedAppSettingsSections?: string[], includePluginSettings?: boolean, selectedPluginIds?: string[], progressRegistrationId?: string }` | `.oxide` bytes/metadata result. Managed keys are excluded by default for plugin-driven sync. |
-| `sync.validateOxide` | `{ fileData: number[] }` | `.oxide` metadata |
-| `sync.previewImport` | `{ fileData: number[], password: string, conflictStrategy?: string, progressRegistrationId?: string }` | Import preview |
-| `sync.importOxide` | `{ fileData: number[], password: string, conflictStrategy?: string, progressRegistrationId?: string, selectedNames?: string[], selectedForwardIds?: string[], importForwards?: boolean, importPortableSecrets?: boolean, importAppSettings?: boolean, selectedAppSettingsSections?: string[], importPluginSettings?: boolean, selectedPluginIds?: string[], importQuickCommands?: boolean }` | Import result |
 
 ### IDE, AI, Profiler
 

@@ -2082,7 +2082,6 @@ impl WorkspaceApp {
                     .t("settings_view.ssh_keys.import_success")
                     .replace("{{name}}", &info.name);
                 self.finish_managed_key_action(status, true, cx);
-                self.queue_cloud_sync_dirty_refresh(cx);
             }
             Err(error) => self.set_managed_key_action_error(error, cx),
         }
@@ -2106,7 +2105,6 @@ impl WorkspaceApp {
                     .t("settings_view.ssh_keys.import_success")
                     .replace("{{name}}", &info.name);
                 self.finish_managed_key_action(status, true, cx);
-                self.queue_cloud_sync_dirty_refresh(cx);
             }
             Err(error) => self.set_managed_key_action_error(error, cx),
         }
@@ -2125,7 +2123,6 @@ impl WorkspaceApp {
                     .t("settings_view.ssh_keys.rename_success")
                     .replace("{{name}}", &info.name);
                 self.finish_managed_key_action(status, true, cx);
-                self.queue_cloud_sync_dirty_refresh(cx);
             }
             Err(error) => self.set_managed_key_action_error(error, cx),
         }
@@ -2142,7 +2139,6 @@ impl WorkspaceApp {
                     .t("settings_view.ssh_keys.delete_success")
                     .replace("{{count}}", &result.deleted.to_string());
                 self.finish_managed_key_action(status, true, cx);
-                self.queue_cloud_sync_dirty_refresh(cx);
             }
             Err(error) => self.set_managed_key_action_error(error, cx),
         }
@@ -2244,7 +2240,6 @@ impl WorkspaceApp {
                     .i18n
                     .t("settings_view.errors.import_success")
                     .replace("{{name}}", &alias);
-                self.queue_cloud_sync_dirty_refresh(cx);
                 (true, status)
             }
             Ok(false) => (
@@ -2320,9 +2315,6 @@ impl WorkspaceApp {
             settings.ssh_config_import_status = status;
             cx.notify();
         });
-        if imported > 0 {
-            self.queue_cloud_sync_dirty_refresh(cx);
-        }
     }
 }
 

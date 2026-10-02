@@ -228,67 +228,6 @@ pub(crate) fn extended_application_tool_definitions() -> Vec<AiToolDefinition> {
             }),
         ),
         tool(
-            "get_cloud_sync_state",
-            "Read non-secret Cloud Sync configuration, sync scope, operation state, conflict state, dirty state, and recent history.",
-            empty_object_schema(),
-        ),
-        tool(
-            "configure_cloud_sync",
-            "Update non-secret Cloud Sync backend, scheduling, conflict, OAuth client-ID, and sync-scope settings. Existing passwords, tokens, and protected credentials are left unchanged.",
-            json!({
-                "type": "object",
-                "properties": {
-                    "backend_type": { "type": "string", "enum": ["webdav", "http-json", "dropbox", "one-drive", "google-drive", "github-gist", "s3", "git"] },
-                    "auth_mode": { "type": "string", "enum": ["bearer", "basic", "none"] },
-                    "endpoint": { "type": "string", "maxLength": MAX_URL_CHARS },
-                    "namespace": { "type": "string", "maxLength": MAX_IDENTIFIER_CHARS },
-                    "s3_bucket": { "type": "string", "maxLength": MAX_IDENTIFIER_CHARS },
-                    "s3_region": { "type": "string", "maxLength": MAX_IDENTIFIER_CHARS },
-                    "git_repository": { "type": "string", "maxLength": MAX_URL_CHARS },
-                    "git_branch": { "type": "string", "maxLength": MAX_IDENTIFIER_CHARS },
-                    "github_oauth_client_id": { "type": "string", "maxLength": MAX_IDENTIFIER_CHARS },
-                    "microsoft_oauth_client_id": { "type": "string", "maxLength": MAX_IDENTIFIER_CHARS },
-                    "google_oauth_client_id": { "type": "string", "maxLength": MAX_IDENTIFIER_CHARS },
-                    "auto_upload_enabled": { "type": "boolean" },
-                    "auto_upload_interval_mins": { "type": "number", "exclusiveMinimum": 0 },
-                    "default_conflict_strategy": { "type": "string", "enum": ["merge", "replace", "skip", "rename"] },
-                    "scope": {
-                        "type": "object",
-                        "properties": {
-                            "sync_connections": { "type": "boolean" },
-                            "sync_forwards": { "type": "boolean" },
-                            "sync_quick_commands": { "type": "boolean" },
-                            "sync_serial_profiles": { "type": "boolean" },
-                            "sync_mosh_profiles": { "type": "boolean" },
-                            "sync_remote_desktop_profiles": { "type": "boolean" },
-                            "sync_sensitive_credentials": { "type": "boolean" },
-                            "sync_app_settings": { "type": "boolean" },
-                            "app_settings_sections": { "type": "array", "items": { "type": "string", "maxLength": 64 }, "maxItems": 32 },
-                            "include_local_terminal_env_vars": { "type": "boolean" },
-                            "sync_plugin_settings": { "type": "boolean" },
-                            "plugin_ids": { "type": "array", "items": { "type": "string", "maxLength": MAX_IDENTIFIER_CHARS }, "maxItems": 256 }
-                        },
-                        "minProperties": 1,
-                        "additionalProperties": false
-                    }
-                },
-                "minProperties": 1,
-                "additionalProperties": false
-            }),
-        ),
-        tool(
-            "manage_cloud_sync",
-            "Open Cloud Sync or start a check, upload preview, or pull preview. Applying or overwriting remote data remains a user-confirmed UI action.",
-            json!({
-                "type": "object",
-                "properties": {
-                    "action": { "type": "string", "enum": ["open", "check", "upload_preview", "pull_preview"] }
-                },
-                "required": ["action"],
-                "additionalProperties": false
-            }),
-        ),
-        tool(
             "list_credentials",
             "List managed SSH key and privilege-credential metadata. Secret values, private keys, passwords, and passphrases are never returned.",
             json!({
@@ -360,8 +299,7 @@ pub(crate) fn validate_extended_application_tool_arguments(
         "list_background_tasks"
         | "list_plugins"
         | "list_transport_profiles"
-        | "list_remote_desktop_sessions"
-        | "get_cloud_sync_state" => require_fields(object, &[], &[])?,
+        | "list_remote_desktop_sessions" => require_fields(object, &[], &[])?,
         "get_background_task" | "cancel_background_task" => {
             require_fields(object, &["task_id"], &["task_id"])?;
             required_string(object, "task_id", MAX_IDENTIFIER_CHARS)?;
@@ -409,15 +347,6 @@ pub(crate) fn validate_extended_application_tool_arguments(
             required_string(object, "tab_id", 128)?;
             required_enum(object, "action", &["disconnect", "reconnect"])?;
         }
-        "manage_cloud_sync" => {
-            require_fields(object, &["action"], &["action"])?;
-            required_enum(
-                object,
-                "action",
-                &["open", "check", "upload_preview", "pull_preview"],
-            )?;
-        }
-        "configure_cloud_sync" => validate_configure_cloud_sync(object)?,
         "list_credentials" => {
             require_fields(object, &["connection_id"], &[])?;
             optional_string(object, "connection_id", MAX_IDENTIFIER_CHARS)?;
@@ -442,100 +371,6 @@ pub(crate) fn validate_extended_application_tool_arguments(
         _ => return Ok(false),
     }
     Ok(true)
-}
-
-fn validate_configure_cloud_sync(
-    object: &Map<String, Value>,
-) -> Result<(), OrchestratorArgumentError> {
-    require_fields(
-        object,
-        &[
-            "backend_type",
-            "auth_mode",
-            "endpoint",
-            "namespace",
-            "s3_bucket",
-            "s3_region",
-            "git_repository",
-            "git_branch",
-            "github_oauth_client_id",
-            "microsoft_oauth_client_id",
-            "google_oauth_client_id",
-            "auto_upload_enabled",
-            "auto_upload_interval_mins",
-            "default_conflict_strategy",
-            "scope",
-        ],
-        &[],
-    )?;
-    if object.is_empty() {
-        return Err(OrchestratorArgumentError::InvalidArguments);
-    }
-    optional_enum(
-        object,
-        "backend_type",
-        &[
-            "webdav",
-            "http-json",
-            "dropbox",
-            "one-drive",
-            "google-drive",
-            "github-gist",
-            "s3",
-            "git",
-        ],
-    )?;
-    optional_enum(object, "auth_mode", &["bearer", "basic", "none"])?;
-    optional_string_allow_empty(object, "endpoint", MAX_URL_CHARS)?;
-    for field in [
-        "namespace",
-        "s3_bucket",
-        "s3_region",
-        "git_branch",
-        "github_oauth_client_id",
-        "microsoft_oauth_client_id",
-        "google_oauth_client_id",
-    ] {
-        optional_string_allow_empty(object, field, MAX_IDENTIFIER_CHARS)?;
-    }
-    optional_string_allow_empty(object, "git_repository", MAX_URL_CHARS)?;
-    optional_bool(object, "auto_upload_enabled")?;
-    optional_positive_number(object, "auto_upload_interval_mins")?;
-    optional_enum(
-        object,
-        "default_conflict_strategy",
-        &["merge", "replace", "skip", "rename"],
-    )?;
-
-    if let Some(scope) = object.get("scope") {
-        let scope = scope
-            .as_object()
-            .ok_or(OrchestratorArgumentError::InvalidArguments)?;
-        let boolean_fields = [
-            "sync_connections",
-            "sync_forwards",
-            "sync_quick_commands",
-            "sync_serial_profiles",
-            "sync_mosh_profiles",
-            "sync_remote_desktop_profiles",
-            "sync_sensitive_credentials",
-            "sync_app_settings",
-            "include_local_terminal_env_vars",
-            "sync_plugin_settings",
-        ];
-        let mut allowed_fields = boolean_fields.to_vec();
-        allowed_fields.extend(["app_settings_sections", "plugin_ids"]);
-        require_fields(scope, &allowed_fields, &[])?;
-        if scope.is_empty() {
-            return Err(OrchestratorArgumentError::InvalidArguments);
-        }
-        for field in boolean_fields {
-            optional_bool(scope, field)?;
-        }
-        optional_string_array(scope, "app_settings_sections", 32, 64)?;
-        optional_string_array(scope, "plugin_ids", 256, MAX_IDENTIFIER_CHARS)?;
-    }
-    Ok(())
 }
 
 fn validate_manage_serial_session(

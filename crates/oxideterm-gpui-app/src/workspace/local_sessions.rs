@@ -111,7 +111,6 @@ impl WorkspaceApp {
                         form.local_profile_id = Some(profile.id.clone());
                     }
                 });
-                self.queue_cloud_sync_dirty_refresh(cx);
                 Some(profile.id)
             } else {
                 None

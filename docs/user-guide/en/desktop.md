@@ -2,7 +2,7 @@
 
 ## First Launch
 
-Open OxideTerm, then check the left activity bar for the main work areas: sessions, connection pool, connection monitor, Host Tools, graphics/VNC, plugins, cloud sync, file manager, notifications, and settings.
+Open OxideTerm, then check the left activity bar for the main work areas: sessions, connection pool, connection monitor, Host Tools, graphics/VNC, plugins, file manager, notifications, and settings.
 
 If the app starts with no sessions, create a local shell tab first. This verifies the terminal renderer, shell integration, input handling, and theme settings before you add remote hosts.
 
@@ -15,7 +15,6 @@ Use the activity bar as the entry point for app surfaces:
 - Connection pool, monitor, and Host Tools: inspect connection runtime state, resource snapshots, processes, containers, services, tmux, logs, ports, and metrics.
 - Graphics/VNC: open saved RDP/VNC profiles or visual sessions launched from a connected node.
 - Plugins: manage installed plugins and plugin settings.
-- Cloud sync: inspect sync status and run sync actions.
 - Notifications: review recent warnings and errors.
 - Settings: change app behavior and provider configuration.
 
@@ -130,7 +129,7 @@ For command execution, prefer asking the AI to target a specific saved connectio
 
 ## Settings
 
-Settings are grouped by feature area. Use the desktop UI for interactive changes such as appearance, terminal behavior, AI provider setup, cloud sync, portable runtime, and help/about.
+Settings are grouped by feature area. Use the desktop UI for interactive changes such as appearance, terminal behavior, AI provider setup, portable runtime, and help/about.
 
 For scripted or repeatable changes, use the CLI with `--dry-run` first. The CLI and desktop app read the same configuration files.
 

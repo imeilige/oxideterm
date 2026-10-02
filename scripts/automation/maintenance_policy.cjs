@@ -30,8 +30,6 @@ const PROTECTED_PATHS = new Set([
 const HUMAN_REVIEW_PATH_PREFIXES = Object.freeze([
   '.github/release-notes/',
   'scripts/release/',
-  'crates/oxideterm-cloud-sync/',
-  'crates/oxideterm-gpui-cloud-sync/',
   'crates/oxideterm-secret-store/',
   'crates/oxideterm-connections/src/secret',
   'crates/oxideterm-network-proxy/src/credentials',
@@ -45,10 +43,6 @@ const SENSITIVE_SIGNAL_PATTERNS = Object.freeze([
   {
     code: 'authentication_boundary',
     pattern: /\b(?:authentication|authorization|oauth|login)\b|身份验证|认证|授权|登录/iu,
-  },
-  {
-    code: 'cloud_sync_boundary',
-    pattern: /\bcloud[\s-]?sync\b|云同步/iu,
   },
   {
     code: 'release_or_update_boundary',

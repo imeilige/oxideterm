@@ -371,21 +371,6 @@ impl WorkspaceApp {
             // a transfer actually needs persisted progress.
             Arc::new(LazyProgressStore::new(path))
         };
-        let cloud_sync_store = oxideterm_cloud_sync::state::CloudSyncStateStore::load(
-            oxideterm_cloud_sync::state::default_cloud_sync_state_path(settings_store.path()),
-        )?;
-        let cloud_sync =
-            cx.new(|cx| cloud_sync::CloudSyncWorkspaceEntity::new(cloud_sync_store, cx));
-        let cloud_sync_observation = cx.observe(&cloud_sync, |_workspace, _cloud_sync, cx| {
-            // Entity-owned delivery and timers repaint every mounted Cloud Sync surface.
-            cx.notify();
-        });
-        let cloud_sync_subscription = cx.subscribe(
-            &cloud_sync,
-            |workspace, _cloud_sync, event: &cloud_sync::CloudSyncWorkspaceEvent, cx| {
-                workspace.enqueue_cloud_sync_window_effect(event.clone(), cx);
-            },
-        );
         let ai_key_store = oxideterm_ai::AiProviderKeyStore::new();
         let ai_entity = cx.new(|cx| {
             let mut entity =
@@ -691,9 +676,6 @@ impl WorkspaceApp {
             _graphics_subscription: graphics_subscription,
             host_tools,
             _host_tools_subscription: host_tools_subscription,
-            cloud_sync,
-            _cloud_sync_observation: cloud_sync_observation,
-            _cloud_sync_subscription: cloud_sync_subscription,
             i18n,
             tokens,
             detected_graphics,
@@ -731,7 +713,6 @@ impl WorkspaceApp {
             workspace.bootstrap_ai_mcp_registry(cx);
         }
         if workspace.version_migration.open {}
-        workspace.bootstrap_cloud_sync_controller(cx);
         workspace.sync_ssh_config_sync_service();
         workspace.restore_session_tree_snapshot();
         workspace.standalone_connections =

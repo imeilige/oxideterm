@@ -50,10 +50,6 @@ When a bundle contains managed keys, the import preview lets you restore them in
 
 Duplicate managed keys are matched by fingerprint and should reuse the existing key instead of creating another copy.
 
-## Cloud Sync Boundary
-
-Cloud Sync can upload encrypted `.oxide` snapshots, but background or plugin-driven sync does not silently include managed SSH keys. Use the manual export or portable migration flow when you need to move complete credential material between machines.
-
 ## Portable Runtime
 
 The portable runtime keystore protects portable secrets after import. Set it up through the app's portable runtime or secret storage surface. If the keystore is locked, unlock it before relying on imported portable secrets.

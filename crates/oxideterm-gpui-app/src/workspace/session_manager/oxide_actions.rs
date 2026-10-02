@@ -612,7 +612,7 @@ impl WorkspaceApp {
             .map(|forward| forward.id.clone())
             .collect();
         let plugin_settings =
-            oxideterm_cloud_sync::plugin_settings::load_plugin_settings(self.settings_store.path())
+            plugin_settings::load_plugin_settings(self.settings_store.path())
                 .unwrap_or_default();
         for setting in plugin_settings {
             if let Some(plugin_id) = plugin_id_from_setting_storage_key(&setting.storage_key) {
@@ -1423,7 +1423,6 @@ impl WorkspaceApp {
         );
 
         self.apply_oxide_import_portable_secrets(&mut envelope, cx);
-        self.queue_cloud_sync_dirty_refresh(cx);
 
         let result = OxideClientStateImportResult {
             envelope,
@@ -1879,7 +1878,7 @@ impl WorkspaceApp {
             None
         };
         let plugin_settings = if dialog.include_plugin_settings {
-            oxideterm_cloud_sync::plugin_settings::load_plugin_settings(self.settings_store.path())?
+            plugin_settings::load_plugin_settings(self.settings_store.path())?
                 .into_iter()
                 .filter(|setting| {
                     plugin_id_from_setting_storage_key(&setting.storage_key)
@@ -2066,7 +2065,7 @@ impl WorkspaceApp {
             })
             .cloned()
             .collect::<Vec<_>>();
-        oxideterm_cloud_sync::plugin_settings::upsert_plugin_settings(
+        plugin_settings::upsert_plugin_settings(
             self.settings_store.path(),
             &filtered,
         )

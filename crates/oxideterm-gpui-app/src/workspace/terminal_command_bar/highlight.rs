@@ -273,7 +273,6 @@ impl WorkspaceApp {
             .set_terminal_highlight_rule_set(&saved_profile_id, saved_rule_set_id)
         {
             Ok(true) => {
-                self.queue_cloud_sync_dirty_refresh(cx);
                 self.clear_active_session_highlight_override(cx);
                 self.apply_active_saved_highlight_preferences(&saved_profile_id, cx);
                 self.send_settings_notice(
@@ -299,7 +298,6 @@ impl WorkspaceApp {
             .set_terminal_highlight_rule_set(&saved_profile_id, None)
         {
             Ok(true) => {
-                self.queue_cloud_sync_dirty_refresh(cx);
                 self.clear_active_session_highlight_override(cx);
                 self.apply_active_saved_highlight_preferences(&saved_profile_id, cx);
             }

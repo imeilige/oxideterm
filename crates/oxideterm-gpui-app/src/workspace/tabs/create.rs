@@ -1597,7 +1597,6 @@ impl WorkspaceApp {
             cx.notify();
             return;
         }
-        self.queue_cloud_sync_dirty_refresh(cx);
     }
 
     pub(in crate::workspace) fn queue_ssh_terminal_tab_for_node_with_mark_used(

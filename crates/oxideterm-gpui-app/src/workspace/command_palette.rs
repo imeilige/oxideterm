@@ -79,7 +79,6 @@ enum PaletteAction {
     OpenSftp,
     OpenSavedConnections,
     OpenSessionManager,
-    OpenCloudSync,
     ManageTerminalTriggers,
     ReloadWindow,
     CloseTab,
@@ -537,7 +536,6 @@ impl WorkspaceApp {
             }
             PaletteAction::OpenSavedConnections => self.open_session_manager_tab(window, cx),
             PaletteAction::OpenSessionManager => self.open_session_manager_tab(window, cx),
-            PaletteAction::OpenCloudSync => self.open_cloud_sync_tab(window, cx),
             PaletteAction::ManageTerminalTriggers => {
                 self.open_terminal_trigger_settings(window, cx)
             }
@@ -1052,7 +1050,6 @@ impl WorkspaceApp {
                     TabKind::MoshTerminal => self.i18n.t("terminal.typeMosh"),
                     TabKind::Settings => self.i18n.t("settings_view.title"),
                     TabKind::SessionManager => self.i18n.t("sidebar.panels.saved_connections"),
-                    TabKind::CloudSync => self.i18n.t("plugin.cloud_sync.panel_title"),
                     TabKind::RemoteDesktop => self.i18n.t("settings_view.tabs.remote_desktop"),
                     TabKind::Forwards => self.i18n.t("sidebar.panels.forwarding"),
                     TabKind::Sftp => self.i18n.t("sidebar.panels.sftp"),
@@ -2160,7 +2157,6 @@ fn tab_kind_icon(kind: &TabKind) -> LucideIcon {
         TabKind::Graphics => LucideIcon::AppWindow,
         TabKind::Forwards => LucideIcon::ArrowLeftRight,
         TabKind::Sftp => LucideIcon::HardDrive,
-        TabKind::CloudSync => LucideIcon::Cloud,
         TabKind::RemoteDesktop => LucideIcon::Monitor,
         TabKind::Settings => LucideIcon::Settings,
         TabKind::SessionManager => LucideIcon::LayoutList,
@@ -2493,13 +2489,6 @@ fn command_palette_specs() -> Vec<CommandSpec> {
             icon: LucideIcon::Layers,
             shortcut_action: None,
             action: PaletteAction::ResetPanes,
-        },
-        CommandSpec {
-            id: "cmd:open_cloud_sync",
-            label_key: "command_palette.cmd_open_cloud_sync".into(),
-            icon: LucideIcon::Cloud,
-            shortcut_action: None,
-            action: PaletteAction::OpenCloudSync,
         },
         CommandSpec {
             id: "cmd:reset_settings",

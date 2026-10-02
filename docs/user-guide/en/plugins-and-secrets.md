@@ -26,7 +26,7 @@ For repeatable setup across machines, export settings through a supported app or
 
 ## Secrets
 
-Secrets include AI provider keys, plugin tokens, cloud-sync credentials, connection passwords or passphrases, privilege credentials, and portable bundle secrets.
+Secrets include AI provider keys, plugin tokens, connection passwords or passphrases, privilege credentials, and portable bundle secrets.
 
 Secret rules:
 
@@ -53,5 +53,4 @@ For CLI secret writes, prefer stdin or environment variables:
 oxideterm secrets status --scope ai --json
 printf '%s' "$OPENAI_API_KEY" | oxideterm secrets set --scope ai --id builtin-openai --stdin
 oxideterm secrets set --scope plugin --plugin-id demo.plugin --key token --env PLUGIN_TOKEN
-oxideterm secrets clear --scope cloud-sync --key token
 ```

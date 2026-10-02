@@ -23,7 +23,7 @@ This document describes the OxideTerm Native system architecture, design decisio
 12. [Graphics And VNC Sessions](#graphics-and-vnc-sessions)
 13. [Reconnect And Recovery](#reconnect-and-recovery)
 14. [Settings And Persistence](#settings-and-persistence)
-15. [Cloud Sync, Backups, And Portable Bundles](#cloud-sync-backups-and-portable-bundles)
+15. [Portable Bundles](#portable-bundles)
 16. [OxideSens AI Architecture](#oxidesens-ai-architecture)
 17. [Plugin Architecture](#plugin-architecture)
 18. [CLI Companion Boundary](#cli-companion-boundary)
@@ -49,8 +49,8 @@ This document describes the OxideTerm Native system architecture, design decisio
 3. **Node-first remote workspace** - Remote workflows are anchored by a stable SSH node, not by a transient terminal pane.
 4. **Default shared connection** - Terminal, SFTP, forwarding, and IDE can share a node's registry connection; AI and plugins use validated capability handles, snapshots, or hooks rather than becoming physical connection consumers.
 5. **Explicit lifecycle ownership** - Saved profiles, live nodes, terminal sessions, SFTP sessions, forwards, editor buffers, and tabs have different owners.
-6. **Local-first state** - SSH, SFTP, local terminal, settings, plugins, and AI provider configuration work without an OxideTerm cloud account.
-7. **Secret separation** - Navigation metadata, settings, AI prompts, logs, support bundles, and plugin labels are not secret storage.
+6. **Local-first state** - SSH, SFTP, local terminal, settings, plugins, and AI provider configuration work entirely locally.
+7. **Secret separation** - Navigation metadata, settings, AI prompts, logs, and plugin labels are not secret storage.
 8. **Minimum visible coupling** - User-facing surfaces should not require users to reason about internal transport handles.
 
 ### Why Rust + GPUI
@@ -81,7 +81,7 @@ flowchart TB
         GraphicsUI["Graphics / VNC Viewer"]
         AiUI["OxideSens AI Sidebar"]
         PluginUI["Plugin Manager"]
-        SyncUI["Cloud Sync / Backups"]
+        PortableUI["Portable Bundles"]
         SettingsUI["Settings"]
     end
 
@@ -98,14 +98,13 @@ flowchart TB
         ModemRuntime["Modem Transfer Engine"]
         AiRuntime["AI Context · Tools · RAG · MCP"]
         PluginRuntime["Plugin Registry · Host API · Settings"]
-        SyncRuntime["Cloud Sync · Backup · Portable Runtime"]
+        PortableRuntime["Portable Runtime"]
     end
 
     subgraph Persistence["Persistence And Secrets"]
         Settings["Settings Files"]
         Connections["Connection Records"]
         Keychain["Secret Storage"]
-        Backups["Backups / Support Bundles"]
         Portable["Portable Runtime"]
     end
 
@@ -117,7 +116,7 @@ flowchart TB
     Shell --> GraphicsUI
     Shell --> AiUI
     Shell --> PluginUI
-    Shell --> SyncUI
+    Shell --> PortableUI
     Shell --> SettingsUI
 
     Sessions --> ConnStore
@@ -134,7 +133,7 @@ flowchart TB
     GraphicsUI --> GraphicsRuntime
     AiUI --> AiRuntime
     PluginUI --> PluginRuntime
-    SyncUI --> SyncRuntime
+    PortableUI --> PortableRuntime
     SettingsUI --> Settings
 
     NodeRuntime --> SshPool
@@ -148,8 +147,7 @@ flowchart TB
     ConnStore --> Connections
     SettingsUI --> Settings
     ConnStore --> Keychain
-    SyncRuntime --> Backups
-    SyncRuntime --> Portable
+    PortableRuntime --> Portable
 ```
 
 ### System Context
@@ -178,7 +176,6 @@ flowchart LR
     subgraph External["External Services"]
         AiProviders["AI Providers"]
         McpServers["MCP Servers"]
-        SyncBackend["Cloud Sync Backend"]
     end
 
     App --> Config
@@ -193,7 +190,6 @@ flowchart LR
     SshHost --> Agent
     App --> AiProviders
     App --> McpServers
-    App --> SyncBackend
 ```
 
 ### User-Facing Summary
@@ -230,7 +226,6 @@ Properties:
 
 - Low latency.
 - High event volume.
-- No dependence on cloud sync or backups.
 - No user-visible confirmation flow for ordinary input.
 - Rendering and input focus stay local to the terminal surface.
 
@@ -242,7 +237,7 @@ The control plane handles structured management operations:
 user action or AI-approved tool
   -> workspace command
   -> domain runtime
-  -> persistence / connection / file / sync action
+  -> persistence / connection / file action
   -> result, notification, or recovery hint
 ```
 
@@ -257,9 +252,7 @@ Examples:
 - Open a graphics/VNC session.
 - Confirm a terminal file-transfer prompt.
 - Change a setting.
-- Run a cloud-sync action.
 - Execute an approved AI tool.
-- Generate a support bundle.
 
 ### Persistence Plane
 
@@ -271,8 +264,6 @@ The persistence plane stores durable state:
 - Plugin state.
 - Privilege credential metadata.
 - AI conversations and summaries.
-- Cloud sync snapshots.
-- Backups.
 - Portable runtime metadata.
 
 Secret-bearing data must cross into secret-aware storage rather than ordinary JSON/text fields. For privilege helpers, durable scope metadata can live with settings or saved connections, but the secret value belongs to the secret store.
@@ -301,7 +292,6 @@ flowchart TB
         Domain --> SettingsStore["Settings Store"]
         Domain --> ConnectionStore["Connection Store"]
         Domain --> SecretStore["Secret Store"]
-        Domain --> BackupStore["Backup / Sync Store"]
     end
 
     Input --> TermIn
@@ -355,7 +345,6 @@ flowchart TB
         Ai["oxideterm-ai"]
         SettingsDomain["oxideterm-settings"]
         PluginsDomain["oxideterm-plugin-*"]
-        SyncDomain["oxideterm-cloud-sync"]
     end
 
     subgraph RuntimeIntegration["Layer 3: Runtime Integrations"]
@@ -373,7 +362,6 @@ flowchart TB
         SettingsFiles["Settings Files"]
         ConnectionFiles["Connection Records"]
         Keychain["Secret Storage"]
-        Backups["Backups / Sync Snapshots"]
     end
 
     Workspace --> Surfaces
@@ -385,7 +373,6 @@ flowchart TB
     Surfaces --> Ai
     Surfaces --> SettingsDomain
     Surfaces --> PluginsDomain
-    Surfaces --> SyncDomain
     Ssh --> SshRuntime
     Sftp --> SftpRuntime
     MonitorDomain --> HostSampler
@@ -395,7 +382,6 @@ flowchart TB
     SshRuntime --> Keychain
     SettingsDomain --> SettingsFiles
     Ssh --> ConnectionFiles
-    SyncDomain --> Backups
     Notifications --> Surfaces
 ```
 
@@ -411,7 +397,6 @@ Examples:
 - `oxideterm-forwarding`: forward rule model.
 - `oxideterm-ai`: AI providers, context window logic, RAG, MCP, orchestrator tool definitions, policy.
 - `oxideterm-settings`: settings load/save/mutation logic.
-- `oxideterm-cloud-sync`: sync and backup logic.
 - `oxideterm-plugin-*`: plugin manifest, protocol, registry, and host API types.
 
 ### Layer 3: Runtime Integrations
@@ -424,7 +409,6 @@ Runtime integrations bridge UI requests to active resources:
 - Forward listener or remote forward.
 - IDE file system access.
 - Plugin host lifecycle.
-- Cloud sync backend.
 - AI provider requests.
 
 The important rule is ownership: a runtime object should have one clear owner.
@@ -434,7 +418,7 @@ handles, subscriptions, or snapshots.
 
 ### Layer 4: Persistence And Secret Storage
 
-Persistent state is shared by the desktop app and CLI companion. Secret values must not be serialized into ordinary settings, support bundles, AI context, or plugin labels.
+Persistent state is shared by the desktop app and CLI companion. Secret values must not be serialized into ordinary settings, AI context, or plugin labels.
 
 ---
 
@@ -539,7 +523,6 @@ Tabs are visible surfaces. A tab can represent:
 - File manager.
 - Plugin manager.
 - Connection monitor.
-- Cloud sync.
 - Knowledge workspace.
 
 Tabs are closeable views. They are not the durable source of truth for saved connections or secrets.
@@ -558,7 +541,7 @@ Knowledge settings remain a configuration surface for embedding and retrieval be
 
 ### Notifications
 
-Notifications turn asynchronous domain events into user-visible messages. They should help users decide what to inspect next: connection monitor, settings, SFTP, cloud sync, plugin manager, or support bundle.
+Notifications turn asynchronous domain events into user-visible messages. They should help users decide what to inspect next: connection monitor, settings, SFTP, or plugin manager.
 
 ---
 
@@ -862,7 +845,6 @@ Settings are durable application state. The desktop Settings surface is the prim
 - AI providers and model settings.
 - AI memory, tool use, and Knowledge embedding or retrieval settings.
 - Plugins.
-- Cloud sync.
 - Portable runtime.
 - Keybindings.
 - Help.
@@ -877,47 +859,21 @@ Privilege credential entries are split: labels, prompt matchers, enabled state, 
 
 The CLI companion is the script and maintenance entry point for the shared
 persistent model. It covers settings, connections, forwards, plugins, quick
-commands, secrets, portable bundles, diagnostics, reports, batch plans,
-backups, and cloud sync. Except for temporary GUI SSH launch, it does not own
+commands, secrets, portable bundles, diagnostics, reports, and batch
+plans. Except for temporary GUI SSH launch, it does not own
 live nodes or terminal runtime inside the desktop process. Mutating commands
 normally use dry-run plans and `--yes` confirmation. For exploratory or visual
 configuration, use the desktop Settings surface.
 
 ---
 
-## Cloud Sync, Backups, And Portable Bundles
+## Portable Bundles
 
-Cloud sync, backups, and `.oxide` bundles operate on persisted state, not on live terminal bytes.
-
-### Cloud Sync
-
-Cloud sync aligns selected local state with a configured remote backend. The
-current model supports WebDAV, HTTP JSON, Dropbox, OneDrive, Google Drive,
-GitHub Gist, S3, and Git backends, with selectable sync partitions. Automatic
-upload, conflict blocking, sync history, and up to five local rollback backups
-are local state-machine behavior. UI and CLI use the same structured sync
-model; live nodes and terminal buffers are not sync objects. It should be
-inspectable before direction-changing actions such as push, pull, apply, or
-conflict resolution.
-
-### Backups
-
-Backups protect users before high-impact changes:
-
-- Bulk imports.
-- Sync apply.
-- Restore.
-- Plugin migration.
-- Settings migration.
-- Portable bundle import.
-
-### Portable Bundles
-
-`.oxide` bundles are encrypted portable exports. They can contain connections, forwards, settings, plugin settings, quick commands, and optional portable secrets.
+`.oxide` bundles are encrypted portable exports. They can contain connections, forwards, settings, plugin settings, quick commands, and optional portable secrets. They operate on persisted state, not on live terminal bytes.
 
 ### Review Rule
 
-Every import, restore, or sync apply should be previewable. Support bundles should be reviewed before sharing.
+Every import should be previewable.
 
 ---
 
@@ -1015,9 +971,6 @@ Use the CLI for:
 - CI validation.
 - Scripted settings changes.
 - Connection export or validation.
-- Backup and restore automation.
-- Cloud sync automation.
-- Support bundle generation.
 - Portable bundle validation.
 
 Do not use the CLI as the normal way to drive interactive SSH work when the desktop app is available.
@@ -1030,7 +983,6 @@ Do not use the CLI as the normal way to drive interactive SSH work when the desk
 
 - SSH passwords.
 - Private key passphrases.
-- Cloud sync tokens.
 - AI provider keys.
 - Plugin tokens.
 - Portable bundle passwords.
@@ -1041,7 +993,6 @@ Do not use the CLI as the normal way to drive interactive SSH work when the desk
 - Navigation metadata is not secret storage.
 - Secret fields should use keychain-backed or secret-aware storage.
 - CLI secret writes should prefer stdin or environment variables.
-- Support bundles should contain hints and status, not raw values.
 - AI context should be redacted before leaving the app boundary.
 
 ### Output Boundaries
@@ -1051,9 +1002,7 @@ Treat these as output boundaries:
 - AI prompts.
 - Tool-call payloads.
 - Logs.
-- Support bundles.
 - Plugin messages.
-- Cloud sync snapshots.
 - CLI JSON output.
 
 ---
@@ -1065,8 +1014,6 @@ Treat these as output boundaries:
 Terminal hot-path work should avoid:
 
 - Blocking disk I/O.
-- Cloud sync work.
-- Backup generation.
 - Large plugin scans.
 - Long AI summarization.
 - Heavy settings serialization.
@@ -1083,8 +1030,6 @@ Long-running operations should show progress and avoid blocking the main workspa
 - X/Y/ZMODEM transfers.
 - Host resource sampling.
 - Graphics/VNC frame updates.
-- Cloud sync.
-- Backups.
 - AI provider calls.
 - Plugin loading.
 - Remote file previews.
@@ -1105,7 +1050,6 @@ flowchart TB
     AppSurfaces --> AiDomain["oxideterm-ai<br/>providers · tools · policy · context"]
     AppSurfaces --> SettingsDomain["oxideterm-settings<br/>settings model · validation"]
     AppSurfaces --> PluginDomain["oxideterm-plugin-*<br/>manifest · host API · lifecycle"]
-    AppSurfaces --> SyncDomain["oxideterm-cloud-sync<br/>preview · backup · apply"]
     AppSurfaces --> TerminalDomain["terminal crates<br/>rendering · PTY · command marks"]
     AppSurfaces --> ModemDomain["oxideterm-modem-transfer<br/>X/Y/ZMODEM · protocol state"]
     AppSurfaces --> GraphicsDomain["graphics surfaces<br/>VNC viewer · frames · input"]
@@ -1121,7 +1065,6 @@ flowchart TB
     ToolExecutor --> SftpDomain
     ToolExecutor --> MonitorDomain
     ToolExecutor --> SettingsDomain
-    SyncDomain --> DurableState["Durable State"]
     SettingsDomain --> DurableState
     PluginDomain --> DurableState
 ```
@@ -1145,7 +1088,6 @@ flowchart TB
 | `workspace/ide.rs` and IDE crates | Open folders, route file operations, and manage editor state | Remote editing is presented as a workspace, not as raw SFTP operations |
 | `workspace/forwards/*` | Render forwarding forms, rules, state, and actions | Port forwarding is visible and recoverable from the desktop app |
 | `workspace/settings/*` | Render settings pages for terminal, appearance, AI, SFTP, IDE, connections, and keybindings | Configuration is app-first and persists through the shared settings model |
-| `workspace/cloud_sync/*` | Render sync status, confirmations, and backup actions | Cloud sync and backup operations are explicit and reversible where possible |
 | `workspace/plugin_entity.rs`, `plugin_manager.rs`, `plugin_lifecycle/*`, `plugin_ui.rs` | Coordinate plugin discovery, lifecycle, host API snapshots, settings, secrets, and UI host calls | Plugins can extend app surfaces without owning core runtime state |
 | `workspace/sidebar/ai/*` | Render AI conversations, model selection, streaming, context, Agent Skills, tool events, and transcript state | OxideSens appears as an integrated workspace assistant with explicit tool boundaries |
 | `workspace/acp_workspace.rs` and `oxideterm-acp-*` integration | Coordinate ACP agent configuration, sessions, model options, and ACP host-tool bridging beside the native provider path | ACP sessions have an independent agent/session lifecycle and are not ordinary provider streams |
@@ -1217,7 +1159,7 @@ flowchart TB
 | `mcp/*` | Manage MCP registry, process startup, and protocol types | External tool servers are isolated from core app state |
 | `references.rs`, `slash.rs`, `suggestions.rs` | Provide references, slash commands, and suggestions | Assistant input helpers remain separate from provider transport |
 
-### Persistence, Settings, Plugin, And Sync Crates
+### Persistence, Settings, And Plugin Crates
 
 | Area | Native Owner | Notes |
 |---|---|---|
@@ -1228,7 +1170,6 @@ flowchart TB
 | Terminal modem transfers | `oxideterm-modem-transfer`, `oxideterm-gpui-terminal` modem worker | Protocol state is terminal-runtime work; file selection and progress are UI concerns |
 | Graphics sessions | `oxideterm-wsl-graphics`, `oxideterm-remote-desktop`, `oxideterm-gpui-remote-desktop`, `oxideterm-rdp-helper`, `oxideterm-vnc-helper`, app graphics/remote-desktop modules | WSL lifecycle, remote protocol helpers, viewer framebuffer, and terminal buffers have separate owners |
 | Plugins | `oxideterm-plugin-*`, plugin manager and lifecycle modules | Manifests, settings, host API calls, and plugin secrets have separate boundaries |
-| Cloud sync | `oxideterm-cloud-sync`, `oxideterm-gpui-cloud-sync`, app cloud-sync modules | Sync plans, backup creation, and apply steps are explicit control-plane operations |
 | Portable runtime | `oxideterm-portable-runtime`, settings portable-runtime modules | Portable metadata and encrypted payload handling are separate from normal settings pages |
 | Notifications | `oxideterm-notification-center`, app notification module | Background status is surfaced as actionable notifications |
 | CLI companion | `oxideterm-cli` | CLI reads and mutates shared state for automation, but does not replace the desktop workflow |
@@ -1258,7 +1199,7 @@ app start
   -> stream output to terminal renderer
 ```
 
-The local terminal path is intentionally short. It should not wait for cloud sync, plugin scans, AI provider discovery, or remote connection checks.
+The local terminal path is intentionally short. It should not wait for plugin scans, AI provider discovery, or remote connection checks.
 
 ### Saved SSH Connection Open
 
@@ -1430,41 +1371,6 @@ sequenceDiagram
     Executor->>Domain: Run command / read file / update state
     Domain-->>Executor: Structured result
     Executor-->>Sidebar: Append tool result to transcript
-```
-
-### Cloud Sync Apply And Backup
-
-```text
-user opens sync
-  -> load local state summary
-  -> fetch or read remote snapshot
-  -> build preview/plan
-  -> ask for confirmation when applying changes
-  -> create backup if required
-  -> apply selected mutations
-  -> show result and conflicts
-```
-
-The preview step is part of the architecture, not a decorative screen. It gives users a chance to understand mutations before persistent state changes.
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant Sync as Cloud Sync Surface
-    participant Planner as Sync Planner
-    participant Backup as Backup Runtime
-    participant Store as Local State
-    participant Remote as Remote Snapshot
-
-    User->>Sync: Open sync or restore action
-    Sync->>Store: Load local summary
-    Sync->>Remote: Fetch remote snapshot
-    Sync->>Planner: Build preview plan
-    Planner-->>User: Show mutations and conflicts
-    User->>Sync: Confirm selected apply
-    Sync->>Backup: Create safety backup when required
-    Sync->>Store: Apply selected mutations
-    Store-->>Sync: Result and conflicts
 ```
 
 ### Plugin Enable
@@ -1662,11 +1568,10 @@ stateDiagram-v2
 | Rejected | Policy or user denied it | Transcript records denial |
 | Failed | Execution failed | Error is shown without leaking secrets |
 
-### Sync And Plugin Lifecycles
+### Plugin Lifecycle
 
 | Area | States | Meaning |
 |---|---|---|
-| Cloud sync | Unconfigured, ready, previewing, applying, conflict, completed, failed | Sync is a plan-and-apply workflow, not silent background mutation |
 | Plugin | Discovered, installed, enabled, failed, disabled, updated, removed | Plugin availability is separate from plugin runtime health |
 
 ---
@@ -1692,9 +1597,7 @@ stateDiagram-v2
 | AI provider key | AI key store | Secret storage | Secret storage | Yes | Yes | Re-enter or unlock |
 | Plugin setting | Plugin settings store | Plugin settings file/store | Separate plugin secret store for credentials | Yes | Usually yes | Reset, disable plugin |
 | Plugin secret | Plugin lifecycle secret boundary | Secret storage | Secret storage | Yes | Yes | Re-enter, revoke, disable |
-| Cloud sync config | Sync runtime/settings | Settings/cloud-sync state | Secret storage for credentials | Yes | Network-dependent | Re-authenticate or disable |
 | Portable runtime | Portable runtime crate | Portable metadata/payload | Portable key material | Yes | Not connection-dependent | Unlock, restore, recreate |
-| Support bundle | Backup/support flow | Generated artifact | Must exclude raw secrets | Artifact exists until removed | Not applicable | Regenerate after fixing scope |
 
 ---
 
@@ -1713,7 +1616,6 @@ flowchart LR
         IDE["IDE save/conflict"]
         AI["AI tool events"]
         Plugin["Plugin lifecycle"]
-        Sync["Sync / backup events"]
     end
 
     subgraph EntityLayer["Domain Entities And Delivery Channels"]
@@ -1739,7 +1641,6 @@ flowchart LR
     IDE --> RuntimeEntities
     AI --> RuntimeEntities
     Plugin --> RuntimeEntities
-    Sync --> RuntimeEntities
     RuntimeEntities --> Delivery
     Delivery --> ActiveSurface
     Delivery --> Notifications
@@ -1767,7 +1668,6 @@ The app receives events such as:
 - Forward start, stop, suspend, and failure.
 - IDE save, conflict, and reload outcomes.
 - Plugin install, enable, disable, settings, and host API failures.
-- Cloud sync preview, apply, conflict, and backup results.
 - AI tool proposals, approvals, execution results, and policy rejections.
 
 ### Notification Rules
@@ -1778,7 +1678,6 @@ Notifications should be actionable and scoped:
 - It should not contain raw credentials, request headers, tokens, or terminal buffer dumps.
 - Repeated events should coalesce when they describe the same underlying condition.
 - Terminal input should not be blocked by unrelated background notifications.
-- Support bundle suggestions should explain what will be included and what is excluded.
 
 ### Refresh Versus Events
 
@@ -1808,7 +1707,7 @@ Staleness means "the app cannot prove this state is current." It does not automa
 |---|---|---|---|---|
 | Terminal tab closed but host still appears connected | Connection Monitor | Tabs and node runtime | A tab is a view; the node can outlive it | Close the node from Connection Monitor if it is no longer needed |
 | Terminal opens but does not accept input | Terminal tab | Terminal runtime | PTY/channel is still starting or failed readiness | Wait for readiness, reopen terminal, or reconnect the node |
-| Terminal output is delayed during large operations | Terminal tab and Notification Center | Data plane contention | A heavy background task may be competing for resources | Pause transfers/sync or wait for the task to complete |
+| Terminal output is delayed during large operations | Terminal tab and Notification Center | Data plane contention | A heavy background task may be competing for resources | Pause transfers or wait for the task to complete |
 | TUI preview leaves a stale block after exit | Terminal tab | Terminal graphics/image placement | Full-screen app did not fully clear image placement or alternate-screen state | Clear screen, reopen the terminal, or file a terminal rendering bug with the captured command |
 | Saved terminal background does not appear | Terminal or runtime page | Terminal background rendering | Background setting is not enabled for that surface or the image library selection is stale | Re-select the image, check enabled tab types, or reload the surface |
 | Privilege password helper does not trigger | Terminal tab and Privilege settings | Terminal helper | Prompt was not detected or the active session has no matching credential scope | Check active terminal scope, prompt matcher, and saved credential ownership |
@@ -1839,11 +1738,8 @@ Staleness means "the app cannot prove this state is current." It does not automa
 | AI provider call fails | AI settings and AI sidebar | Provider transport | Missing key, invalid model, quota, or network failure | Update provider settings and retry |
 | Plugin setting changed but page did not update | Plugin manager and affected page | Plugin lifecycle | Page needs refresh or plugin event did not re-render the view | Refresh page, disable/enable plugin, or restart app |
 | Plugin fails to enable | Plugin manager | Plugin registry/lifecycle | Manifest invalid, permission denied, missing dependency, or secret unavailable | Review plugin details, update settings, or remove plugin |
-| Cloud sync conflict appears | Cloud Sync | Sync planner | Local and remote durable state changed independently | Review preview, choose local/remote resolution, then apply |
-| Backup generation fails | Cloud Sync or backup dialog | Backup runtime | Destination unavailable, permission denied, or secret redaction failure | Choose another destination or reduce selected data |
-| Portable runtime cannot unlock | Portable settings | Portable runtime | Wrong passphrase, missing key material, or corrupted payload | Re-enter passphrase, restore backup, or recreate portable data |
+| Portable runtime cannot unlock | Portable settings | Portable runtime | Wrong passphrase, missing key material, or corrupted payload | Re-enter passphrase or recreate portable data |
 | CLI report differs from app view | CLI and app page | Shared state boundary | CLI reads persisted state while app also has live runtime state | Refresh app state or compare with Connection Monitor |
-| Support bundle lacks expected data | Support bundle dialog | Output boundary | Secret redaction or selected scope excluded it | Regenerate with the right scope, still excluding raw secrets |
 
 ---
 
@@ -1867,7 +1763,7 @@ Staleness means "the app cannot prove this state is current." It does not automa
 | AI, RAG, MCP, reasoning, and tool policy | `oxideterm-ai`, `oxideterm-ai-tasks`, `oxideterm-skills`, app AI sidebar |
 | ACP agent sessions and host tools | `oxideterm-acp-adapter`, `oxideterm-acp-host-tools`, `workspace/acp_workspace.rs` |
 | Plugins | `oxideterm-plugin-manifest`, `oxideterm-plugin-registry`, `oxideterm-plugin-host-api`, `oxideterm-plugin-wasm-runtime`, app plugin entities |
-| Cloud sync and portable runtime | `oxideterm-cloud-sync`, `oxideterm-gpui-cloud-sync`, `oxideterm-portable-runtime` |
+| Portable runtime | `oxideterm-portable-runtime` |
 | CLI companion | `oxideterm-cli` |
 
 ---
@@ -1890,6 +1786,6 @@ Staleness means "the app cannot prove this state is current." It does not automa
 | AI sidebar and tools | OxideSens AI architecture |
 | Plugin runtime | Plugin registry, host API, lifecycle, settings, secrets |
 | SettingsStore | Settings domain crates and Settings surface |
-| `.oxide` format and backups | Portable bundles, backups, cloud sync |
+| `.oxide` format | Portable bundles |
 
 The implementation details are native GPUI/Rust rather than Tauri/React, but the architectural intent is the same: keep terminal hot-path work responsive, route remote capabilities through stable node identity, separate user views from runtime owners, and keep secrets out of ordinary app text.

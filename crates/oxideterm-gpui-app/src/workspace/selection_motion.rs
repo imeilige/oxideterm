@@ -3,7 +3,6 @@ use super::*;
 pub(in crate::workspace) const TERMINAL_SETTINGS_SWITCHER_ID: &str =
     "terminal-settings-page-switcher";
 pub(in crate::workspace) const AI_SETTINGS_SWITCHER_ID: &str = "ai-settings-page-switcher";
-pub(in crate::workspace) const CLOUD_SYNC_SWITCHER_ID: &str = "cloud-sync-tab-bar";
 pub(in crate::workspace) const HOST_TOOLS_SWITCHER_ID: &str = "host-tools-tab-bar";
 pub(in crate::workspace) const SETTINGS_NAVIGATION_ID: &str = "settings-navigation";
 pub(in crate::workspace) const FILE_MANAGER_NAVIGATION_ID: &str = "file-manager-navigation";
@@ -256,11 +255,11 @@ mod tests {
     #[test]
     fn transitions_are_bounded_per_control_and_target() {
         let mut state = UserSegmentedControlMotionState::default();
-        state.begin_with_vertical_offset(CLOUD_SYNC_SWITCHER_ID, 1, None);
+        state.begin_with_vertical_offset(AI_SETTINGS_SWITCHER_ID, 1, None);
 
-        assert!(state.is_active_for(CLOUD_SYNC_SWITCHER_ID, 1));
-        assert!(!state.is_active_for(CLOUD_SYNC_SWITCHER_ID, 2));
-        state.clear(CLOUD_SYNC_SWITCHER_ID);
+        assert!(state.is_active_for(AI_SETTINGS_SWITCHER_ID, 1));
+        assert!(!state.is_active_for(AI_SETTINGS_SWITCHER_ID, 2));
+        state.clear(AI_SETTINGS_SWITCHER_ID);
 
         for target_index in 0..1_000 {
             state.begin_with_vertical_offset(HOST_TOOLS_SWITCHER_ID, target_index, None);

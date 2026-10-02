@@ -36,22 +36,20 @@ pub use calls::{
     PublicDesktopMouseButton, PublicMoshIpFamily, PublicMoshPredictionMode,
     PublicMoshUdpPortSelection, PublicRdpNetworkProfile, PublicRemoteDesktopOptions,
     PublicRemoteDesktopProfile, PublicSavedConnectionProfile, PublicSerialFlowControl,
-    PublicSerialParity, PublicSshChannelStrategy, PublicSyncConflictStrategy, PublicSyncSection,
-    PublicTelnetControl, PublicTerminalBackspaceSequence, PublicTerminalDeleteSequence,
-    PublicTerminalEncoding, PublicTerminalOptions, PublicToolCall,
-    PublicUpstreamProxy, PublicUpstreamProxyProtocol, PublicVncCompression, PublicVncImageQuality,
-    PublicVncSecurityPolicy, PublicVncSessionMode, PublicX11ForwardingMode,
-    ReadDesktopClipboardArgs, RecordingExportFormat, RecordingStatusTarget, RecordingsControlArgs,
-    RecordingsExportArgs, RecordingsSearchArgs, RecordingsStatusArgs, RemovePublicConnectionArgs,
-    ResizeDesktopArgs, SavePublicConnectionArgs, StartTransferArgs, StoreCredentialArgs,
-    SyncApplyPlanArgs, SyncPublishPreviewArgs, SyncPullPreviewArgs, SyncRestoreArgs, SyncSelection,
-    SyncStatusArgs, TerminalControlAction, TerminalOpenSource, ToolEnvelope, ToolOutcome,
-    TransferHandleArgs, WriteDesktopClipboardArgs,
+    PublicSerialParity, PublicSshChannelStrategy, PublicTelnetControl,
+    PublicTerminalBackspaceSequence, PublicTerminalDeleteSequence, PublicTerminalEncoding,
+    PublicTerminalOptions, PublicToolCall, PublicUpstreamProxy, PublicUpstreamProxyProtocol,
+    PublicVncCompression, PublicVncImageQuality, PublicVncSecurityPolicy, PublicVncSessionMode,
+    PublicX11ForwardingMode, ReadDesktopClipboardArgs, RecordingExportFormat,
+    RecordingStatusTarget, RecordingsControlArgs, RecordingsExportArgs, RecordingsSearchArgs,
+    RecordingsStatusArgs, RemovePublicConnectionArgs, ResizeDesktopArgs, SavePublicConnectionArgs,
+    StartTransferArgs, StoreCredentialArgs, SubmitTerminalArgs, TerminalControlAction,
+    TerminalOpenSource, ToolEnvelope, ToolOutcome, TransferHandleArgs, WriteDesktopClipboardArgs,
 };
 pub use handles::{
     ApprovalRef, ArtifactRef, AuditRef, ClientRef, CommandRef, ConnectionRef, DesktopRef,
-    FileSessionRef, ForwardRef, HandleParseError, NodeRef, OperationRef, RecordingRef, SyncPlanRef,
-    TerminalRef, TransferRef, UndoRef,
+    FileSessionRef, ForwardRef, HandleParseError, NodeRef, OperationRef, RecordingRef, TerminalRef,
+    TransferRef, UndoRef,
 };
 pub use runtime::{PublicMcpHttpServer, start_http_server};
 pub use service::{PublicMcpService, PublicMcpState};

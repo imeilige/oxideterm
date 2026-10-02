@@ -98,7 +98,7 @@ pub struct ActiveDeliveryWake {                                            // :8
 
 ### 3.2 为什么需要这个
 
-后台 worker（SSH 读流、SFTP 传输、云同步、连接监控采样）产出的事件速率远高于帧率。没有预算机制，UI 线程会被 backlog 卡死。`DeliveryBudget` 把"处理多少"变成显式参数，让每个子系统自己决定节奏。
+后台 worker（SSH 读流、SFTP 传输、连接监控采样）产出的事件速率远高于帧率。没有预算机制，UI 线程会被 backlog 卡死。`DeliveryBudget` 把"处理多少"变成显式参数，让每个子系统自己决定节奏。
 
 ## 4. SSH 连接所有权
 
@@ -168,6 +168,6 @@ native window
 | `cx.background_executor()` | 定时器、可移植的阻塞工作（`app.rs:1042`） |
 | `cx.spawn(async …)` | 与 UI 实体绑定的异步任务，实体释放时自动取消 |
 | `runtime.spawn_blocking()` | CPU 密集工作（语法高亮、diff） |
-| tokio `Runtime` | 网络 I/O（SSH、SFTP、云同步） |
+| tokio `Runtime` | 网络 I/O（SSH、SFTP） |
 
 铁律：**`cx.spawn` 捕获的实体是弱引用**（`weak.update(...)`），实体释放时任务自然结束，不产生悬挂。终端面板大量使用这个模式做搜索、提权提示、图像解码完成回调（如 `app.rs:1019`、`1712`、`2286`）。

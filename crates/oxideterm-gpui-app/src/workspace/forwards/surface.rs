@@ -459,7 +459,6 @@ impl WorkspaceApp {
                     tab_id,
                     node_id.clone(),
                     "forwards.messages.created",
-                    true,
                     ForwardingRuntimeOperation::Quick { action, port },
                     cx,
                 );
@@ -726,7 +725,6 @@ impl WorkspaceApp {
                                     tab_id,
                                     node_id.clone(),
                                     "forwards.messages.stopped",
-                                    false,
                                     ForwardingRuntimeOperation::Stop { forward_id },
                                     cx,
                                 );
@@ -750,7 +748,6 @@ impl WorkspaceApp {
                                         tab_id,
                                         node_id.clone(),
                                         "forwards.messages.restarted",
-                                        true,
                                         ForwardingRuntimeOperation::Restart { forward_id },
                                         cx,
                                     );

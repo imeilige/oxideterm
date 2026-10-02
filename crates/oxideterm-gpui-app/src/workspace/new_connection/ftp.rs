@@ -148,9 +148,6 @@ impl WorkspaceApp {
         let Some((profile, options, saved)) = prepared else {
             return;
         };
-        if saved {
-            self.queue_cloud_sync_dirty_refresh(cx);
-        }
         if action == NewConnectionSubmitAction::Save {
             self.update_connection_form_state(cx, ConnectionFormState::clear);
             cx.notify();

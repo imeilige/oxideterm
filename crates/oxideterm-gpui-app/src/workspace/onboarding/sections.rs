@@ -593,7 +593,6 @@ impl WorkspaceApp {
             (LucideIcon::Monitor, "remote_desktop", None, false),
             (LucideIcon::Activity, "host_tools", None, false),
             (LucideIcon::RefreshCw, "reconnect", None, false),
-            (LucideIcon::Cloud, "cloud_sync", None, false),
             (LucideIcon::FileArchive, "portable_oxide", None, false),
             (LucideIcon::MessageSquare, "quick_commands", None, false),
             (LucideIcon::BookOpen, "knowledge_base", None, false),

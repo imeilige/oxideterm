@@ -200,24 +200,6 @@ pub enum SettingsInput {
     AiMcpHeaderValue(usize),
     KnowledgeCollectionName,
     KnowledgeDocumentTitle,
-    CloudSyncEndpoint,
-    CloudSyncNamespace,
-    CloudSyncS3Bucket,
-    CloudSyncS3Region,
-    CloudSyncGitRepository,
-    CloudSyncGitBranch,
-    CloudSyncGithubOauthClientId,
-    CloudSyncMicrosoftOauthClientId,
-    CloudSyncGoogleOauthClientId,
-    CloudSyncToken,
-    CloudSyncGitToken,
-    CloudSyncBasicUsername,
-    CloudSyncBasicPassword,
-    CloudSyncAccessKeyId,
-    CloudSyncSecretAccessKey,
-    CloudSyncSessionToken,
-    CloudSyncSyncPassword,
-    CloudSyncAutoUploadInterval,
     NativePluginInstallUrl,
     NativePluginInstallChecksum,
     NativePluginRegistryUrl,
@@ -524,24 +506,6 @@ impl SettingsInput {
             Self::AiMcpHeaderValue(index) => 25_301 + index as u64 * 2,
             Self::KnowledgeCollectionName => 26_000,
             Self::KnowledgeDocumentTitle => 26_001,
-            Self::CloudSyncEndpoint => 27_000,
-            Self::CloudSyncNamespace => 27_001,
-            Self::CloudSyncS3Bucket => 27_002,
-            Self::CloudSyncS3Region => 27_003,
-            Self::CloudSyncGitRepository => 27_004,
-            Self::CloudSyncGitBranch => 27_005,
-            Self::CloudSyncGithubOauthClientId => 27_006,
-            Self::CloudSyncMicrosoftOauthClientId => 27_016,
-            Self::CloudSyncGoogleOauthClientId => 27_017,
-            Self::CloudSyncToken => 27_007,
-            Self::CloudSyncGitToken => 27_008,
-            Self::CloudSyncBasicUsername => 27_009,
-            Self::CloudSyncBasicPassword => 27_010,
-            Self::CloudSyncAccessKeyId => 27_011,
-            Self::CloudSyncSecretAccessKey => 27_012,
-            Self::CloudSyncSessionToken => 27_013,
-            Self::CloudSyncSyncPassword => 27_014,
-            Self::CloudSyncAutoUploadInterval => 27_015,
             Self::NativePluginInstallUrl => PLUGIN_MANAGER_INPUT_ANCHOR_BASE,
             Self::NativePluginInstallChecksum => PLUGIN_MANAGER_INPUT_ANCHOR_BASE + 1,
             Self::NativePluginRegistryUrl => PLUGIN_MANAGER_INPUT_ANCHOR_BASE + 2,
@@ -563,14 +527,6 @@ impl SettingsInput {
             self,
             Self::AiProviderApiKey(_)
                 | Self::AiMcpAuthToken
-                | Self::CloudSyncToken
-                | Self::CloudSyncGitToken
-                | Self::CloudSyncBasicUsername
-                | Self::CloudSyncBasicPassword
-                | Self::CloudSyncAccessKeyId
-                | Self::CloudSyncSecretAccessKey
-                | Self::CloudSyncSessionToken
-                | Self::CloudSyncSyncPassword
                 | Self::ManagedKeyFilePassphrase
                 | Self::ManagedKeyPastePrivateKey
                 | Self::ManagedKeyPastePassphrase
@@ -614,7 +570,6 @@ mod tests {
     #[test]
     fn secret_inputs_are_categorized_in_the_model_layer() {
         assert!(SettingsInput::AiProviderApiKey(0).is_secret());
-        assert!(SettingsInput::CloudSyncSecretAccessKey.is_secret());
         assert!(!SettingsInput::TerminalFontSize.is_secret());
     }
 }

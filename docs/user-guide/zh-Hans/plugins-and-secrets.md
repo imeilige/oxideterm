@@ -26,7 +26,7 @@
 
 ## 凭据
 
-凭据包括 AI 供应商密钥、插件令牌、云同步凭据、连接密码或密钥口令、提权凭据，以及便携包凭据。
+凭据包括 AI 供应商密钥、插件令牌、连接密码或密钥口令、提权凭据，以及便携包凭据。
 
 凭据规则：
 
@@ -53,5 +53,4 @@ CLI 写入凭据时，优先使用标准输入或环境变量：
 oxideterm secrets status --scope ai --json
 printf '%s' "$OPENAI_API_KEY" | oxideterm secrets set --scope ai --id builtin-openai --stdin
 oxideterm secrets set --scope plugin --plugin-id demo.plugin --key token --env PLUGIN_TOKEN
-oxideterm secrets clear --scope cloud-sync --key token
 ```

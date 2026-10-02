@@ -7,7 +7,6 @@ mod ai_state;
 mod audit_runtime;
 mod breadcrumb_scroll;
 mod browser_behavior;
-mod cloud_sync;
 mod command_palette;
 mod connection_monitor;
 mod delivery;
@@ -324,9 +323,6 @@ const SETTINGS_PERCENT_SCALE: f64 = 100.0;
 const SETTINGS_SECTION_LIST_ESTIMATED_HEIGHT: f32 = 260.0;
 const SETTINGS_SECTION_LIST_OVERSCAN: usize = 2;
 const SETTINGS_SCROLL_CARET_PAUSE_MS: u64 = 700;
-const CLOUD_SYNC_SECTION_LIST_INITIAL_ITEM_COUNT: usize = 7;
-const CLOUD_SYNC_SECTION_LIST_ESTIMATED_HEIGHT: f32 = 240.0;
-const CLOUD_SYNC_SECTION_LIST_OVERSCAN: usize = 1;
 const FORWARDS_SECTION_LIST_INITIAL_ITEM_COUNT: usize = 5;
 const FORWARDS_SECTION_LIST_ESTIMATED_HEIGHT: f32 = 180.0;
 const FORWARDS_SECTION_LIST_OVERSCAN: usize = 2;
@@ -358,12 +354,6 @@ const OXIDE_IMPORT_FORWARD_DETAIL_LIST_OVERSCAN: usize = 6;
 const OXIDE_IMPORT_NAME_GROUP_LIST_INITIAL_ITEM_COUNT: usize = 0;
 const OXIDE_IMPORT_NAME_GROUP_LIST_ESTIMATED_HEIGHT: f32 = 28.0;
 const OXIDE_IMPORT_NAME_GROUP_LIST_OVERSCAN: usize = 6;
-const CLOUD_SYNC_ROLLBACK_BACKUP_LIST_INITIAL_ITEM_COUNT: usize = 0;
-const CLOUD_SYNC_ROLLBACK_BACKUP_LIST_ESTIMATED_HEIGHT: f32 = 72.0;
-const CLOUD_SYNC_ROLLBACK_BACKUP_LIST_OVERSCAN: usize = 4;
-const CLOUD_SYNC_HISTORY_LIST_INITIAL_ITEM_COUNT: usize = 0;
-const CLOUD_SYNC_HISTORY_LIST_ESTIMATED_HEIGHT: f32 = 72.0;
-const CLOUD_SYNC_HISTORY_LIST_OVERSCAN: usize = 4;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum AiCompactionNoticePhase {
@@ -873,9 +863,6 @@ pub(crate) struct WorkspaceApp {
     _graphics_subscription: Subscription,
     host_tools: Entity<HostToolsEntity>,
     _host_tools_subscription: Subscription,
-    cloud_sync: Entity<cloud_sync::CloudSyncWorkspaceEntity>,
-    _cloud_sync_observation: Subscription,
-    _cloud_sync_subscription: Subscription,
     i18n: I18n,
     tokens: ThemeTokens,
     detected_graphics: DetectedGraphics,

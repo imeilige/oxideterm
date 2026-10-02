@@ -152,9 +152,6 @@ pub enum SelectAnchorId {
     NewConnectionTerminalDeleteSequence,
     NewConnectionTerminalSemanticScheme,
     NewConnectionTerminalHighlightRuleSet,
-    CloudSyncBackend,
-    CloudSyncAuthMode,
-    CloudSyncConflictStrategy,
     IdeAgentStatus,
     IdeFileEncoding,
     IdeFileLineEnding,
@@ -264,16 +261,6 @@ impl SelectAnchorId {
                 | Self::NewConnectionTerminalDeleteSequence
                 | Self::NewConnectionTerminalSemanticScheme
                 | Self::NewConnectionTerminalHighlightRuleSet
-        )
-    }
-
-    pub fn is_cloud_sync_select_trigger(self) -> bool {
-        // Cloud Sync select popups are root-mounted like settings popups. Keep
-        // their closed trigger rect warm so the first pointer click can open
-        // immediately instead of waiting for a second prepaint cycle.
-        matches!(
-            self,
-            Self::CloudSyncBackend | Self::CloudSyncAuthMode | Self::CloudSyncConflictStrategy
         )
     }
 }

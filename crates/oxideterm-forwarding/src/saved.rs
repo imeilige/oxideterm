@@ -22,25 +22,12 @@ fn forward_configuration_audit(
     action: &str,
     forward_id: Option<&str>,
 ) -> oxideterm_audit::AuditOperation {
-    if oxideterm_audit::AuditContext::current_request()
-        .as_ref()
-        .is_some_and(|context| context.protocol.as_deref() == Some("cloud_sync_apply"))
-    {
-        // The cross-store transaction owns the final commit or rollback result.
-        oxideterm_audit::AuditOperation::in_context(
-            None,
-            oxideterm_audit::AuditCategory::Configuration,
-            action,
-            None,
-        )
-    } else {
-        oxideterm_audit::AuditOperation::begin(
-            oxideterm_audit::AuditCategory::Configuration,
-            action,
-            forward_id,
-            None,
-        )
-    }
+    oxideterm_audit::AuditOperation::begin(
+        oxideterm_audit::AuditCategory::Configuration,
+        action,
+        forward_id,
+        None,
+    )
 }
 
 pub const FORWARD_TOMBSTONE_RETENTION_DAYS: i64 = 30;

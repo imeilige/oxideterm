@@ -219,20 +219,11 @@ fn orchestrator_v2_authority_inventory_covers_every_tool() {
         "manage_telnet_session": { "authority": "runtime_handle", "fields": ["handle_id"] },
         "list_remote_desktop_sessions": { "authority": "remote_desktop_owner", "fields": [] },
         "manage_remote_desktop_session": { "authority": "remote_desktop_owner", "fields": [] },
-        "get_cloud_sync_state": { "authority": "cloud_sync_owner", "fields": [] },
-        "manage_cloud_sync": { "authority": "cloud_sync_owner", "fields": [] },
         "list_credentials": { "authority": "credential_metadata_store", "fields": [] },
         "manage_credential": { "authority": "credential_store", "fields": [] },
         "list_memory_entries": { "authority": "memory_store", "fields": [] },
         "manage_memory_entry": { "authority": "memory_store", "fields": [] }
     });
-    inventory
-        .as_object_mut()
-        .expect("the contract inventory is an object")
-        .insert(
-            "configure_cloud_sync".to_string(),
-            serde_json::json!({ "authority": "cloud_sync_owner", "fields": [] }),
-        );
     inventory
         .as_object_mut()
         .expect("the contract inventory is an object")
@@ -673,40 +664,8 @@ fn application_tool_policy_classifies_mutations_by_action() {
         AiActionRisk::Read
     );
     assert_eq!(
-        orchestrator_risk_for_tool("configure_cloud_sync", None),
+        orchestrator_risk_for_tool("remember_preference", None),
         AiActionRisk::Write
-    );
-}
-
-#[test]
-fn cloud_sync_configuration_tool_accepts_non_secret_patch_and_rejects_secret_fields() {
-    let patch = serde_json::json!({
-        "backend_type": "http-json",
-        "endpoint": "https://sync.example.test",
-        "auto_upload_interval_mins": 15.0,
-        "scope": {
-            "sync_connections": true,
-            "sync_sensitive_credentials": true,
-            "app_settings_sections": ["general", "network"]
-        }
-    });
-    assert_eq!(
-        canonicalize_orchestrator_tool_arguments("configure_cloud_sync", patch.clone()),
-        Ok(patch)
-    );
-    assert!(
-        canonicalize_orchestrator_tool_arguments(
-            "configure_cloud_sync",
-            serde_json::json!({ "token": "must-not-cross-the-ai-boundary" })
-        )
-        .is_err()
-    );
-    assert!(
-        canonicalize_orchestrator_tool_arguments(
-            "configure_cloud_sync",
-            serde_json::json!({ "scope": {} })
-        )
-        .is_err()
     );
 }
 

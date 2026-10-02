@@ -40,7 +40,6 @@ pub enum ToolGroup {
     ForwardManage,
     FileRead,
     FileWrite,
-    CloudSync,
 }
 
 impl ToolGroup {
@@ -71,7 +70,6 @@ impl ToolGroup {
             Self::ForwardManage => "forward_manage",
             Self::FileRead => "file_read",
             Self::FileWrite => "file_write",
-            Self::CloudSync => "cloud_sync",
         }
     }
 
@@ -101,7 +99,6 @@ impl ToolGroup {
             Self::ForwardManage,
             Self::FileRead,
             Self::FileWrite,
-            Self::CloudSync,
         ]
     }
 }
@@ -204,7 +201,7 @@ impl Default for ClientRegistry {
 }
 
 impl ClientRegistry {
-    /// Opens local authorization metadata that is intentionally separate from settings and sync.
+    /// Opens local authorization metadata that is intentionally separate from settings.
     pub fn open(path: impl Into<PathBuf>) -> Result<Self, ClientRegistryError> {
         let path = path.into();
         let clients = if path.exists() {

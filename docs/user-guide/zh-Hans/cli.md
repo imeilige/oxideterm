@@ -68,20 +68,6 @@ oxideterm backup restore ./oxideterm-backup.json --section settings --dry-run --
 
 恢复命令应先用 `--dry-run` 检查计划，再用 `--yes` 确认真执行。
 
-## 云同步
-
-```sh
-oxideterm cloud-sync status --json
-oxideterm cloud-sync diff --dirty-only --format table
-oxideterm cloud-sync backend webdav configure --endpoint https://example.invalid/sync --dry-run
-oxideterm cloud-sync push --dry-run --json
-oxideterm cloud-sync pull --dry-run --json
-oxideterm cloud-sync apply --from remote --strategy merge --dry-run
-oxideterm cloud-sync secrets status --json
-```
-
-凭据命令只能输出提示或状态。写入凭据时使用标准输入或环境变量。
-
 ## 外部 MCP stdio bridge
 
 外部客户端只支持 stdio MCP 时，先在 OxideTerm 的“设置 → 网络与代理 → 外部 MCP 控制”创建客户端并复制只显示一次的凭据，再把客户端命令配置为：
@@ -115,7 +101,7 @@ oxideterm batch apply ./plan.json --dry-run
 oxideterm batch apply ./plan.json --yes --json
 ```
 
-当设置、连接快照和云同步配置需要一起审查时，使用批处理模式。
+当设置和连接快照需要一起审查时，使用批处理模式。
 
 ## Shell Completion
 

@@ -15,8 +15,7 @@ use oxideterm_settings_model::{
     SettingsDynamicSectionCounts, SettingsInputDraftApply, TERMINAL_THEME_COLOR_FIELDS,
     ThemeColorField, ThemeEditorSection, ThemeEditorState, UI_THEME_COLOR_FIELDS,
     add_custom_semantic_rule, ai_mcp_configs, ai_mcp_transport_label, ai_provider_views,
-    apply_cloud_sync_form_input_owned, apply_persisted_settings_input_draft,
-    cloud_sync_form_input_value_ref, create_custom_semantic_scheme, custom_theme_display_name,
+    apply_persisted_settings_input_draft, create_custom_semantic_scheme, custom_theme_display_name,
     delete_custom_semantic_rule, delete_custom_semantic_scheme, delete_custom_theme_from_settings,
     edit_custom_semantic_scheme, editor_terminal_theme, editor_ui_colors,
     export_custom_semantic_scheme, import_custom_semantic_scheme_named, is_custom_theme_id,
@@ -26,7 +25,7 @@ use oxideterm_settings_model::{
     settings_multiline_line_ranges, settings_multiline_line_selection,
     settings_section_list_identity as settings_model_section_list_identity,
     settings_section_list_item_count as settings_model_section_list_item_count,
-    take_cloud_sync_form_input_value, theme_editor_from_settings,
+    theme_editor_from_settings,
 };
 use oxideterm_theme::BUILT_IN_THEMES;
 

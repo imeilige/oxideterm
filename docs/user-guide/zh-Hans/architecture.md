@@ -23,7 +23,7 @@
 12. [图形与 VNC 会话](#图形与-vnc-会话)
 13. [重连与恢复](#重连与恢复)
 14. [设置与持久化](#设置与持久化)
-15. [云同步、备份与便携包](#云同步备份与便携包)
+15. [便携包](#便携包)
 16. [OxideSens AI 架构](#oxidesens-ai-架构)
 17. [插件架构](#插件架构)
 18. [CLI 伴侣工具边界](#cli-伴侣工具边界)
@@ -49,8 +49,8 @@
 3. **节点优先的远端工作区** - 远端工作流以稳定 SSH 节点为锚点，不以临时终端面板为锚点。
 4. **默认共享连接** - 终端、SFTP、转发和 IDE 可以共享节点注册表连接；AI 与插件通过经过校验的能力句柄、快照或钩子使用节点能力，不成为物理连接消费者。
 5. **生命周期归属明确** - 保存配置、在线节点、终端会话、SFTP 会话、转发、编辑器缓冲区和标签页分别有不同所有者。
-6. **本地优先状态** - SSH、SFTP、本地终端、设置、插件和 AI 供应商配置不依赖 OxideTerm 云账号。
-7. **凭据边界清晰** - 导航元数据、设置、AI 提示词、日志、支持包和插件标签不是凭据存储。
+6. **本地优先状态** - SSH、SFTP、本地终端、设置、插件和 AI 供应商配置完全在本地工作。
+7. **凭据边界清晰** - 导航元数据、设置、AI 提示词、日志和插件标签不是凭据存储。
 8. **减少用户可见耦合** - 用户界面不应要求用户理解内部传输句柄。
 
 ### 为什么选择 Rust + GPUI
@@ -81,7 +81,7 @@ flowchart TB
         GraphicsUI["图形 / VNC 查看器"]
         AiUI["OxideSens AI 侧边栏"]
         PluginUI["插件管理器"]
-        SyncUI["云同步 / 备份"]
+        PortableUI["便携包"]
         SettingsUI["设置"]
     end
 
@@ -98,14 +98,13 @@ flowchart TB
         ModemRuntime["Modem 传输引擎"]
         AiRuntime["AI 上下文 · 工具 · RAG · MCP"]
         PluginRuntime["插件注册表 · 宿主 API · 设置"]
-        SyncRuntime["云同步 · 备份 · 便携运行时"]
+        PortableRuntime["便携运行时"]
     end
 
     subgraph Persistence["持久化与凭据"]
         Settings["设置文件"]
         Connections["连接记录"]
         Keychain["凭据存储"]
-        Backups["备份 / 支持包"]
         Portable["便携运行时"]
     end
 
@@ -117,7 +116,7 @@ flowchart TB
     Shell --> GraphicsUI
     Shell --> AiUI
     Shell --> PluginUI
-    Shell --> SyncUI
+    Shell --> PortableUI
     Shell --> SettingsUI
 
     Sessions --> ConnStore
@@ -134,7 +133,7 @@ flowchart TB
     GraphicsUI --> GraphicsRuntime
     AiUI --> AiRuntime
     PluginUI --> PluginRuntime
-    SyncUI --> SyncRuntime
+    PortableUI --> PortableRuntime
     SettingsUI --> Settings
 
     NodeRuntime --> SshPool
@@ -148,8 +147,7 @@ flowchart TB
     ConnStore --> Connections
     SettingsUI --> Settings
     ConnStore --> Keychain
-    SyncRuntime --> Backups
-    SyncRuntime --> Portable
+    PortableRuntime --> Portable
 ```
 
 ### 系统上下文
@@ -178,7 +176,6 @@ flowchart LR
     subgraph External["外部服务"]
         AiProviders["AI 供应商"]
         McpServers["MCP 服务器"]
-        SyncBackend["云同步后端"]
     end
 
     App --> Config
@@ -193,7 +190,6 @@ flowchart LR
     SshHost --> Agent
     App --> AiProviders
     App --> McpServers
-    App --> SyncBackend
 ```
 
 ### 用户侧摘要
@@ -230,7 +226,6 @@ Tauri 架构把通信分为数据平面和控制平面。Native GPUI 去掉了 W
 
 - 低延迟。
 - 事件频率高。
-- 不依赖云同步或备份。
 - 普通输入不需要用户确认流程。
 - 渲染和输入焦点属于终端页面。
 
@@ -242,7 +237,7 @@ Tauri 架构把通信分为数据平面和控制平面。Native GPUI 去掉了 W
 用户操作或已批准 AI 工具
   -> 工作区命令
   -> 领域运行时
-  -> 持久化 / 连接 / 文件 / 同步操作
+  -> 持久化 / 连接 / 文件操作
   -> 结果、通知或恢复建议
 ```
 
@@ -257,9 +252,7 @@ Tauri 架构把通信分为数据平面和控制平面。Native GPUI 去掉了 W
 - 打开图形/VNC 会话。
 - 确认终端文件传输提示。
 - 修改设置。
-- 执行云同步操作。
 - 执行已批准 AI 工具。
-- 生成支持包。
 
 ### 持久化平面
 
@@ -270,8 +263,6 @@ Tauri 架构把通信分为数据平面和控制平面。Native GPUI 去掉了 W
 - 转发规则。
 - 插件状态。
 - AI 对话和摘要。
-- 云同步快照。
-- 备份。
 - 便携运行时元数据。
 
 包含凭据的数据必须进入凭据感知存储，而不是普通 JSON 或文本字段。对于提权辅助，持久作用域元数据可以随设置或保存连接保存，但凭据值本身属于凭据存储。
@@ -300,7 +291,6 @@ flowchart TB
         Domain --> SettingsStore["设置存储"]
         Domain --> ConnectionStore["连接存储"]
         Domain --> SecretStore["凭据存储"]
-        Domain --> BackupStore["备份 / 同步存储"]
     end
 
     Input --> TermIn
@@ -352,7 +342,6 @@ flowchart TB
         Ai["oxideterm-ai"]
         SettingsDomain["oxideterm-settings"]
         PluginsDomain["oxideterm-plugin-*"]
-        SyncDomain["oxideterm-cloud-sync"]
     end
 
     subgraph RuntimeIntegration["第三层：运行时集成"]
@@ -370,7 +359,6 @@ flowchart TB
         SettingsFiles["设置文件"]
         ConnectionFiles["连接记录"]
         Keychain["凭据存储"]
-        Backups["备份 / 同步快照"]
     end
 
     Workspace --> Surfaces
@@ -382,7 +370,6 @@ flowchart TB
     Surfaces --> Ai
     Surfaces --> SettingsDomain
     Surfaces --> PluginsDomain
-    Surfaces --> SyncDomain
     Ssh --> SshRuntime
     Sftp --> SftpRuntime
     MonitorDomain --> HostSampler
@@ -392,7 +379,6 @@ flowchart TB
     SshRuntime --> Keychain
     SettingsDomain --> SettingsFiles
     Ssh --> ConnectionFiles
-    SyncDomain --> Backups
     Notifications --> Surfaces
 ```
 
@@ -408,7 +394,6 @@ flowchart TB
 - `oxideterm-forwarding`：转发规则模型。
 - `oxideterm-ai`：AI 供应商、上下文窗口、RAG、MCP、orchestrator 工具定义和策略。
 - `oxideterm-settings`：设置加载、保存和变更逻辑。
-- `oxideterm-cloud-sync`：同步和备份逻辑。
 - `oxideterm-plugin-*`：插件清单、协议、注册表和宿主 API 类型。
 
 ### 第三层：运行时集成
@@ -421,7 +406,6 @@ flowchart TB
 - 转发监听器或远端转发。
 - IDE 文件系统访问。
 - 插件宿主生命周期。
-- 云同步后端。
 - AI 供应商请求。
 
 关键规则是所有权：一个运行时对象应有唯一清晰所有者。应用层可以持有负责协调的
@@ -430,7 +414,7 @@ Entity 及其生命周期，而可复用规则仍位于领域 crate；界面视�
 
 ### 第四层：持久化与凭据存储
 
-持久化状态由桌面应用和 CLI 伴侣工具共享。凭据值不能序列化进普通设置、支持包、AI 上下文或插件标签。
+持久化状态由桌面应用和 CLI 伴侣工具共享。凭据值不能序列化进普通设置、AI 上下文或插件标签。
 
 ---
 
@@ -532,7 +516,6 @@ flowchart TB
 - 文件管理器。
 - 插件管理器。
 - 连接监控。
-- 云同步。
 - 知识库工作区。
 
 标签页是可关闭视图，不是保存连接或凭据的长期真源。
@@ -551,7 +534,7 @@ flowchart TB
 
 ### 通知
 
-通知把异步领域事件转为用户可见消息。通知应帮助用户判断下一步检查哪里：连接监控、设置、SFTP、云同步、插件管理器或支持包。
+通知把异步领域事件转为用户可见消息。通知应帮助用户判断下一步检查哪里：连接监控、设置、SFTP 或插件管理器。
 
 ---
 
@@ -854,7 +837,6 @@ AI 和插件能力句柄不是直接重连阶段。它们通过运行时边界�
 - AI 供应商和模型设置。
 - AI 记忆、工具调用，以及知识库嵌入与检索设置。
 - 插件。
-- 云同步。
 - 快捷键。
 - 帮助。
 
@@ -865,42 +847,19 @@ AI 和插件能力句柄不是直接重连阶段。它们通过运行时边界�
 ### CLI 关系
 
 CLI 伴侣工具是共享持久化模型的脚本和维护入口，覆盖设置、连接、转发、插件、
-快捷命令、凭据、便携包、诊断、报告、批处理计划、备份和云同步。除临时 GUI SSH
+快捷命令、凭据、便携包、诊断、报告和批处理计划。除临时 GUI SSH
 启动外，它不拥有桌面进程中的在线节点或终端运行时。修改型命令通常使用 dry-run
 计划和 `--yes` 确认。探索性或视觉配置应使用桌面设置页面。
 
 ---
 
-## 云同步、备份与便携包
+## 便携包
 
-云同步、备份和 `.oxide` 包作用于持久化状态，不作用于在线终端字节。
-
-### 云同步
-
-云同步将选定本地状态与配置的远端后端对齐。当前模型支持 WebDAV、HTTP JSON、
-Dropbox、OneDrive、Google Drive、GitHub Gist、S3 和 Git，并支持按分区选择同步范围。
-自动上传、冲突阻止、同步历史和最多五个本地回滚备份由本地状态机管理。UI 与 CLI
-共用结构化同步模型；在线节点和终端缓冲区不是同步对象。执行 push、pull、apply 或
-冲突解决这类改变方向的操作前，应能检查状态。
-
-### 备份
-
-备份用于保护高影响变更前的状态：
-
-- 批量导入。
-- 同步应用。
-- 恢复。
-- 插件迁移。
-- 设置迁移。
-- 便携包导入。
-
-### 便携包
-
-`.oxide` 包是加密便携导出，可以包含连接、转发、设置、插件设置、快捷命令和可选便携凭据。
+`.oxide` 包是加密便携导出，可以包含连接、转发、设置、插件设置、快捷命令和可选便携凭据。它作用于持久化状态，不作用于在线终端字节。
 
 ### 审查规则
 
-每次导入、恢复或同步应用都应可预览。分享支持包前应先检查内容。
+每次导入都应可预览。
 
 ---
 
@@ -996,9 +955,6 @@ CLI 适合：
 - CI 校验。
 - 脚本化设置变更。
 - 连接导出或校验。
-- 备份和恢复自动化。
-- 云同步自动化。
-- 支持包生成。
 - 便携包校验。
 
 桌面应用可用时，不应把 CLI 当作驱动交互式 SSH 工作的常规方式。
@@ -1011,7 +967,6 @@ CLI 适合：
 
 - SSH 密码。
 - 私钥口令。
-- 云同步 token。
 - AI 供应商密钥。
 - 插件 token。
 - 便携包密码。
@@ -1022,7 +977,6 @@ CLI 适合：
 - 导航元数据不是凭据存储。
 - 凭据字段应使用系统钥匙串支持或凭据感知存储。
 - CLI 写入凭据时应优先使用 stdin 或环境变量。
-- 支持包应包含提示和状态，不包含原始值。
 - AI 上下文离开应用边界前应脱敏。
 
 ### 输出边界
@@ -1032,9 +986,7 @@ CLI 适合：
 - AI 提示词。
 - 工具调用载荷。
 - 日志。
-- 支持包。
 - 插件消息。
-- 云同步快照。
 - CLI JSON 输出。
 
 ---
@@ -1046,8 +998,6 @@ CLI 适合：
 终端热路径应避免：
 
 - 阻塞磁盘 I/O。
-- 云同步工作。
-- 备份生成。
 - 大型插件扫描。
 - 长时间 AI 总结。
 - 重型设置序列化。
@@ -1064,8 +1014,6 @@ CLI 适合：
 - X/Y/ZMODEM 传输。
 - 主机资源采样。
 - 图形/VNC 帧更新。
-- 云同步。
-- 备份。
 - AI 供应商调用。
 - 插件加载。
 - 远端文件预览。
@@ -1086,7 +1034,6 @@ flowchart TB
     AppSurfaces --> AiDomain["oxideterm-ai<br/>供应商 · 工具 · 策略 · 上下文"]
     AppSurfaces --> SettingsDomain["oxideterm-settings<br/>设置模型 · 校验"]
     AppSurfaces --> PluginDomain["oxideterm-plugin-*<br/>manifest · 宿主 API · 生命周期"]
-    AppSurfaces --> SyncDomain["oxideterm-cloud-sync<br/>预览 · 备份 · 应用"]
     AppSurfaces --> TerminalDomain["终端 crate<br/>渲染 · PTY · 命令标记"]
     AppSurfaces --> ModemDomain["oxideterm-modem-transfer<br/>X/Y/ZMODEM · 协议状态"]
     AppSurfaces --> GraphicsDomain["图形页面<br/>VNC viewer · 帧 · 输入"]
@@ -1102,7 +1049,6 @@ flowchart TB
     ToolExecutor --> SftpDomain
     ToolExecutor --> MonitorDomain
     ToolExecutor --> SettingsDomain
-    SyncDomain --> DurableState["持久状态"]
     SettingsDomain --> DurableState
     PluginDomain --> DurableState
 ```
@@ -1126,7 +1072,6 @@ flowchart TB
 | `workspace/ide.rs` 与 IDE crate | 打开文件夹、路由文件操作、管理编辑器状态 | 远端编辑体现为工作区，而不是裸 SFTP 操作 |
 | `workspace/forwards/*` | 渲染转发表单、规则、状态和动作 | 端口转发可见、可恢复、可从桌面应用管理 |
 | `workspace/settings/*` | 渲染终端、外观、AI、SFTP、IDE、连接和快捷键设置页 | 配置以应用为主入口，并通过共享设置模型持久化 |
-| `workspace/cloud_sync/*` | 渲染同步状态、确认流程和备份动作 | 云同步与备份操作显式展示，尽量可预演和可恢复 |
 | `workspace/plugin_entity.rs`、`plugin_manager.rs`、`plugin_lifecycle/*`、`plugin_ui.rs` | 协调插件发现、生命周期、宿主 API 快照、设置、凭据和界面调用 | 插件可以扩展应用页面，但不拥有核心运行时状态 |
 | `workspace/sidebar/ai/*` | 渲染 AI 对话、模型选择、流式输出、上下文、Agent Skills、工具事件和对话记录状态 | OxideSens 是集成在工作区内的助手，并有明确工具边界 |
 | `workspace/acp_workspace.rs` 与 `oxideterm-acp-*` 集成 | 协调 ACP agent 配置、session、模型选项和 ACP 主机工具桥接，并与原生供应商路径并列 | ACP session 有独立的 agent/session 生命周期，不应被当作普通供应商流 |
@@ -1198,7 +1143,7 @@ flowchart TB
 | `mcp/*` | 管理 MCP 注册表、进程启动和协议类型 | 外部工具服务器与核心应用状态隔离 |
 | `references.rs`, `slash.rs`, `suggestions.rs` | 提供引用、斜杠命令和建议 | 助手输入辅助与供应商传输分离 |
 
-### 持久化、设置、插件与同步模块
+### 持久化、设置与插件模块
 
 | 区域 | Native 所有者 | 说明 |
 |---|---|---|
@@ -1209,7 +1154,6 @@ flowchart TB
 | 终端 modem 传输 | `oxideterm-modem-transfer`, `oxideterm-gpui-terminal` modem worker | 协议状态属于终端运行时；文件选择和进度属于 UI |
 | 图形会话 | `oxideterm-wsl-graphics`, `oxideterm-remote-desktop`, `oxideterm-gpui-remote-desktop`, `oxideterm-rdp-helper`, `oxideterm-vnc-helper`, 应用图形/远程桌面模块 | WSL 生命周期、远程协议 helper、viewer framebuffer 和终端缓冲区各自归属清晰 |
 | 插件 | `oxideterm-plugin-*`, 插件管理器和生命周期模块 | manifest、设置、宿主 API 调用和插件凭据有各自边界 |
-| 云同步 | `oxideterm-cloud-sync`, `oxideterm-gpui-cloud-sync`, 应用云同步模块 | 同步计划、备份创建和应用步骤都是显式控制平面操作 |
 | 便携运行时 | `oxideterm-portable-runtime`, 设置中的便携运行时模块 | 便携元数据和加密载荷处理与普通设置页分离 |
 | 通知 | `oxideterm-notification-center`, 应用通知模块 | 后台状态以可操作通知呈现 |
 | CLI 伴侣工具 | `oxideterm-cli` | CLI 为自动化读取和修改共享状态，但不替代桌面工作流 |
@@ -1239,7 +1183,7 @@ flowchart TB
   -> 将输出流送入终端渲染器
 ```
 
-本地终端路径刻意保持很短。它不应等待云同步、插件扫描、AI 供应商发现或远端连接检查。
+本地终端路径刻意保持很短。它不应等待插件扫描、AI 供应商发现或远端连接检查。
 
 ### 打开保存的 SSH 连接
 
@@ -1411,41 +1355,6 @@ sequenceDiagram
     Executor->>Domain: 运行命令 / 读取文件 / 更新状态
     Domain-->>Executor: 结构化结果
     Executor-->>Sidebar: 将工具结果追加到对话记录
-```
-
-### 云同步应用与备份
-
-```text
-用户打开同步页
-  -> 加载本地状态摘要
-  -> 获取或读取远端快照
-  -> 构建预览/计划
-  -> 应用变更前请求确认
-  -> 必要时创建备份
-  -> 应用选中变更
-  -> 展示结果和冲突
-```
-
-预览步骤是架构的一部分，不是装饰页面。它让用户在持久状态变化前理解将要发生的修改。
-
-```mermaid
-sequenceDiagram
-    actor User as 用户
-    participant Sync as 云同步页面
-    participant Planner as 同步计划器
-    participant Backup as 备份运行时
-    participant Store as 本地状态
-    participant Remote as 远端快照
-
-    User->>Sync: 打开同步或恢复动作
-    Sync->>Store: 加载本地摘要
-    Sync->>Remote: 获取远端快照
-    Sync->>Planner: 构建预览计划
-    Planner-->>User: 展示变更和冲突
-    User->>Sync: 确认选中应用
-    Sync->>Backup: 必要时创建安全备份
-    Sync->>Store: 应用选中变更
-    Store-->>Sync: 返回结果和冲突
 ```
 
 ### 启用插件
@@ -1643,11 +1552,10 @@ stateDiagram-v2
 | 已拒绝 | 策略或用户拒绝 | 对话记录保存拒绝原因 |
 | 失败 | 执行失败 | 显示错误但不泄漏凭据 |
 
-### 同步与插件生命周期
+### 插件生命周期
 
 | 区域 | 状态 | 含义 |
 |---|---|---|
-| 云同步 | 未配置、就绪、预览中、应用中、冲突、已完成、失败 | 同步是“计划后应用”的流程，不是静默后台修改 |
 | 插件 | 已发现、已安装、已启用、失败、已禁用、已更新、已移除 | 插件可用性与插件运行健康状态分离 |
 
 ---
@@ -1673,9 +1581,7 @@ stateDiagram-v2
 | AI 供应商密钥 | AI 密钥存储 | 凭据存储 | 凭据存储 | 是 | 是 | 重新输入或解锁 |
 | 插件设置 | 插件设置存储 | 插件设置文件/存储 | 插件凭据另行存储 | 是 | 通常是 | 重置、禁用插件 |
 | 插件凭据 | 插件生命周期凭据边界 | 凭据存储 | 凭据存储 | 是 | 是 | 重新输入、撤销、禁用 |
-| 云同步配置 | 同步运行时 / 设置 | 设置和云同步状态 | 凭据存储 | 是 | 取决于网络 | 重新认证或禁用 |
 | 便携运行时 | 便携运行时 crate | 便携元数据/载荷 | 便携密钥材料 | 是 | 与连接无关 | 解锁、恢复、重建 |
-| 支持包 | 备份/支持流程 | 生成的文件 | 必须排除原始凭据 | 文件保留到删除为止 | 不适用 | 按正确范围重新生成 |
 
 ---
 
@@ -1694,7 +1600,6 @@ flowchart LR
         IDE["IDE 保存/冲突"]
         AI["AI 工具事件"]
         Plugin["插件生命周期"]
-        Sync["同步 / 备份事件"]
     end
 
     subgraph EntityLayer["领域实体与投递通道"]
@@ -1720,7 +1625,6 @@ flowchart LR
     IDE --> RuntimeEntities
     AI --> RuntimeEntities
     Plugin --> RuntimeEntities
-    Sync --> RuntimeEntities
     RuntimeEntities --> Delivery
     Delivery --> ActiveSurface
     Delivery --> Notifications
@@ -1746,7 +1650,6 @@ flowchart LR
 - 转发启动、停止、挂起和失败。
 - IDE 保存、冲突和重新加载结果。
 - 插件安装、启用、禁用、设置和宿主 API 失败。
-- 云同步预览、应用、冲突和备份结果。
 - AI 工具提出、批准、执行结果和策略拒绝。
 
 ### 通知规则
@@ -1757,7 +1660,6 @@ flowchart LR
 - 通知不应包含原始凭据、请求头、token 或终端缓冲区转储。
 - 重复事件如果描述同一底层条件，应合并展示。
 - 与终端无关的后台通知不应阻塞终端输入。
-- 建议生成支持包时，应说明会包含什么、会排除什么。
 
 ### 刷新与事件
 
@@ -1787,7 +1689,7 @@ flowchart LR
 |---|---|---|---|---|
 | 终端标签页关闭，但主机仍显示在线 | 连接监控 | 标签页和节点运行时 | 标签页是视图；节点可以比标签页活得更久 | 如果不再需要，从连接监控关闭节点 |
 | 终端打开但不能输入 | 终端标签页 | 终端运行时 | PTY 或通道仍在启动，或就绪失败 | 等待就绪、重新打开终端，或重连节点 |
-| 大型操作期间终端输出变慢 | 终端标签页和通知中心 | 数据平面竞争 | 重型后台任务可能正在竞争资源 | 暂停传输/同步，或等待任务完成 |
+| 大型操作期间终端输出变慢 | 终端标签页和通知中心 | 数据平面竞争 | 重型后台任务可能正在竞争资源 | 暂停传输，或等待任务完成 |
 | TUI 预览退出后留下旧黑块 | 终端标签页 | 终端图形/图片占位 | 全屏应用没有完整清理图片占位或备用屏状态 | 清屏、重新打开终端，或带命令样本提交终端渲染问题 |
 | 已保存的终端背景不显示 | 终端或运行时页面 | 终端背景渲染 | 背景未对该页面启用，或图片库选择已失效 | 重新选择图片、检查启用标签页类型，或重新加载页面 |
 | 提权密码辅助没有触发 | 终端标签页和提权设置 | 终端辅助 | 未检测到提示，或活跃 session 没有匹配凭据作用域 | 检查活跃终端作用域、提示匹配器和保存凭据 owner |
@@ -1818,11 +1720,8 @@ flowchart LR
 | AI 供应商调用失败 | AI 设置和 AI 侧边栏 | 供应商传输 | 密钥缺失、模型无效、额度不足或网络失败 | 更新供应商设置并重试 |
 | 插件设置变更后界面未更新 | 插件管理器和受影响页面 | 插件生命周期 | 页面需要刷新，或插件事件未触发重新渲染 | 刷新页面、禁用/启用插件，或重启应用 |
 | 插件启用失败 | 插件管理器 | 插件注册表/生命周期 | manifest 无效、权限不足、依赖缺失，或凭据不可用 | 查看插件详情、更新设置，或移除插件 |
-| 出现云同步冲突 | 云同步 | 同步计划器 | 本地和远端持久状态各自发生变化 | 查看预览，选择本地/远端解决方式，再应用 |
-| 备份生成失败 | 云同步或备份对话框 | 备份运行时 | 目标位置不可用、权限不足，或凭据脱敏失败 | 选择其他位置，或缩小所选数据 |
-| 便携运行时无法解锁 | 便携设置 | 便携运行时 | 口令错误、密钥材料缺失，或载荷损坏 | 重新输入口令、从备份恢复，或重建便携数据 |
+| 便携运行时无法解锁 | 便携设置 | 便携运行时 | 口令错误、密钥材料缺失，或载荷损坏 | 重新输入口令，或重建便携数据 |
 | CLI 报告与应用视图不同 | CLI 和应用页面 | 共享状态边界 | CLI 读取持久状态，而应用还持有在线运行时状态 | 刷新应用状态，或与连接监控对照 |
-| 支持包缺少预期数据 | 支持包对话框 | 输出边界 | 凭据脱敏或选择范围排除了该数据 | 使用正确范围重新生成，同时仍排除原始凭据 |
 
 ---
 
@@ -1846,7 +1745,7 @@ flowchart LR
 | AI、RAG、MCP、推理和工具策略 | `oxideterm-ai`, `oxideterm-ai-tasks`, `oxideterm-skills`, 应用 AI 侧边栏 |
 | ACP agent session 和主机工具 | `oxideterm-acp-adapter`, `oxideterm-acp-host-tools`, `workspace/acp_workspace.rs` |
 | 插件 | `oxideterm-plugin-manifest`, `oxideterm-plugin-registry`, `oxideterm-plugin-host-api`, `oxideterm-plugin-wasm-runtime`, 应用插件 Entity |
-| 云同步和便携运行时 | `oxideterm-cloud-sync`, `oxideterm-gpui-cloud-sync`, `oxideterm-portable-runtime` |
+| 便携运行时 | `oxideterm-portable-runtime` |
 | CLI 伴侣工具 | `oxideterm-cli` |
 
 ---
@@ -1869,6 +1768,6 @@ flowchart LR
 | AI 侧边栏与工具 | OxideSens AI 架构 |
 | 插件运行时 | 插件注册表、宿主 API、生命周期、设置和凭据 |
 | SettingsStore | 设置领域 crate 和设置页面 |
-| `.oxide` 格式和备份 | 便携包、备份、云同步 |
+| `.oxide` 格式 | 便携包 |
 
 实现细节已经从 Tauri/React 替换为 Native GPUI/Rust，但架构意图一致：保持终端热路径响应，远端能力通过稳定节点身份路由，区分用户视图和运行时所有者，并把凭据排除在普通应用文本之外。

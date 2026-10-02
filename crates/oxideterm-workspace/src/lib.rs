@@ -35,7 +35,6 @@ pub enum TabKind {
     Sftp,
     Forwards,
     SessionManager,
-    CloudSync,
     RemoteDesktop,
     Settings,
 }

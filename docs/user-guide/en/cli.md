@@ -68,20 +68,6 @@ oxideterm backup restore ./oxideterm-backup.json --section settings --dry-run --
 
 Restore commands should be reviewed in dry-run form before `--yes`.
 
-## Cloud Sync
-
-```sh
-oxideterm cloud-sync status --json
-oxideterm cloud-sync diff --dirty-only --format table
-oxideterm cloud-sync backend webdav configure --endpoint https://example.invalid/sync --dry-run
-oxideterm cloud-sync push --dry-run --json
-oxideterm cloud-sync pull --dry-run --json
-oxideterm cloud-sync apply --from remote --strategy merge --dry-run
-oxideterm cloud-sync secrets status --json
-```
-
-Secret commands must only print hints or status. Use stdin or environment variables for secret writes.
-
 ## External MCP stdio bridge
 
 When an external client supports stdio MCP only, first create a client under **Settings → Network & Proxy → External MCP Control** and copy its one-time credential. Configure the client command as:
@@ -115,7 +101,7 @@ oxideterm batch apply ./plan.json --dry-run
 oxideterm batch apply ./plan.json --yes --json
 ```
 
-Use batch mode for scripted setup where settings, connection snapshots, and cloud-sync configuration should be reviewed together.
+Use batch mode for scripted setup where settings and connection snapshots should be reviewed together.
 
 ## Completion
 

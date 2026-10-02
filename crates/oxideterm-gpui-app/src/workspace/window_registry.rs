@@ -316,7 +316,6 @@ pub(in crate::workspace) enum WorkspaceWindowEffect {
     WindowIntent(window_intent::WindowIntentAction),
     Runtime(runtime_entity::WorkspaceRuntimeEvent),
     ConnectionFlow,
-    CloudSync(cloud_sync::CloudSyncWorkspaceEvent),
     Ai(AiWindowEffect),
     TabHost(tabs::WorkspaceTabHostEvent),
     Graphics,
@@ -326,7 +325,6 @@ pub(in crate::workspace) enum WorkspaceWindowEffect {
 pub(in crate::workspace) enum WorkspaceWindowEffectKey {
     Runtime,
     ConnectionFlow,
-    CloudSyncDeliveries,
     Ai(AiWindowEffectKey),
     TabCloseProcessCheck,
     Graphics,
@@ -356,10 +354,6 @@ impl WorkspaceWindowEffect {
             Self::WindowIntent(_) => None,
             Self::Runtime(_) => Some(WorkspaceWindowEffectKey::Runtime),
             Self::ConnectionFlow => Some(WorkspaceWindowEffectKey::ConnectionFlow),
-            Self::CloudSync(cloud_sync::CloudSyncWorkspaceEvent::DeliveriesReady) => {
-                Some(WorkspaceWindowEffectKey::CloudSyncDeliveries)
-            }
-            Self::CloudSync(_) => None,
             Self::Ai(effect) => Some(WorkspaceWindowEffectKey::Ai(match effect {
                 AiWindowEffect::AcpAgentProbeDeliveryReady => AiWindowEffectKey::AcpAgentProbe,
                 AiWindowEffect::AcpModelDiscoveryDeliveryReady => {
@@ -392,24 +386,6 @@ impl WorkspaceWindowEffect {
 
     fn target_hint(&self) -> WindowTargetHint {
         match self {
-            Self::CloudSync(cloud_sync::CloudSyncWorkspaceEvent::UiIntent(intent)) => {
-                let source_window = match intent {
-                    cloud_sync::CloudSyncUiIntent::BeginInputSelection {
-                        source_window, ..
-                    }
-                    | cloud_sync::CloudSyncUiIntent::UpdateInputSelection {
-                        source_window, ..
-                    }
-                    | cloud_sync::CloudSyncUiIntent::UpdateInputAnchor { source_window, .. }
-                    | cloud_sync::CloudSyncUiIntent::UpdateSelectAnchor { source_window, .. } => {
-                        Some(*source_window)
-                    }
-                    _ => None,
-                };
-                source_window.map_or(WindowTargetHint::MainOrAny, |handle| {
-                    WindowTargetHint::Prefer(handle.window_id())
-                })
-            }
             Self::TabHost(tabs::WorkspaceTabHostEvent::TerminalPaneDelivery {
                 window_handle,
                 ..
@@ -490,14 +466,6 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) {
         self.enqueue_window_effect(WorkspaceWindowEffect::ConnectionFlow, cx);
-    }
-
-    pub(in crate::workspace) fn enqueue_cloud_sync_window_effect(
-        &mut self,
-        event: cloud_sync::CloudSyncWorkspaceEvent,
-        cx: &mut Context<Self>,
-    ) {
-        self.enqueue_window_effect(WorkspaceWindowEffect::CloudSync(event), cx);
     }
 
     pub(in crate::workspace) fn enqueue_ai_window_effect(
@@ -612,9 +580,6 @@ impl WorkspaceApp {
             }
             WorkspaceWindowEffect::ConnectionFlow => {
                 self.apply_connection_flow_worker_delivery(window, cx);
-            }
-            WorkspaceWindowEffect::CloudSync(event) => {
-                self.handle_cloud_sync_workspace_event(&event, window, cx);
             }
             WorkspaceWindowEffect::Ai(event) => {
                 self.handle_ai_workspace_event(&event.into_event(), window, cx);

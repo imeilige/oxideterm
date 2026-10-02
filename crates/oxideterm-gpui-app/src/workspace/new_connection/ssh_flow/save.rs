@@ -1235,7 +1235,6 @@ impl WorkspaceApp {
         // so duplicate-name and keychain failures should block connection start.
         match self.connection_store.upsert_with_runtime_secrets(request) {
             Ok((connection, secrets)) => {
-                self.queue_cloud_sync_dirty_refresh(cx);
                 Some(SavedConnectionRuntimeHandoff {
                     connection_id: connection.id,
                     secrets,
@@ -1495,7 +1494,6 @@ impl WorkspaceApp {
                 save_request.expect("serial save action must build a serial profile request");
             match self.connection_store.upsert_serial_profile(request) {
                 Ok(_) => {
-                    self.queue_cloud_sync_dirty_refresh(cx);
                     self.update_connection_form_state(cx, ConnectionFormState::clear);
                 }
                 Err(error) => {
@@ -1519,7 +1517,7 @@ impl WorkspaceApp {
                 .take()
                 .expect("serial save-and-open action must build a serial profile request");
             match self.connection_store.upsert_serial_profile(request) {
-                Ok(_) => self.queue_cloud_sync_dirty_refresh(cx),
+                Ok(_) => {}
                 Err(error) => {
                     self.update_connection_form_state(cx, |state| {
                         if let Some(form) = state.form.as_mut() {
@@ -1547,7 +1545,6 @@ impl WorkspaceApp {
                                 profile.id,
                                 cx,
                             );
-                            self.queue_cloud_sync_dirty_refresh(cx);
                         }
                         Err(error) => {
                             let message = format!(
@@ -1654,7 +1651,6 @@ impl WorkspaceApp {
                 save_request.expect("telnet save action must build a telnet profile request");
             match self.connection_store.upsert_telnet_profile(request) {
                 Ok(_) => {
-                    self.queue_cloud_sync_dirty_refresh(cx);
                     self.update_connection_form_state(cx, ConnectionFormState::clear);
                 }
                 Err(error) => {
@@ -1681,7 +1677,6 @@ impl WorkspaceApp {
             match self.connection_store.upsert_telnet_profile(request) {
                 Ok(profile) => {
                     connected_profile_id = Some(profile.id);
-                    self.queue_cloud_sync_dirty_refresh(cx);
                 }
                 Err(error) => {
                     self.update_connection_form_state(cx, |state| {
@@ -1708,7 +1703,6 @@ impl WorkspaceApp {
                     match self.connection_store.upsert_telnet_profile(request) {
                         Ok(profile) => {
                             connected_profile_id = Some(profile.id);
-                            self.queue_cloud_sync_dirty_refresh(cx);
                         }
                         Err(error) => {
                             let message = format!(
@@ -1990,7 +1984,6 @@ impl WorkspaceApp {
                 return;
             }
         };
-        self.queue_cloud_sync_dirty_refresh(cx);
         if action == NewConnectionSubmitAction::Save {
             self.update_connection_form_state(cx, ConnectionFormState::clear);
             cx.notify();
@@ -2193,7 +2186,6 @@ impl WorkspaceApp {
                 return;
             }
         };
-        self.queue_cloud_sync_dirty_refresh(cx);
         if action == NewConnectionSubmitAction::Save {
             self.update_connection_form_state(cx, ConnectionFormState::clear);
             self.close_new_connection_select(cx);
@@ -2474,7 +2466,6 @@ impl WorkspaceApp {
                     profile.id = saved.id;
                     profile.label = saved.name;
                     profile.credential_ref = saved.credential_ref;
-                    self.queue_cloud_sync_dirty_refresh(cx);
                     if action != NewConnectionSubmitAction::Save && runtime_password.is_none() {
                         match self
                             .connection_store
@@ -2930,7 +2921,6 @@ impl WorkspaceApp {
                                 state.clear();
                                 node_id
                             });
-                        self.queue_cloud_sync_dirty_refresh(cx);
                         if let Some(node_id) = connect_after_save_node_id {
                             if let Some(conn) = self.connection_store.get(&id).cloned()
                                 && let Some(config) = ssh_config_from_saved_connection(
@@ -3067,7 +3057,6 @@ impl WorkspaceApp {
                     self.session_manager.update(cx, |session_manager, cx| {
                         session_manager.set_status(Some(message), cx);
                     });
-                    self.queue_cloud_sync_dirty_refresh(cx);
                     self.focus_active_pane(window, cx);
                 }
                 Err(error) => {

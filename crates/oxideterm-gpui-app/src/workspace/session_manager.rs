@@ -1035,6 +1035,7 @@ mod controls;
 mod dialogs;
 mod helpers;
 mod oxide_actions;
+mod plugin_settings;
 mod oxide_dialog_common;
 mod oxide_dialog_helpers;
 mod oxide_export_dialogs;

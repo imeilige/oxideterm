@@ -47,7 +47,6 @@ pub(in crate::workspace) fn tab_surface_kind(kind: &TabKind) -> &'static str {
         TabKind::Sftp => "sftp",
         TabKind::Forwards => "forwards",
         TabKind::SessionManager => "session_manager",
-        TabKind::CloudSync => "cloud_sync",
         TabKind::RemoteDesktop => "remote_desktop",
         TabKind::Settings => "settings",
     }
@@ -631,20 +630,6 @@ impl WorkspaceApp {
         self.release_active_remote_desktop_inputs(cx);
         self.close_settings_select();
         self.close_new_connection_select(cx);
-        // Cloud Sync provider/config selects are Radix-like transient popovers;
-        // a modal boundary must release both the open menu and the trigger
-        // focus owner so keyboard rings do not leak behind the dialog.
-        self.cloud_sync.update(cx, |cloud_sync, cx| {
-            let open_changed = cloud_sync.view.open_select.take().is_some();
-            let focus_changed = cloud_sync.view.focused_select.take().is_some();
-            let changed = open_changed || focus_changed;
-            if changed {
-                cx.notify();
-            }
-        });
-        // Modal actions may originate from the Cloud Sync form. Return the
-        // active IME-owned value before the modal replaces the focus owner.
-        self.apply_focused_cloud_sync_input_draft(cx);
         self.focused_settings_input = None;
         self.settings_slider_drag = None;
         self.ime_marked_text = None;
@@ -667,22 +652,6 @@ impl WorkspaceApp {
         }
         if self.connection_form_state(cx).open_select.is_some() {
             self.close_new_connection_select(cx);
-            changed = true;
-        }
-        if self.cloud_sync.update(cx, |cloud_sync, cx| {
-            let open_changed = cloud_sync.view.open_select.take().is_some();
-            if open_changed {
-                cloud_sync.view.select_highlighted = None;
-            }
-            // Outside pointer focus in the browser leaves the Radix trigger;
-            // mirror that owner release so the native focus ring cannot linger.
-            let focus_changed = cloud_sync.view.focused_select.take().is_some();
-            let changed = open_changed || focus_changed;
-            if changed {
-                cx.notify();
-            }
-            changed
-        }) {
             changed = true;
         }
         if self

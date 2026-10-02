@@ -115,7 +115,7 @@ OxideTerm 将连接、文件、转发、主机工具、自动化与 AI 上下文
 | **文件与远程编辑** | SFTP、传输队列、收藏夹、安全写入、项目树与多标签编辑 |
 | **转发与网络** | 本地、远程与动态 SOCKS5 转发、已保存规则与 Socket 调试 |
 | **主机运维与远程桌面** | 监控、进程、服务、日志、端口、任务、磁盘、软件包、容器、tmux、RDP 与 VNC |
-| **OxideSens 与自动化** | 自有 AI 服务商、MCP、本地 RAG、Agent Skills、已批准操作、加密云同步与 CLI |
+| **OxideSens 与自动化** | 自有 AI 服务商、MCP、本地 RAG、Agent Skills、已批准操作与 CLI |
 | **扩展与个性化** | manifest-only、WASM 与进程插件、自定义标签页、快速命令、主题、背景图片、快捷键与 2 种界面语言（中文和英文） |
 
 ---
@@ -163,7 +163,7 @@ GPUI 渲染循环
   NodeRouter → SshConnectionRegistry
   TerminalState ← SSH PTY channel
   SftpSession / ForwardingRuntime / IdeWorkspace
-  Ai/ACP Entities / CloudSync / Plugin Runtimes
+  Ai/ACP Entities / Plugin Runtimes
 ```
 
 界面与 SSH/终端后端之间没有序列化边界。终端字节直接修改 `TerminalState`，GPUI 读取状态并发出 GPU 绘制命令。
@@ -285,7 +285,6 @@ cargo run -p oxideterm-cli -- doctor --strict
 cargo run -p oxideterm-cli -- settings validate --strict --json
 cargo run -p oxideterm-cli -- connections search prod
 cargo run -p oxideterm-cli -- forwards list --format json
-cargo run -p oxideterm-cli -- cloud-sync push --dry-run --json
 cargo run -p oxideterm-cli -- oxide export ./profile.oxide --connection prod --password-stdin
 cargo run -p oxideterm-cli -- report --bundle ./oxideterm-report.zip
 cargo run -p oxideterm-cli -- completion install zsh --force

@@ -1,6 +1,6 @@
 # Application Guide
 
-This guide introduces the OxideTerm desktop app. Use it for day-to-day terminal, SSH, file, forwarding, Host Tools, graphics/VNC, AI, plugin, sync, and settings work. The `oxideterm` CLI is a separate companion for automation, diagnostics, CI, migration, and recovery.
+This guide introduces the OxideTerm desktop app. Use it for day-to-day terminal, SSH, file, forwarding, Host Tools, graphics/VNC, AI, plugin, and settings work. The `oxideterm` CLI is a separate companion for automation, diagnostics, CI, migration, and recovery.
 
 ## First Run
 
@@ -27,7 +27,6 @@ Primary areas:
 - File manager and SFTP: browse, preview, upload, download, and edit remote files.
 - Graphics/VNC: open a saved RDP/VNC profile, or open node-launched graphics when a connected SSH node provides it.
 - Plugins: install, enable, disable, and configure plugins.
-- Cloud sync: sync app state and inspect sync status.
 - Notifications: review app events and warnings.
 - Settings: configure app behavior.
 
@@ -154,7 +153,7 @@ External editors, command-line AI tools, and other MCP clients can use saved SSH
 
 1. Create a standard or full-access client. Standard mode requires in-app approval for high-risk actions; full-access mode skips per-action approval only for enabled tool groups.
 2. Copy the loopback HTTP endpoint and the client credential, which is shown only once.
-   The listening port defaults to `0`, which lets the app choose automatically. Enter and apply a value from `1` to `65535` when a fixed port is required. The preference remains device-local and is excluded from ordinary settings, `.oxide` exports, and cloud sync.
+   The listening port defaults to `0`, which lets the app choose automatically. Enter and apply a value from `1` to `65535` when a fixed port is required. The preference remains device-local and is excluded from ordinary settings and `.oxide` exports.
 3. Configure the endpoint as a Streamable HTTP URL in the external MCP client and add an `Authorization: Bearer <credential>` request header.
    If the client supports stdio only, configure the command as `oxideterm mcp bridge` and provide `OXIDETERM_MCP_TOKEN=<credential>` through the client's secret environment settings. The bridge discovers the current loopback endpoint automatically. Never put the credential in command arguments.
 
@@ -191,13 +190,13 @@ External editors, command-line AI tools, and other MCP clients can use saved SSH
 5. In standard mode, review the actual client, target, and command under **Pending Actions** in OxideTerm, then have the client call `mcp_commit_action`. Full-access mode executes directly.
 6. Use the returned `command_ref` to query state and read bounded stdout and stderr ranges.
 
-The current implementation exposes connection and credential management, NodeRouter leases, terminal and recording workflows, RDP/VNC, SSH exec, bounded temporary artifacts, SFTP and background single-file transfers, remote IDE workspaces, forwarding, Quick Commands, managed addon lifecycle, Cloud Sync, the current client's redacted MCP audit records, and typed Host Tools snapshots/actions. Background transfers move data only between an authorized SFTP root and client-owned artifact storage; they never accept local paths. The current bound is 64 MiB and restartable resume is not yet available. IDE workspaces are mounted from an authorized SFTP file session; reading and structured editing are separate grants, reads are limited to 4 MiB, and edits require an observed revision. Cloud Sync returns a one-use preview plan and rechecks both local and remote revisions before applying it. Remote publishes do not claim false undo support, and pulls containing SSH, Mosh, or credentials retain only the product's existing encrypted recovery backup. Host Tools accepts only fixed resource and action schemas; it does not expose free-form shell text or plugin calls. Releasing an MCP node lease does not disconnect a physical SSH node still used by terminal, SFTP, IDE, or forwarding consumers; only an explicitly approved `nodes_disconnect` does that.
+The current implementation exposes connection and credential management, NodeRouter leases, terminal and recording workflows, RDP/VNC, SSH exec, bounded temporary artifacts, SFTP and background single-file transfers, remote IDE workspaces, forwarding, Quick Commands, managed addon lifecycle, the current client's redacted MCP audit records, and typed Host Tools snapshots/actions. Background transfers move data only between an authorized SFTP root and client-owned artifact storage; they never accept local paths. The current bound is 64 MiB and restartable resume is not yet available. IDE workspaces are mounted from an authorized SFTP file session; reading and structured editing are separate grants, reads are limited to 4 MiB, and edits require an observed revision. Host Tools accepts only fixed resource and action schemas; it does not expose free-form shell text or plugin calls. Releasing an MCP node lease does not disconnect a physical SSH node still used by terminal, SFTP, IDE, or forwarding consumers; only an explicitly approved `nodes_disconnect` does that.
 
 Background commands and SFTP transfers return an `operation_ref` in addition to their domain handle. `mcp_operation` reads a unified redacted status and progress projection, while `mcp_cancel_operation` requests cancellation. Cancelling a command or upload does not claim that remote side effects were reversed.
 
-An action is reversible only when its result explicitly contains an `undo_ref`. `mcp_revert` currently reuses the strict local Cloud Sync restore path, including the Cloud Sync tool-group and revision checks. Remote publishes, commands, uploads, and permanent deletion never receive a fabricated undo handle.
+An action is reversible only when its result explicitly contains an `undo_ref`. Commands, uploads, and permanent deletion never receive a fabricated undo handle.
 
-OxideTerm stores only a digest of each client credential. Disabling or revoking a client immediately cancels its commands, pending actions, and node leases. The endpoint, authorization records, and credential are excluded from ordinary settings, `.oxide` exports, and cloud sync. The external client process is responsible for protecting the stdio bridge environment variable; OxideTerm does not write it back to configuration files.
+OxideTerm stores only a digest of each client credential. Disabling or revoking a client immediately cancels its commands, pending actions, and node leases. The endpoint, authorization records, and credential are excluded from ordinary settings and `.oxide` exports. The external client process is responsible for protecting the stdio bridge environment variable; OxideTerm does not write it back to configuration files.
 
 Full-access mode does not enable every tool. Each client still needs explicit grants for connection, node, command, audit, and temporary-content groups. A client may request additional groups with `mcp_request_access`, but that request always needs approval in the app even in full-access mode. `mcp_revoke_access` immediately disables the client's selected groups and releases their capabilities. Disabled tools are neither advertised nor callable. Bearer authentication, app lock, secret non-disclosure, and audit remain active in both modes.
 
@@ -220,12 +219,6 @@ Use the plugin manager to install, enable, disable, update, and configure plugin
 
 Plugin settings and plugin secrets should be managed through app surfaces designed for that purpose. Do not put secret values in plugin names, labels, or ordinary text fields unless the field is explicitly a secret field.
 
-## Cloud Sync and Backups
-
-Use Cloud Sync from the desktop app when you want to inspect sync status, run a manual sync, or resolve user-visible sync issues. Keep backups enabled before applying high-impact imports, restores, or sync changes.
-
-For a support bundle or automated restore plan, use the CLI companion after confirming the issue in the desktop app.
-
 ## CLI Companion
 
 Use the CLI companion when the work is headless, repeatable, or diagnostic:
@@ -233,7 +226,7 @@ Use the CLI companion when the work is headless, repeatable, or diagnostic:
 - `doctor` and support reports.
 - Scripted settings changes.
 - Headless connection validation.
-- Backup, restore, and cloud-sync automation.
+- Backup and restore automation.
 - CI checks for exported configuration.
 
 For normal daily work, start in the desktop app. The CLI should support the desktop workflow, not replace it.

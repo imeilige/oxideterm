@@ -12,7 +12,7 @@ On macOS, packaged artifacts include a `.dmg`, an `.app.zip`, and a portable arc
 
 ## First Launch
 
-Open the OxideTerm desktop app first. The main window is a tabbed SSH workspace with a left activity bar for sessions, files, forwarding, Host Tools, graphics/VNC, plugins, cloud sync, notifications, and settings.
+Open the OxideTerm desktop app first. The main window is a tabbed SSH workspace with a left activity bar for sessions, files, forwarding, Host Tools, graphics/VNC, plugins, notifications, and settings.
 
 Start with a local terminal tab:
 
@@ -36,7 +36,6 @@ After the first local terminal and first SSH connection work, check the app surf
 - IDE workspace: remote project folders and editor tabs.
 - AI sidebar: current workspace context and tool approvals.
 - Plugins: installed plugins and plugin settings.
-- Cloud sync: sync status and backup state.
 
 ## CLI Companion Diagnostics
 
@@ -80,11 +79,11 @@ Profile data is stored under `profiles/<name>` inside the selected config direct
 
 ## Safe Write Pattern
 
-For everyday app use, make ordinary configuration changes from Settings, the connection manager, the plugin manager, or the cloud sync surface. For scripted CLI writes, inspect the plan first, then repeat with `--yes` only when the change is expected:
+For everyday app use, make ordinary configuration changes from Settings, the connection manager, or the plugin manager. For scripted CLI writes, inspect the plan first, then repeat with `--yes` only when the change is expected:
 
 ```sh
 oxideterm settings set terminal.fontSize 14 --dry-run --json
 oxideterm settings set terminal.fontSize 14 --yes
 ```
 
-Backups and restore flows should be used before high-risk changes such as bulk imports, cloud-sync apply, privilege credential changes, or `.oxide` imports.
+Backups and restore flows should be used before high-risk changes such as bulk imports, privilege credential changes, or `.oxide` imports.

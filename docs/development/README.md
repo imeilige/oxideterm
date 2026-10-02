@@ -48,7 +48,7 @@ Move inward only when evidence says the outer layer is correct. For example, an 
 | Write or review regression coverage and fixtures | [Testing and fixtures](testing-and-fixtures.md) |
 | Add product copy or a localized control | [Internationalization and product copy](i18n-and-product-copy.md) |
 | Handle credentials, diagnostics, or external process input | [Secrets and sensitive data](secrets-and-sensitive-data.md) |
-| Change persisted settings, export, sync, or migration behavior | [Settings, data, and migrations](settings-data-and-migrations.md) |
+| Change persisted settings, export, or migration behavior | [Settings, data, and migrations](settings-data-and-migrations.md) |
 | Make a performance claim or change a hot path | [Performance and benchmarking](performance-and-benchmarking.md) |
 | Prepare a stable release or repair release assets | [Release process](release-process.md) |
 | Maintain Nix packaging, flake checks, or Git dependency hashes | [Nix packaging guide](../../nix/README.md) |

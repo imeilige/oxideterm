@@ -489,7 +489,6 @@ impl WorkspaceApp {
                     session_manager.remove_ssh_config_host_alias(&alias, cx);
                     session_manager.set_status(Some(status), cx);
                 });
-                self.queue_cloud_sync_dirty_refresh(cx);
             }
             Ok(false) => {
                 let status = self

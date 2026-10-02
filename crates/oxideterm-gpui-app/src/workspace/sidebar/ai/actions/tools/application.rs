@@ -164,19 +164,18 @@ impl WorkspaceApp {
             .tab_for_node(&node_id)
             .or_else(|| self.active_tab_id(cx))
             .ok_or_else(|| "No workspace tab is available for forwarding delivery.".to_string())?;
-        let (message_key, sync_saved_forwards) = match action {
-            "create" => ("forwards.messages.created", true),
-            "update" => ("forwards.messages.updated", true),
-            "stop" => ("forwards.messages.stopped", false),
-            "restart" => ("forwards.messages.restarted", false),
-            "delete" => ("forwards.messages.deleted", true),
+        let message_key = match action {
+            "create" => "forwards.messages.created",
+            "update" => "forwards.messages.updated",
+            "stop" => "forwards.messages.stopped",
+            "restart" => "forwards.messages.restarted",
+            "delete" => "forwards.messages.deleted",
             _ => return Err("Unsupported forwarding action.".to_string()),
         };
         self.start_forward_operation(
             tab_id,
             node_id,
             message_key,
-            sync_saved_forwards,
             operation,
             cx,
         );
@@ -583,92 +582,6 @@ impl WorkspaceApp {
         }))
     }
 
-    pub(in crate::workspace) fn execute_ai_get_cloud_sync_state(
-        &self,
-        cx: &App,
-    ) -> serde_json::Value {
-        oxideterm_ai::sanitize_json_for_ai(&self.cloud_sync.read(cx).ai_snapshot())
-    }
-
-    pub(in crate::workspace) fn execute_ai_manage_cloud_sync(
-        &mut self,
-        arguments: &serde_json::Value,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> Result<serde_json::Value, String> {
-        let action = arguments
-            .get("action")
-            .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| "A Cloud Sync action is required.".to_string())?;
-        if action != "open" && self.cloud_sync.read(cx).operation_in_flight() {
-            return Err("Another Cloud Sync operation is already running.".to_string());
-        }
-        match action {
-            "open" => self.open_cloud_sync_tab(window, cx),
-            "check" => self.start_cloud_sync_check_with_options(false, cx),
-            "upload_preview" => self.start_cloud_sync_upload_preview(cx),
-            "pull_preview" => self.start_cloud_sync_pull_preview(cx),
-            _ => return Err("Unsupported Cloud Sync action.".to_string()),
-        }
-        Ok(serde_json::json!({ "accepted": true, "action": action }))
-    }
-
-    pub(in crate::workspace) fn execute_ai_configure_cloud_sync(
-        &mut self,
-        arguments: &serde_json::Value,
-        cx: &mut Context<Self>,
-    ) -> Result<serde_json::Value, String> {
-        if self.cloud_sync.read(cx).operation_in_flight() {
-            return Err("Cloud Sync configuration cannot change while an operation is running."
-                .to_string());
-        }
-        // Return any active IME-owned draft before refreshing the form projection.
-        self.apply_focused_cloud_sync_input_draft(cx);
-        let (current_settings, current_scope) = {
-            let cloud_sync = self.cloud_sync.read(cx);
-            let state = cloud_sync.controller.store.state();
-            (state.settings.clone(), state.sync_scope.clone())
-        };
-        let (settings, scope, updated_fields) =
-            oxideterm_gpui_cloud_sync::apply_cloud_sync_configuration_patch(
-                &current_settings,
-                &current_scope,
-                arguments,
-            )?;
-        let settings_for_view = settings.clone();
-        let save_result = self.cloud_sync.update(cx, |cloud_sync, cx| {
-            let state = cloud_sync.controller.store.state_mut();
-            state.settings = settings;
-            state.sync_scope = scope;
-            state.last_error = None;
-            if let Err(error) = cloud_sync.controller.store.save() {
-                // Roll back only non-secret state; protected credentials were never read or moved.
-                let message = error.to_string();
-                let state = cloud_sync.controller.store.state_mut();
-                state.settings = current_settings.clone();
-                state.sync_scope = current_scope.clone();
-                state.last_error = Some(message.clone());
-                return Err(message);
-            }
-            cloud_sync
-                .view
-                .form
-                .apply_changed_non_secret_settings(&current_settings, &settings_for_view);
-            cx.notify();
-            Ok(())
-        });
-        save_result.map_err(|error| format!("Failed to save Cloud Sync configuration: {error}"))?;
-
-        self.invalidate_cloud_sync_snapshot_caches(cx);
-        self.reschedule_cloud_sync_auto_upload(cx);
-        self.queue_cloud_sync_dirty_refresh(cx);
-        Ok(serde_json::json!({
-            "accepted": true,
-            "updatedFields": updated_fields,
-            "state": self.execute_ai_get_cloud_sync_state(cx),
-        }))
-    }
-
     pub(in crate::workspace) fn execute_ai_list_credentials(
         &self,
         arguments: &serde_json::Value,
@@ -797,9 +710,6 @@ impl WorkspaceApp {
                 .map_err(|error| error.to_string())?,
             _ => return Err("Unsupported credential kind.".to_string()),
         };
-        if deleted {
-            self.queue_cloud_sync_dirty_refresh(cx);
-        }
         cx.notify();
         Ok(serde_json::json!({
             "accepted": deleted,

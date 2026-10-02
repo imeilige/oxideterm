@@ -18,7 +18,6 @@ pub(in crate::workspace) enum ForwardingDeliveryIntent {
     Operation {
         tab_id: TabId,
         message_key: &'static str,
-        sync_saved_forwards_on_success: bool,
         binding: Option<(String, String, ConnectionConsumer)>,
         result: Result<(), String>,
     },
@@ -224,7 +223,6 @@ impl ForwardingWorkspaceEntity {
         node_id: NodeId,
         owner_connection_id: Option<String>,
         message_key: &'static str,
-        sync_saved_forwards_on_success: bool,
         operation: ForwardingRuntimeOperation,
     ) {
         self.begin_operation();
@@ -233,7 +231,6 @@ impl ForwardingWorkspaceEntity {
             node_id,
             owner_connection_id,
             message_key,
-            sync_saved_forwards_on_success,
             operation,
             self.worker_tx.clone(),
         );
@@ -527,7 +524,6 @@ impl ForwardingWorkspaceEntity {
                 ForwardingWorkerResult::Operation {
                     tab_id,
                     message_key,
-                    sync_saved_forwards_on_success,
                     binding,
                     result,
                 } => {
@@ -538,7 +534,6 @@ impl ForwardingWorkspaceEntity {
                         .push_back(ForwardingDeliveryIntent::Operation {
                             tab_id,
                             message_key,
-                            sync_saved_forwards_on_success,
                             binding,
                             result,
                         });

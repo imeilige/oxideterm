@@ -27,13 +27,11 @@ oxideterm-ai-tasks = { path = "../oxideterm-ai-tasks" }
 oxideterm-acp-adapter = { path = "../oxideterm-acp-adapter" }
 oxideterm-acp-host-tools = { path = "../oxideterm-acp-host-tools" }
 oxideterm-atomic-file = { path = "../oxideterm-atomic-file" }
-oxideterm-cloud-sync = { path = "../oxideterm-cloud-sync" }
 oxideterm-connection-monitor = { path = "../oxideterm-connection-monitor" }
 oxideterm-connections = { path = "../oxideterm-connections" }
 oxideterm-desktop-presence = { path = "../oxideterm-desktop-presence" }
 oxideterm-editor-core = { path = "../oxideterm-editor-core" }
 oxideterm-forwarding = { path = "../oxideterm-forwarding" }
-oxideterm-gpui-cloud-sync = { path = "../oxideterm-gpui-cloud-sync" }
 oxideterm-gpui-markdown = { path = "../oxideterm-gpui-markdown" }
 oxideterm-gpui-platform = { path = "../oxideterm-gpui-platform" }
 oxideterm-gpui-remote-desktop = { path = "../oxideterm-gpui-remote-desktop" }

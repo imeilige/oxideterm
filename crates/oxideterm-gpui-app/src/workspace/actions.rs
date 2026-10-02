@@ -751,14 +751,6 @@ impl WorkspaceApp {
             return;
         }
 
-        if self.handle_cloud_sync_confirm_key(event, cx) {
-            return;
-        }
-
-        if self.handle_cloud_sync_select_key(event, cx) {
-            return;
-        }
-
         let connection_monitor_keys_visible = self.context_sidebar_visible()
             && self.active_context_sidebar_panel == ContextSidebarPanel::HostTools
             && matches!(

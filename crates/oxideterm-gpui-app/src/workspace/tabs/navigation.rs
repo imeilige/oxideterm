@@ -240,9 +240,6 @@ impl WorkspaceApp {
                 self.active_surface = ActiveSurface::Terminal;
                 self.active_sidebar_section = SidebarSection::Connections;
             }
-            Some(TabKind::CloudSync) => {
-                self.active_surface = ActiveSurface::Terminal;
-            }
             Some(TabKind::RemoteDesktop) => {
                 self.active_surface = ActiveSurface::Terminal;
             }

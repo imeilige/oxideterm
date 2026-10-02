@@ -11,7 +11,6 @@ enum WelcomeToolAction {
     NewConnection,
     LocalTerminal,
     SessionManager,
-    CloudSync,
 }
 
 fn tab_kind_icon(kind: &TabKind) -> LucideIcon {
@@ -25,7 +24,6 @@ fn tab_kind_icon(kind: &TabKind) -> LucideIcon {
         TabKind::Sftp => LucideIcon::FolderInput,
         TabKind::Forwards => LucideIcon::ArrowLeftRight,
         TabKind::SessionManager => LucideIcon::LayoutList,
-        TabKind::CloudSync => LucideIcon::Cloud,
         TabKind::Settings => LucideIcon::Settings,
     }
 }
@@ -1334,13 +1332,6 @@ impl WorkspaceApp {
                 WelcomeToolAction::SessionManager,
                 cx,
             ))
-            .child(self.render_welcome_tool_row(
-                LucideIcon::Cloud,
-                "plugin.cloud_sync.panel_title",
-                "layout.empty.cloud_sync_hint",
-                WelcomeToolAction::CloudSync,
-                cx,
-            ))
     }
 
     fn render_welcome_tool_row(
@@ -1411,7 +1402,6 @@ impl WorkspaceApp {
                         WelcomeToolAction::SessionManager => {
                             this.open_session_manager_tab(window, cx)
                         }
-                        WelcomeToolAction::CloudSync => this.open_cloud_sync_tab(window, cx),
                     }
                     cx.stop_propagation();
                 }),

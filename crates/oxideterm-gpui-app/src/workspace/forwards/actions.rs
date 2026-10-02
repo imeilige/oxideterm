@@ -63,7 +63,6 @@ impl WorkspaceApp {
                         tab_id,
                         node_id,
                         "forwards.messages.deleted",
-                        true,
                         ForwardingRuntimeOperation::Delete { forward_id },
                         cx,
                     );
@@ -128,7 +127,6 @@ impl WorkspaceApp {
             tab_id,
             node_id,
             "forwards.messages.created",
-            true,
             ForwardingRuntimeOperation::Create { rule, check_health },
             cx,
         );
@@ -164,7 +162,6 @@ impl WorkspaceApp {
             tab_id,
             node_id,
             "forwards.messages.created",
-            true,
             ForwardingRuntimeOperation::Create {
                 rule,
                 check_health: true,
@@ -223,7 +220,6 @@ impl WorkspaceApp {
             tab_id,
             node_id,
             "forwards.messages.updated",
-            true,
             ForwardingRuntimeOperation::Update { forward_id, update },
             cx,
         );
@@ -271,7 +267,6 @@ impl WorkspaceApp {
         tab_id: TabId,
         node_id: NodeId,
         message_key: &'static str,
-        sync_saved_forwards_on_success: bool,
         operation: ForwardingRuntimeOperation,
         cx: &mut Context<Self>,
     ) {
@@ -295,7 +290,6 @@ impl WorkspaceApp {
                 node_id,
                 owner_connection_id,
                 message_key,
-                sync_saved_forwards_on_success,
                 operation,
             );
         });
@@ -486,7 +480,6 @@ impl WorkspaceApp {
                 ForwardingDeliveryIntent::Operation {
                     tab_id,
                     message_key,
-                    sync_saved_forwards_on_success,
                     binding,
                     result,
                 } => {
@@ -499,11 +492,6 @@ impl WorkspaceApp {
                     }
                     match result {
                         Ok(()) => {
-                            if sync_saved_forwards_on_success {
-                                // Persisted mutations are durable even when the initiating tab
-                                // becomes hidden before the worker completes.
-                                self.queue_cloud_sync_dirty_refresh(cx);
-                            }
                             if self.forwards_tab_is_visible(tab_id, cx) {
                                 let _ = message_key;
                                 let (show_new_form, editing_forward) = {

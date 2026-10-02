@@ -36,7 +36,7 @@ remove that decision or close the issue later.
 
 - `candidate_for_agent`: a bounded bug with useful reproduction evidence;
 - `needs_human`: platform validation, compatibility, product, secret, authentication, update,
-  release, destructive-data, cloud-sync, or plugin-permission judgment is required;
+  release, destructive-data, or plugin-permission judgment is required;
 - `blocked_by_quality_gate`: the existing deterministic issue gate still owns a correction;
 - `observe_only`: available evidence does not justify an implementation route.
 
@@ -56,7 +56,7 @@ edit an isolated worktree, run tests, and export a patch. A separate clean publi
 
 Automation control files under `.github/workflows/`, `.github/actions/`, and
 `scripts/automation/` are protected from agent-authored patches. Release, update, secret-store,
-cloud-sync, and plugin capability boundaries require a maintainer.
+and plugin capability boundaries require a maintainer.
 
 ## GitHub App
 
