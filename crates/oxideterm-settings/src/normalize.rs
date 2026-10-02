@@ -459,15 +459,19 @@ fn normalize_ai_reasoning_effort_aliases(settings: &mut Value) {
     ai.insert("reasoningEffort".to_string(), json!(normalized));
 }
 
-/// Releases up to 2.2.8 shipped the Meslo bundled subset and recorded "meslo"
-/// in the persisted font family. The subset is no longer embedded, and an
-/// unknown variant tag would fail the whole settings document, so remap it to
-/// the bundled JetBrains family before deserialization.
+/// Releases up to 2.2.8 shipped the Meslo and Maple bundled subsets and
+/// recorded their tags in the persisted font family. Neither subset is
+/// embedded any more, and an unknown variant tag would fail the whole settings
+/// document and block startup, so remap them to the bundled JetBrains family
+/// before deserialization.
 fn normalize_retired_font_family(settings: &mut Value) {
     let Some(terminal) = object_mut(settings, "terminal") else {
         return;
     };
-    if terminal.get("fontFamily").and_then(Value::as_str) == Some("meslo") {
+    if matches!(
+        terminal.get("fontFamily").and_then(Value::as_str),
+        Some("meslo" | "maple")
+    ) {
         terminal.insert("fontFamily".to_string(), json!("jetbrains"));
     }
 }
@@ -966,19 +970,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn retired_meslo_font_family_falls_back_without_losing_other_settings() {
-        let sanitized = sanitize_settings_value(json!({
-            "terminal": { "fontFamily": "meslo", "fontSize": 19 }
-        }))
-        .expect("sanitize settings");
+    fn retired_bundled_font_families_fall_back_without_losing_other_settings() {
+        for retired in ["meslo", "maple"] {
+            let sanitized = sanitize_settings_value(json!({
+                "terminal": { "fontFamily": retired, "fontSize": 19 }
+            }))
+            .expect("sanitize settings");
 
-        assert_eq!(
-            sanitized.settings.terminal.font_family,
-            FontFamily::Jetbrains
-        );
-        // The rest of the document must survive the remap, otherwise a released
-        // build that stored "meslo" would reset the whole user profile.
-        assert_eq!(sanitized.settings.terminal.font_size, 19);
+            assert_eq!(
+                sanitized.settings.terminal.font_family,
+                FontFamily::Jetbrains
+            );
+            // The rest of the document must survive the remap, otherwise a released
+            // build that stored a retired subset would reset the whole user profile.
+            assert_eq!(sanitized.settings.terminal.font_size, 19);
+        }
     }
 
     #[test]
