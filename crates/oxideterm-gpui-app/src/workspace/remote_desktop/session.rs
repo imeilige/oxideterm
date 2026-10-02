@@ -125,7 +125,6 @@ impl RemoteDesktopSessionEntity {
             worker_wake.stop();
         }
         self.shutdown_worker();
-        self.public_mcp_clipboard = None;
         let replacement_frame_slot = RemoteDesktopFrameDeliverySlot::new();
         // Freeze the last presented frame and sever queued deltas from the
         // failed worker before the replacement graphics epoch starts.
@@ -193,7 +192,6 @@ impl RemoteDesktopSessionEntity {
                 None,
             );
         }
-        self.public_mcp_clipboard = None;
         drop(self.ssh_tunnel.take());
         drop(self.password.take());
         self.credential_prompt_task.take();
@@ -261,11 +259,6 @@ impl RemoteDesktopSessionEntity {
                                 oxideterm_audit::AuditOutcome::Succeeded,
                                 Some(text.len() as u64),
                             );
-                            // Keep a session-scoped zeroizing copy for explicitly authorized
-                            // Public MCP reads; the platform clipboard remains the UI boundary.
-                            self.public_mcp_clipboard = Some(RemoteDesktopPublicClipboard::Text(
-                                Zeroizing::new(text.clone()),
-                            ));
                             cx.write_to_clipboard(ClipboardItem::new_string(text));
                             changed = true;
                         }
@@ -279,10 +272,6 @@ impl RemoteDesktopSessionEntity {
                                 oxideterm_audit::AuditOutcome::Succeeded,
                                 Some(data.bytes.len() as u64),
                             );
-                            self.public_mcp_clipboard = Some(RemoteDesktopPublicClipboard::Image {
-                                format: data.format,
-                                bytes: Zeroizing::new(data.bytes.clone()),
-                            });
                             if let Some(item) = remote_desktop_clipboard_item_from_data(data) {
                                 cx.write_to_clipboard(item);
                             }
@@ -1130,7 +1119,7 @@ impl RemoteDesktopSessionEntity {
     }
 
     pub(super) fn apply_frame_visibility(&mut self, cx: &mut Context<Self>) {
-        let effective_visible = self.ui_frame_visible || self.public_mcp_frame_observers > 0;
+        let effective_visible = self.ui_frame_visible;
         let visibility_changed = self.frame_slot.is_visible() != effective_visible;
         let recovery_required = self.frame_slot.set_visible(effective_visible);
         if recovery_required
@@ -1362,7 +1351,6 @@ impl WorkspaceApp {
         window: Option<&mut Window>,
         cx: &mut Context<Self>,
     ) {
-        self.release_public_mcp_desktop_for_closed_tab(tab_id);
         if let Some(session) = self.remote_desktop_session_entity(tab_id, cx) {
             session.update(cx, |session, cx| session.shutdown(window, cx));
         }

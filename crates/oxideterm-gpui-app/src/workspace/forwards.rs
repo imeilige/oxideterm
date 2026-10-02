@@ -68,9 +68,7 @@ pub(in crate::workspace) use reconnect::{
     release_reconnect_forward_bindings,
 };
 use runtime_service::{ForwardingQuickAction, ForwardingRuntimeSnapshot};
-pub(in crate::workspace) use runtime_service::{
-    ForwardingRuntimeOperation, PublicMcpForwardMutation,
-};
+pub(in crate::workspace) use runtime_service::ForwardingRuntimeOperation;
 pub(in crate::workspace) use runtime_service::{
     ForwardingRuntimeService, ReconnectForwardRestoreRequest,
 };

@@ -467,7 +467,6 @@ impl WorkspaceApp {
                 if let Some(token) = intent.standalone_sftp_pair_launch_token() {
                     self.pending_standalone_sftp_pair_launches.remove(token);
                 }
-                self.fail_public_mcp_mosh_open_for_intent(&intent, message.clone());
                 let reported_to_form = self.connection_flow.update(cx, |connection_flow, cx| {
                     connection_flow.set_form_feedback(None, Some(message.clone()), cx)
                 });
@@ -1269,7 +1268,6 @@ impl WorkspaceApp {
                 let _ = self.open_or_create_saved_ssh_terminal_tab(id, config, title, window, cx);
             }
             SshConnectionIntent::Mosh(options) => {
-                let public_mcp_open_token = options.public_mcp_open_token.clone();
                 let runtime_connection_attempt_id = options.runtime_connection_attempt_id.clone();
                 if runtime_connection_attempt_id
                     .as_deref()
@@ -1280,15 +1278,6 @@ impl WorkspaceApp {
                     })
                 {
                     // The logical connection was cancelled while host-key work was pending.
-                    return;
-                }
-                if public_mcp_open_token
-                    .as_deref()
-                    .is_some_and(|token| self.cancel_public_mcp_mosh_open_if_request_ended(token))
-                {
-                    if let Some(attempt_id) = runtime_connection_attempt_id.as_deref() {
-                        self.standalone_connections.remove_attempt(attempt_id);
-                    }
                     return;
                 }
                 self.connection_flow.update(cx, |connection_flow, cx| {
@@ -1374,21 +1363,11 @@ impl WorkspaceApp {
                                 .connection_store
                                 .mark_mosh_profile_used(&saved_profile_id);
                         }
-                        if let Some(token) = public_mcp_open_token {
-                            self.complete_public_mcp_mosh_terminal_open(token, Ok(session_id), cx);
-                        }
                     }
                     Err(error) => {
                         self.standalone_connections
                             .mark_attempt_error(&runtime_connection_attempt_id);
                         let error = error.to_string();
-                        if let Some(token) = public_mcp_open_token {
-                            self.complete_public_mcp_mosh_terminal_open(
-                                token,
-                                Err(error.clone()),
-                                cx,
-                            );
-                        }
                         self.session_manager.update(cx, |session_manager, cx| {
                             session_manager.set_status(Some(error), cx);
                         });

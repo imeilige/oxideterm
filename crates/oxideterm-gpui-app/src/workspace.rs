@@ -27,7 +27,6 @@ mod onboarding;
 mod overlay;
 mod pane_tree;
 mod path_completion;
-mod public_mcp;
 mod remote_desktop;
 mod runtime_entity;
 mod root {
@@ -833,7 +832,6 @@ pub(crate) struct WorkspaceApp {
     _connection_flow_subscription: Subscription,
     workspace_runtime: Entity<runtime_entity::WorkspaceRuntimeEntity>,
     _workspace_runtime_subscription: Subscription,
-    public_mcp: public_mcp::PublicMcpWorkspaceBridge,
     ssh_registry: SshConnectionRegistry,
     forwarding_service: forwards::ForwardingRuntimeService,
     forwarding_runtime: Arc<tokio::runtime::Runtime>,

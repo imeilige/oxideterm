@@ -144,10 +144,6 @@ impl WorkspaceApp {
             if let Some(token) = intent.standalone_sftp_pair_launch_token() {
                 self.pending_standalone_sftp_pair_launches.remove(token);
             }
-            self.fail_public_mcp_mosh_open_for_intent(
-                &intent,
-                "The host-key confirmation was cancelled",
-            );
         }
         let delay = oxideterm_gpui_ui::motion::duration(
             &self.tokens,

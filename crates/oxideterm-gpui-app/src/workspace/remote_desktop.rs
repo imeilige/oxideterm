@@ -54,14 +54,12 @@ mod certificate;
 mod clipboard;
 mod input;
 mod interaction;
-mod public_mcp;
 mod session;
 mod vendor_files;
 mod view;
 mod worker;
 
 pub(in crate::workspace) use interaction::remote_desktop_keyboard_capture;
-pub(in crate::workspace) use public_mcp::RemoteDesktopPublicClipboardSnapshot;
 
 use certificate::*;
 use clipboard::*;
@@ -624,8 +622,6 @@ pub(in crate::workspace) struct RemoteDesktopSessionEntity {
     geometry: SharedRemoteDesktopGeometry,
     frame_slot: RemoteDesktopFrameDeliverySlot,
     ui_frame_visible: bool,
-    public_mcp_frame_observers: usize,
-    public_mcp_clipboard: Option<RemoteDesktopPublicClipboard>,
     audit_context: Option<oxideterm_audit::AuditContext>,
     connect_audit: Option<oxideterm_audit::AuditOperation>,
     file_audits: HashMap<String, oxideterm_audit::AuditOperation>,
@@ -702,8 +698,6 @@ impl RemoteDesktopSessionEntity {
             geometry: SharedRemoteDesktopGeometry::default(),
             frame_slot,
             ui_frame_visible: false,
-            public_mcp_frame_observers: 0,
-            public_mcp_clipboard: None,
             audit_context,
             connect_audit: None,
             file_audits: HashMap::new(),

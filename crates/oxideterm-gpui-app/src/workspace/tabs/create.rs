@@ -1240,7 +1240,6 @@ impl WorkspaceApp {
                 prediction: MoshPredictionMode::Adaptive,
                 locale: None,
                 terminal: ConnectionTerminalOptions::default(),
-                public_mcp_open_token: None,
                 runtime_connection_attempt_id: None,
             }),
             cx,

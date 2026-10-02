@@ -608,7 +608,6 @@ pub(in crate::workspace) fn mosh_options_from_profile(
         prediction: profile.prediction,
         locale: profile.locale.clone(),
         terminal: profile.terminal.clone(),
-        public_mcp_open_token: None,
         runtime_connection_attempt_id: None,
     }
 }
@@ -1825,7 +1824,6 @@ impl WorkspaceApp {
                 locale: (!form.mosh_locale.trim().is_empty())
                     .then(|| form.mosh_locale.trim().to_string()),
                 terminal: form.terminal.clone(),
-                public_mcp_open_token: None,
                 runtime_connection_attempt_id: None,
             };
             let ssh_port = ssh_port.expect("validated Mosh SSH port must exist");
@@ -3354,9 +3352,8 @@ impl WorkspaceApp {
         cx: &App,
     ) {
         if let SshConnectionIntent::Mosh(options) = &mut intent {
-            let mut reconnect_options = options.clone();
+            let reconnect_options = options.clone();
             // A later manual retry must not reuse an automation request correlation token.
-            reconnect_options.public_mcp_open_token = None;
             let reconnect_launch = options.saved_profile_id.as_ref().map_or_else(
                 || StandaloneConnectionLaunch::MoshPreflight {
                     config: config.clone(),

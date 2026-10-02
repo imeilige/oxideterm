@@ -1041,7 +1041,6 @@ impl WorkspaceApp {
             self.standalone_connections.release_surface(
                 standalone_connections::StandaloneConnectionSurface::Terminal(session_id),
             );
-            self.release_public_mcp_terminal_for_closed_session(session_id, cx);
             self.serial_terminal_configs.remove(&session_id);
             self.telnet_terminal_profile_ids.remove(&session_id);
             self.terminal_saved_connection_refs.remove(&session_id);

@@ -190,7 +190,6 @@ fn temporary_sessions_persist_metadata_and_reauthenticate_into_the_same_record()
     let profile = MoshProfile::new("shell", "mosh.test", 22, "operator", SavedAuth::Agent);
     let mut options = new_connection::mosh_options_from_profile(&profile);
     options.saved_profile_id = None;
-    options.public_mcp_open_token = Some("automation-token".into());
     options.udp_host_override = Some("udp.test".into());
     let mosh_id = registry.insert_pending(
         StandaloneConnectionKind::Mosh,
