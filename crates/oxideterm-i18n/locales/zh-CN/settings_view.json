@@ -1283,7 +1283,6 @@
         "sftp.download": "下载选中文件",
         "sftp.delete": "删除选中文件",
         "sftp.rename": "重命名文件",
-        "sftp.togglePreviewSource": "切换 Markdown 预览源码",
         "fileManager.selectAll": "选择全部文件",
         "fileManager.copy": "复制文件",
         "fileManager.cut": "剪切文件",

@@ -402,12 +402,6 @@ pub(crate) static ACTION_DEFINITIONS: LazyLock<Vec<ActionDefinition>> = LazyLock
             KeyCombo::ctrl_shift("i"),
         ),
         def(
-            "terminal.recording",
-            ActionScope::Terminal,
-            KeyCombo::cmd_shift("r"),
-            KeyCombo::ctrl_shift("r"),
-        ),
-        def(
             "terminal.toggleFreeTypeMode",
             ActionScope::Terminal,
             KeyCombo::cmd_shift("f"),
@@ -562,13 +556,6 @@ pub(crate) static ACTION_DEFINITIONS: LazyLock<Vec<ActionDefinition>> = LazyLock
             KeyCombo::plain("f2"),
         ),
     ]);
-
-    actions.push(def(
-        "sftp.togglePreviewSource",
-        ActionScope::Sftp,
-        KeyCombo::plain("u"),
-        KeyCombo::plain("u"),
-    ));
 
     actions.extend([
         def(

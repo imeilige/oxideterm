@@ -1283,7 +1283,6 @@
         "sftp.download": "Download selected files",
         "sftp.delete": "Delete selected files",
         "sftp.rename": "Rename file",
-        "sftp.togglePreviewSource": "Toggle Markdown preview source",
         "fileManager.selectAll": "Select all files",
         "fileManager.copy": "Copy files",
         "fileManager.cut": "Cut files",
