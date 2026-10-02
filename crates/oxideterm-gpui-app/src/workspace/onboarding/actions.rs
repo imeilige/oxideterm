@@ -67,14 +67,6 @@ impl WorkspaceApp {
         }
         self.onboarding.step = step;
         self.onboarding.scroll_handle = ScrollHandle::new();
-        if OnboardingStep::from_index(step) == OnboardingStep::CliCompanion
-            && self
-                .settings_workspace
-                .read(cx)
-                .cli_companion_needs_refresh()
-        {
-            self.refresh_cli_companion_status(cx);
-        }
         if OnboardingStep::from_index(step) == OnboardingStep::QuickStart
             && self.onboarding.host_count.is_none()
         {

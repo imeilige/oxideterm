@@ -74,15 +74,6 @@ fn settings_search_specs() -> Vec<SettingsSearchEntrySpec> {
         ),
         settings_search_entry(
             SettingsTab::General,
-            3 + window_behavior_sections,
-            "settings_view.general.cli_companion",
-            &[
-                "settings_view.general.cli_tool",
-                "settings_view.general.cli_tool_hint",
-            ],
-        ),
-        settings_search_entry(
-            SettingsTab::General,
             1,
             "settings_view.general.startup",
             &[
@@ -679,7 +670,6 @@ impl WorkspaceApp {
         self.clear_ime_selection();
         self.ime_marked_text = None;
         if tab == SettingsTab::General {
-            self.refresh_cli_companion_status(cx);
             #[cfg(not(target_os = "macos"))]
             self.refresh_launch_at_login_status(cx);
         }

@@ -1809,7 +1809,6 @@ impl WorkspaceApp {
         // Opening Settings must preserve the user's current primary-sidebar state.
         self.reveal_active_tab(window, cx);
         if self.settings_workspace.read(cx).route_snapshot().active_tab == SettingsTab::General {
-            self.refresh_cli_companion_status(cx);
             #[cfg(not(target_os = "macos"))]
             self.refresh_launch_at_login_status(cx);
         }

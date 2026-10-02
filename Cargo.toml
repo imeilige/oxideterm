@@ -9,7 +9,6 @@ members = [
   "crates/oxideterm-mosh",
   "crates/oxideterm-atomic-file",
   "crates/oxideterm-gpui-markdown",
-  "crates/oxideterm-cli",
   "crates/oxideterm-rdp-helper",
   "crates/oxideterm-pcm-audio",
   "crates/oxideterm-gpui-cloud-sync",

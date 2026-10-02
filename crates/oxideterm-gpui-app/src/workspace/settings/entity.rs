@@ -18,7 +18,7 @@ use zeroize::Zeroizing;
 
 use crate::workspace::browser_behavior;
 
-use super::{CliCompanionStatus, SettingsManagedKeyDialog};
+use super::SettingsManagedKeyDialog;
 
 const EXTERNAL_STORE_WATCH_INTERVAL: Duration = Duration::from_millis(530);
 
@@ -93,27 +93,11 @@ pub(in crate::workspace) enum ManagedKeyDialogSnapshot {
 }
 
 #[derive(Clone)]
-pub(in crate::workspace) struct CliCompanionSnapshot {
-    pub(in crate::workspace) status: Option<CliCompanionStatus>,
-    pub(in crate::workspace) loading: bool,
-    pub(in crate::workspace) error: Option<String>,
-}
-
-#[derive(Clone)]
 pub(in crate::workspace) struct SshConfigImportSnapshot {
     pub(in crate::workspace) open: bool,
     pub(in crate::workspace) selected_hosts: HashSet<String>,
     pub(in crate::workspace) status: Option<String>,
     pub(in crate::workspace) presence: oxideterm_gpui_ui::motion::ExitPresence,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(in crate::workspace) enum CliCompanionOperation {
-    Refresh,
-    Install,
-    Uninstall,
-    UninstallLegacy,
-    Migrate,
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -292,10 +276,6 @@ pub(in crate::workspace) struct SettingsWorkspaceEntity {
     pub(super) managed_key_dialog_presence: oxideterm_gpui_ui::motion::ExitPresence,
     pub(super) managed_key_dialog_exit_task: Option<Task<()>>,
     pub(super) managed_key_file_picker_task: Option<Task<()>>,
-    pub(super) cli_companion_status: Option<CliCompanionStatus>,
-    pub(super) cli_companion_loading: bool,
-    pub(super) cli_companion_error: Option<String>,
-    pub(super) cli_companion_task: Option<Task<()>>,
     pub(super) ssh_config_import_dialog_open: bool,
     pub(super) ssh_config_selected_hosts: HashSet<String>,
     pub(super) ssh_config_import_status: Option<String>,
@@ -363,10 +343,6 @@ pub(in crate::workspace) enum SettingsWorkspaceEvent {
     ThemeImportReady,
     ThemeEditorOperationReady,
     KeybindingFileOperationReady,
-    CliCompanionFinished {
-        operation: CliCompanionOperation,
-        success: bool,
-    },
 }
 
 impl EventEmitter<SettingsWorkspaceEvent> for SettingsWorkspaceEntity {}
@@ -391,10 +367,6 @@ impl SettingsWorkspaceEntity {
             managed_key_dialog_presence: oxideterm_gpui_ui::motion::ExitPresence::visible(),
             managed_key_dialog_exit_task: None,
             managed_key_file_picker_task: None,
-            cli_companion_status: None,
-            cli_companion_loading: false,
-            cli_companion_error: None,
-            cli_companion_task: None,
             ssh_config_import_dialog_open: false,
             ssh_config_selected_hosts: HashSet::new(),
             ssh_config_import_status: None,

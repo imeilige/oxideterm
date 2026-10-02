@@ -788,7 +788,6 @@ class LinuxPackagingTests(unittest.TestCase):
 
             target = "x86_64-unknown-linux-gnu"
             for relative_path in (
-                Path("cli-bin") / target / "oxideterm",
                 Path("helpers") / target / "oxideterm-rdp-helper",
                 Path("helpers") / target / "oxideterm-vnc-helper",
             ):
@@ -835,13 +834,10 @@ class LinuxPackagingTests(unittest.TestCase):
             )
             self.assertIn("/opt/oxideterm/PACKAGE_KIND", package_listing)
             self.assertIn("/opt/oxideterm/oxideterm-native", package_listing)
-            # The bundled CLI must ship for the packaged target; the remote
-            # agent resource directory no longer exists in the release layout.
-            self.assertIn(
-                f"/opt/oxideterm/resources/cli-bin/{target}/oxideterm",
-                package_listing,
-            )
+            # The remote agent resource directory no longer exists in the
+            # release layout, and the CLI companion is no longer bundled.
             self.assertNotIn("/opt/oxideterm/resources/agents", package_listing)
+            self.assertNotIn("cli-bin", package_listing)
             recommendations = subprocess.check_output(
                 ["rpm", "-qp", "--recommends", str(artifact)],
                 text=True,

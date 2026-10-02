@@ -20,10 +20,6 @@ notices:
 stats *args:
     {{ python }} scripts/project-stats.py {{ args }}
 
-# Build and stage the CLI companion for an optional target triple.
-build-cli target="":
-    bash scripts/build/build-cli.sh {{ target }}
-
 # Run the terminal throughput benchmark in the active OxideTerm terminal.
 benchmark:
     sh benchmark/benchmark.sh

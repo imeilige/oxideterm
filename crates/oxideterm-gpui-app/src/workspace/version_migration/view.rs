@@ -2,10 +2,7 @@
 // Hallmark · macrostructure: Narrative Workflow · genre: modern-minimal · tone: technical and restrained · anchor: project theme accent
 
 use super::*;
-use crate::workspace::settings::{
-    APPEARANCE_BORDER_RADIUS_MAX, APPEARANCE_BORDER_RADIUS_MIN, CLI_COMPANION_COMMAND_NAME,
-    LEGACY_CLI_COMPANION_COMMAND_NAME,
-};
+use crate::workspace::settings::{APPEARANCE_BORDER_RADIUS_MAX, APPEARANCE_BORDER_RADIUS_MIN};
 use oxideterm_gpui_settings_view::{
     animation_label, animation_options, settings_appearance_radius_control,
 };
@@ -179,7 +176,6 @@ impl WorkspaceApp {
     fn version_migration_page(&self, compact: bool, cx: &mut Context<Self>) -> AnyElement {
         match self.version_migration.step {
             0 => self.version_migration_overview_page(compact),
-            1 => self.version_migration_cli_page(compact, cx),
             2 => self.version_migration_gpui_page(compact),
             3 => self.version_migration_visual_page(compact, cx),
             4 => self.version_migration_features_page(compact),
@@ -262,172 +258,6 @@ impl WorkspaceApp {
             "migration.overview_eyebrow",
             "migration.overview_title",
             "migration.overview_description",
-            body.into_any_element(),
-        )
-    }
-
-    fn version_migration_cli_page(&self, compact: bool, cx: &mut Context<Self>) -> AnyElement {
-        let cli = self.settings_workspace.read(cx).cli_companion_snapshot();
-        let status = cli.status.as_ref();
-        let loading = cli.loading;
-        let new_installed = status.is_some_and(|status| status.installed);
-        let new_ready = status.is_some_and(|status| status.installed && !status.needs_reinstall);
-        let legacy_installed = status.is_some_and(|status| status.legacy_installed);
-        let bundled = status.is_some_and(|status| status.bundled);
-        let migration_ready = new_ready && !legacy_installed;
-
-        let commands = div()
-            .flex()
-            .flex_col()
-            .border_t_1()
-            .border_b_1()
-            .border_color(rgb(self.tokens.ui.border))
-            .child(self.version_migration_cli_status_item(
-                CLI_COMPANION_COMMAND_NAME,
-                status.and_then(|status| status.install_path.as_deref()),
-                if loading {
-                    self.i18n.t("settings_view.general.cli_checking")
-                } else if new_ready {
-                    self.i18n.t("migration.cli_installed")
-                } else if new_installed {
-                    self.i18n.t("migration.cli_reinstall_required")
-                } else {
-                    self.i18n.t("migration.cli_not_installed")
-                },
-                if new_ready {
-                    StatusTone::Success
-                } else if new_installed {
-                    StatusTone::Warning
-                } else {
-                    StatusTone::Neutral
-                },
-            ))
-            .child(self.version_migration_cli_status_item(
-                LEGACY_CLI_COMPANION_COMMAND_NAME,
-                status.and_then(|status| status.legacy_install_path.as_deref()),
-                if legacy_installed {
-                    self.i18n.t("migration.cli_legacy_found")
-                } else {
-                    self.i18n.t("migration.cli_legacy_absent")
-                },
-                if legacy_installed {
-                    StatusTone::Warning
-                } else {
-                    StatusTone::Success
-                },
-            ));
-
-        let body = div()
-            .flex()
-            .flex_col()
-            .gap(px(self.tokens.spacing.three))
-            .child(
-                semantic_surface(
-                    &self.tokens,
-                    SurfaceOptions::new(SurfaceKind::Inspector).padding(SurfacePadding::Normal),
-                )
-                .flex()
-                .flex_col()
-                .gap(px(self.tokens.spacing.three))
-                .child(
-                    div()
-                        .flex()
-                        .flex_row()
-                        .flex_wrap()
-                        .items_center()
-                        .justify_between()
-                        .gap(px(self.tokens.spacing.two))
-                        .child(self.version_migration_command_change())
-                        .child(status_pill(
-                            &self.tokens,
-                            if migration_ready {
-                                self.i18n.t("migration.cli_ready")
-                            } else {
-                                self.i18n.t("migration.cli_action_required")
-                            },
-                            StatusPillOptions::new(if migration_ready {
-                                StatusTone::Success
-                            } else {
-                                StatusTone::Warning
-                            })
-                            .strong(),
-                        )),
-                )
-                .child(commands)
-                .when_some(cli.error.clone(), |card, error| {
-                    card.child(self.version_migration_error(error))
-                })
-                .child(
-                    div()
-                        .flex()
-                        .flex_row()
-                        .flex_wrap()
-                        .items_center()
-                        .gap(px(self.tokens.spacing.two))
-                        .when(legacy_installed && bundled, |row| {
-                            row.child(self.version_migration_button(
-                                self.i18n.t("migration.cli_migrate"),
-                                LucideIcon::ArrowRight,
-                                ButtonVariant::Default,
-                                loading,
-                                |this, cx| this.migrate_cli_companion(cx),
-                                cx,
-                            ))
-                        })
-                        .when(!legacy_installed && bundled && !new_ready, |row| {
-                            row.child(self.version_migration_button(
-                                if new_installed {
-                                    self.i18n.t("migration.cli_reinstall_new")
-                                } else {
-                                    self.i18n.t("migration.cli_install_new")
-                                },
-                                LucideIcon::Download,
-                                ButtonVariant::Default,
-                                loading,
-                                |this, cx| this.install_cli_companion(cx),
-                                cx,
-                            ))
-                        })
-                        .when(legacy_installed, |row| {
-                            row.child(self.version_migration_button(
-                                self.i18n.t("migration.cli_uninstall_legacy"),
-                                LucideIcon::Trash2,
-                                ButtonVariant::Ghost,
-                                loading,
-                                |this, cx| this.uninstall_legacy_cli_companion(cx),
-                                cx,
-                            ))
-                        })
-                        .when(status.is_none() || cli.error.is_some(), |row| {
-                            row.child(self.version_migration_button(
-                                self.i18n.t("migration.cli_retry"),
-                                LucideIcon::RefreshCw,
-                                ButtonVariant::Outline,
-                                loading,
-                                |this, cx| this.refresh_cli_companion_status(cx),
-                                cx,
-                            ))
-                        }),
-                )
-                .when(!bundled && status.is_some(), |card| {
-                    card.child(self.version_migration_notice(
-                        LucideIcon::Info,
-                        "migration.cli_not_bundled",
-                        self.tokens.ui.warning,
-                    ))
-                }),
-            )
-            .child(self.version_migration_notice(
-                LucideIcon::AlertTriangle,
-                "migration.cli_script_notice",
-                self.tokens.ui.warning,
-            ));
-
-        self.version_migration_page_shell(
-            compact,
-            "migration.cli_eyebrow",
-            "migration.cli_page_title",
-            "migration.cli_description",
             body.into_any_element(),
         )
     }
@@ -746,27 +576,6 @@ impl WorkspaceApp {
                     .text_color(rgb(self.tokens.ui.text))
                     .child(self.i18n.t(key)),
             )
-            .into_any_element()
-    }
-
-    fn version_migration_command_change(&self) -> AnyElement {
-        div()
-            .flex()
-            .items_center()
-            .gap(px(9.0))
-            .child(self.version_migration_command_label(
-                LEGACY_CLI_COMPANION_COMMAND_NAME,
-                self.tokens.ui.error,
-            ))
-            .child(Self::render_lucide_icon(
-                LucideIcon::ArrowRight,
-                16.0,
-                rgb(self.tokens.ui.text_muted),
-            ))
-            .child(self.version_migration_command_label(
-                CLI_COMPANION_COMMAND_NAME,
-                self.tokens.ui.success,
-            ))
             .into_any_element()
     }
 

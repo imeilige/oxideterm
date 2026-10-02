@@ -1435,15 +1435,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "clap_complete"
-version = "4.6.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0a7a9bfdb35811f9e59832f0f05975114d2251b415fb534108e6f34060fd772"
-dependencies = [
- "clap",
-]
-
-[[package]]
 name = "clap_derive"
 version = "4.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6968,31 +6959,6 @@ dependencies = [
 [[package]]
 name = "oxideterm-backend-classification"
 version = "2.2.8"
-
-[[package]]
-name = "oxideterm-cli"
-version = "2.2.8"
-dependencies = [
- "chrono",
- "clap",
- "clap_complete",
- "oxideterm-ai",
- "oxideterm-audit",
- "oxideterm-cloud-sync",
- "oxideterm-connections",
- "oxideterm-forwarding",
- "oxideterm-portable-runtime",
- "oxideterm-quick-commands",
- "oxideterm-settings",
- "oxideterm-ssh",
- "oxideterm-ssh-launch",
- "reqwest",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "zeroize",
-]
 
 [[package]]
 name = "oxideterm-cloud-sync"

@@ -379,10 +379,6 @@ def copy_runtime_resources(dst: Path, target: str) -> None:
     # Do not copy stale CLI binaries for other platforms. The app resolves the
     # host-specific subdirectory first and only falls back to scanning when it is
     # missing, so release packages must contain exactly the current target CLI.
-    cli_source = RESOURCE_DIR / "cli-bin" / target
-    if not cli_source.exists():
-        raise FileNotFoundError(f"target CLI resource directory not found: {cli_source}")
-    copy_tree(cli_source, dst / "cli-bin" / target)
 
     helper_source = RESOURCE_DIR / HELPER_RESOURCE_DIR / target
     if not helper_source.exists():
@@ -419,25 +415,6 @@ def native_cargo_build_env(target: str) -> dict[str, str]:
         # exposes an alternative Kerberos implementation through pkg-config.
         env["LIBGSSAPI_IMPL"] = "apple"
     return env
-
-
-def build_cli(target: str, target_was_explicit: bool) -> Path:
-    args = ["cargo", "build", "-p", "oxideterm-cli", "--release"]
-    if target_was_explicit:
-        args.extend(["--target", target])
-    run(args, env=native_cargo_build_env(target))
-
-    source = release_binary(target, target_was_explicit, CLI_BIN)
-    if not source.exists():
-        raise FileNotFoundError(f"CLI binary not found: {source}")
-
-    out_dir = RESOURCE_DIR / "cli-bin" / target
-    out_dir.mkdir(parents=True, exist_ok=True)
-    dest = out_dir / source.name
-    shutil.copy2(source, dest)
-    make_executable(dest)
-    print(f"CLI artifact written to {dest}")
-    return dest
 
 
 def build_helper(package: str, target: str, target_was_explicit: bool) -> Path:
@@ -1714,7 +1691,6 @@ def main() -> None:
         f"==> Packaging {identity.app_name} {version} ({identity.channel}) for {target}",
         flush=True,
     )
-    build_cli(target, target_was_explicit)
     build_remote_desktop_helpers(target, target_was_explicit)
     app_binary = build_app(target, target_was_explicit)
     if "windows" in target:

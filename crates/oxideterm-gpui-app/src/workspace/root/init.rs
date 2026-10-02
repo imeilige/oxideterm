@@ -732,8 +732,7 @@ impl WorkspaceApp {
             workspace.bootstrap_ai_mcp_registry(cx);
         }
         if workspace.version_migration.open {
-            workspace.refresh_cli_companion_status(cx);
-        }
+            }
         workspace.bootstrap_cloud_sync_controller(cx);
         workspace.sync_ssh_config_sync_service();
         workspace.restore_session_tree_snapshot();

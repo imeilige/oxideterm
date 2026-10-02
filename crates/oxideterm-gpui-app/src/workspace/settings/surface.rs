@@ -294,10 +294,6 @@ impl WorkspaceApp {
                 launch_at_login.pending.hash(&mut hasher);
                 launch_at_login.error.hash(&mut hasher);
                 settings.general.minimize_to_tray_on_close.hash(&mut hasher);
-                let cli = self.settings_workspace.read(cx).cli_companion_snapshot();
-                cli.loading.hash(&mut hasher);
-                cli.error.is_some().hash(&mut hasher);
-                cli.status.hash(&mut hasher);
             }
             SettingsTab::Terminal => {
                 format!("{:?}", route.terminal_page).hash(&mut hasher);
@@ -723,7 +719,6 @@ impl WorkspaceApp {
                     this.settings_slider_drag = None;
                     this.clear_ime_selection();
                     if tab == SettingsTab::General {
-                        this.refresh_cli_companion_status(cx);
                         #[cfg(not(target_os = "macos"))]
                         this.refresh_launch_at_login_status(cx);
                     }

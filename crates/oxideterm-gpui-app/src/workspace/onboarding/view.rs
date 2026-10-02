@@ -63,9 +63,6 @@ impl WorkspaceApp {
                                 OnboardingStep::AiSetup => {
                                     self.render_onboarding_ai_setup(window, cx)
                                 }
-                                OnboardingStep::CliCompanion => {
-                                    self.render_onboarding_cli_companion(window, cx)
-                                }
                                 OnboardingStep::QuickStart => {
                                     self.render_onboarding_quick_start(window, cx)
                                 }

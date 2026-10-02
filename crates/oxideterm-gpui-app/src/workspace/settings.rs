@@ -9,7 +9,7 @@ use oxideterm_settings::{
     create_default_highlight_rule, reindex_highlight_rules, sanitize_highlight_rule_sets,
 };
 use oxideterm_settings_model::{
-    AiSettingsPage, CUSTOM_SEMANTIC_SCHEME_PREFIX, CliCompanionStatus,
+    AiSettingsPage, CUSTOM_SEMANTIC_SCHEME_PREFIX,
     MAX_SEMANTIC_RULES, SEMANTIC_CLASSES, SETTINGS_SECTION_HEADER_ITEM_COUNT, SemanticClass,
     SemanticRuleContext, SemanticRuleDefinition, SemanticSchemeDocument,
     SettingsDynamicSectionCounts, SettingsInputDraftApply, TERMINAL_THEME_COLOR_FIELDS,
@@ -150,12 +150,11 @@ pub(in crate::workspace) const APPEARANCE_UI_FONT_SIZE_MAX: f32 = 20.0;
 mod ai_page;
 mod appearance;
 mod cards;
-mod cli_companion;
 mod connections_page;
 mod controls;
 mod entity;
 pub(in crate::workspace) use entity::{
-    CliCompanionOperation, CliCompanionSnapshot, DataDirectoryConfirm,
+    DataDirectoryConfirm,
     DataDirectoryOperationResult, KeybindingFileOperationResult, KeybindingRecordingFooterAction,
     KeybindingRecordingKeyAction, KeybindingResetConfirmKeyAction, LaunchAtLoginError,
     ManagedKeyDialogSnapshot, SettingsNavigationDraftAction, SettingsWorkspaceEntity,
@@ -179,9 +178,6 @@ mod terminal_triggers;
 pub(in crate::workspace) use terminal_triggers::TerminalTriggersSettingsState;
 
 pub(in crate::workspace) use ai_page::AiTextEditorDialog;
-pub(in crate::workspace) use cli_companion::{
-    CLI_COMPANION_COMMAND_NAME, LEGACY_CLI_COMPANION_COMMAND_NAME, cli_install_path,
-};
 use connections_page::connection_idle_timeout_options;
 use pages::settings_keybinding_scope_matches;
 pub(in crate::workspace) use remote_shell_integration::{

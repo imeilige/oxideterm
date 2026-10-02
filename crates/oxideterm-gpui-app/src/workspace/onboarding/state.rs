@@ -54,7 +54,6 @@ pub(in crate::workspace) enum OnboardingStep {
     Features,
     AiIntro,
     AiSetup,
-    CliCompanion,
     QuickStart,
 }
 
@@ -68,7 +67,6 @@ impl OnboardingStep {
             4 => Self::Features,
             5 => Self::AiIntro,
             6 => Self::AiSetup,
-            7 => Self::CliCompanion,
             _ => Self::QuickStart,
         }
     }
@@ -82,7 +80,6 @@ impl OnboardingStep {
             Self::Features => LucideIcon::Shield,
             Self::AiIntro => LucideIcon::Sparkles,
             Self::AiSetup => LucideIcon::Settings,
-            Self::CliCompanion => LucideIcon::Terminal,
             Self::QuickStart => LucideIcon::Rocket,
         }
     }
