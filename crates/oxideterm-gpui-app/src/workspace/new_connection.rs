@@ -27,6 +27,7 @@ pub(super) use kbi_dialog::KeyboardInteractiveChallenge;
 pub(super) use ssh_flow::{
     MoshConnectionOptions, NativeSshPromptHandler, PendingStandaloneSftpPairLaunch,
     SshConnectionIntent, SshConnectionWorkerResult, SshTerminalConnectionOptions,
+    mosh_options_from_profile,
 };
 
 pub(super) use form_view::restore_saved_password_placeholder_if_empty;
