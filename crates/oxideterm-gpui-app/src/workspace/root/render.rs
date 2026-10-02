@@ -232,7 +232,7 @@ impl WorkspaceApp {
         let sidebar_resize_cursor_active = (resize_hotzone_visible
             && self.sidebar_resize_hotzone_hovered)
             || self.sidebar_resizing
-            || self.ai_entity.read(cx).chat_ui().sidebar_resizing;
+            || self.context_sidebar_resizing;
         let embedded_sftp_resize_cursor_active = self.embedded_sftp_sidebar_resizing;
         let read_only_selection_workspace = cx.entity();
         self.update_main_window_tabbar_drop_bounds(window, titlebar_visible, zen_mode, cx);

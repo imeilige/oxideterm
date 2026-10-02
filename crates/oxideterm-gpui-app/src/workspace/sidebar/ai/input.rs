@@ -356,7 +356,7 @@ impl WorkspaceApp {
         target: WorkspaceImeTarget,
         cx: &App,
     ) -> f32 {
-        let sidebar_width = self.ai_entity.read(cx).chat_ui().sidebar_width;
+        let sidebar_width = self.context_sidebar_width;
         let text_width = if target == WorkspaceImeTarget::AiMessageEdit {
             self.text_input_anchors
                 .bounds(target.anchor_id())

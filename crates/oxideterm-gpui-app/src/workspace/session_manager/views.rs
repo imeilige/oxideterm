@@ -584,7 +584,7 @@ impl WorkspaceApp {
             }
         }
         if self.context_sidebar_visible() {
-            available_width -= self.ai_entity.read(cx).chat_ui().sidebar_width;
+            available_width -= self.context_sidebar_width;
         }
         let grid_width =
             (available_width - self.tokens.spacing.three * 2.0).max(MANAGER_GRID_CARD_MIN_WIDTH);

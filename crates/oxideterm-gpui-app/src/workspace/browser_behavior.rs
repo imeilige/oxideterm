@@ -536,7 +536,7 @@ impl WorkspaceApp {
         resolve_browser_pointer_capture_owner(BrowserPointerCaptureState {
             sidebar_resizing: self.sidebar_resizing,
             embedded_sftp_sidebar_resizing: self.embedded_sftp_sidebar_resizing,
-            ai_sidebar_resizing: self.ai_entity.read(cx).chat_ui().sidebar_resizing,
+            ai_sidebar_resizing: self.context_sidebar_resizing,
             sftp_pane_resizing: sftp.pane_resize_active(),
             sftp_queue_resizing: sftp.queue_resize_active(),
             terminal_command_sender_resizing: self.terminal_command_sender.read(cx).is_resizing(),

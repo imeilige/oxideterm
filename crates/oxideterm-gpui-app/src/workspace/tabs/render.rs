@@ -991,7 +991,7 @@ impl WorkspaceApp {
                 available_width -= self.sidebar_panel_width();
             }
             if self.context_sidebar_visible() {
-                available_width -= self.ai_entity.read(cx).chat_ui().sidebar_width;
+                available_width -= self.context_sidebar_width;
             }
         }
         available_width.max(self.tokens.metrics.min_main_width)
