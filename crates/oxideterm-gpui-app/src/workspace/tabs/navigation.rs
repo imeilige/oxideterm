@@ -80,16 +80,6 @@ impl WorkspaceApp {
                 })
                 .detach();
             }
-            WorkspaceTabHostEvent::RecordingElapsedTick { pane_id } => {
-                if self.active_pane_id(cx) == Some(*pane_id)
-                    && self.active_terminal_recording_status(cx).state
-                        == TerminalRecordingState::Recording
-                {
-                    cx.notify();
-                } else {
-                    self.sync_active_terminal_recording_elapsed_tick(cx);
-                }
-            }
             WorkspaceTabHostEvent::TerminalOutputUnread => cx.notify(),
             WorkspaceTabHostEvent::TerminalPaneDelivery {
                 pane_id,
@@ -296,7 +286,6 @@ impl WorkspaceApp {
             window.focus(&self.focus_handle, cx);
         }
         self.sync_active_terminal_metadata_context(cx);
-        self.sync_active_terminal_recording_elapsed_tick(cx);
         self.sync_active_privilege_prompt_inline_hint(cx);
     }
 

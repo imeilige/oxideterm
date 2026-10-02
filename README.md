@@ -112,7 +112,7 @@ OxideTerm keeps terminal rendering, connection state, reconnect orchestration, f
 
 | Category | Features |
 |---|---|
-| **Terminal & Connections** | Local shells, SSH, Mosh, Telnet, serial, split panes, Free Type Mode, shell integration, command marks, configurable session logs, recording, trzsz transfers, terminal graphics, native tmux -CC control mode with pane layouts and draggable dividers, named broadcast groups, advanced multi-target command sending, multi-hop routes, host-key verification, Agent forwarding, 2FA, and Grace Period reconnect |
+| **Terminal & Connections** | Local shells, SSH, Mosh, Telnet, serial, split panes, Free Type Mode, shell integration, command marks, configurable session logs, trzsz transfers, terminal graphics, native tmux -CC control mode with pane layouts and draggable dividers, advanced multi-target command sending, multi-hop routes, host-key verification, Agent forwarding, 2FA, and Grace Period reconnect |
 | **Files & Remote Editing** | SFTP browsing, transfer queues, speed limits, progress and ETA, bookmarks, safe writes, local file management, remote project trees, multi-tab editing, conflict handling, and workspace restore |
 | **Forwarding & Networking** | Local, remote, and dynamic SOCKS5 forwarding, saved rules, reconnect-aware restore, remote port detection, connection topology, and ad-hoc socket debugging |
 | **Host Operations & Remote Desktop** | Host monitoring, processes, services, logs, ports, tasks, disks, packages, containers, tmux, built-in RDP and VNC, clipboard, input, reconnect, and viewport-aware sizing |

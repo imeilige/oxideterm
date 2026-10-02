@@ -1783,10 +1783,6 @@ impl WorkspaceApp {
                     registry_row("terminal.paste", "settings_view.help.shortcut_paste"),
                     registry_row("terminal.aiPanel", "settings_view.help.shortcut_ai_panel"),
                     registry_row(
-                        "terminal.recording",
-                        "settings_view.help.shortcut_recording",
-                    ),
-                    registry_row(
                         "terminal.closePanel",
                         "settings_view.help.shortcut_close_panel",
                     ),
@@ -1834,7 +1830,6 @@ impl WorkspaceApp {
                     "palette.aiSidebar",
                     "settings_view.help.shortcut_ai_sidebar",
                 ),
-                registry_row("palette.broadcast", "settings_view.help.shortcut_broadcast"),
             ]
             .into_iter()
             .flatten()
@@ -2284,12 +2279,6 @@ fn command_palette_specs() -> Vec<CommandSpec> {
             "command_palette.cmd_split_vertical",
             "split.vertical",
             LucideIcon::SplitSquareVertical,
-        ),
-        keybinding_command(
-            "cmd:broadcast_toggle",
-            "command_palette.cmd_broadcast_toggle",
-            "palette.broadcast",
-            LucideIcon::Radio,
         ),
         keybinding_command(
             "cmd:next_tab",

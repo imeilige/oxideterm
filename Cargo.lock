@@ -7179,7 +7179,6 @@ dependencies = [
  "oxideterm-ssh",
  "oxideterm-ssh-launch",
  "oxideterm-terminal",
- "oxideterm-terminal-recording",
  "oxideterm-terminal-semantic",
  "oxideterm-terminal-triggers",
  "oxideterm-theme",
@@ -7338,7 +7337,6 @@ dependencies = [
  "oxideterm-settings",
  "oxideterm-ssh",
  "oxideterm-terminal",
- "oxideterm-terminal-recording",
  "oxideterm-terminal-semantic",
  "oxideterm-terminal-triggers",
  "oxideterm-terminal-unicode",
@@ -7763,13 +7761,6 @@ dependencies = [
 [[package]]
 name = "oxideterm-terminal-model"
 version = "2.2.8"
-
-[[package]]
-name = "oxideterm-terminal-recording"
-version = "2.2.8"
-dependencies = [
- "serde_json",
-]
 
 [[package]]
 name = "oxideterm-terminal-semantic"

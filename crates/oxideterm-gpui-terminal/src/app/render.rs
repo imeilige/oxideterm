@@ -348,9 +348,6 @@ impl Render for TerminalPane {
             .image_cache
             .cached_images(&snapshot.images, decode_images);
         self.drop_retired_images(window, cx);
-        let row_timestamps = self
-            .terminal_timestamps_enabled
-            .then(|| self.row_timestamps.clone());
         let search_matches = self.current_search_matches();
         let selection_highlight_query = self.selection_highlight_query();
 
@@ -436,7 +433,6 @@ impl Render for TerminalPane {
             self.preferences.semantic_scheme.clone(),
             self.preferences.semantic_shell,
         )
-        .row_timestamps(row_timestamps)
         .transparent_background(self.preferences.transparent_background)
         .ghost_text(self.terminal_ghost_text())
         .viewport_rows(viewport_rows)

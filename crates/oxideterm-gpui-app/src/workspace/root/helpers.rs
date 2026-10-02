@@ -500,7 +500,7 @@ impl WorkspaceApp {
         listener: impl Fn(&mut Self, &MouseDownEvent, &mut Window, &mut Context<Self>) + 'static,
         cx: &mut Context<Self>,
     ) -> gpui::Div {
-        // Checkbox-like Radix menu rows, such as terminal broadcast targets,
+        // Checkbox-like Radix menu rows, such as terminal saved-target rows,
         // keep the menu open after activation but must still share the same
         // disabled/loading guard and hover semantics as closing menu items.
         let item = oxideterm_gpui_ui::context_menu::context_menu_actionable_row(
@@ -522,7 +522,7 @@ impl WorkspaceApp {
         // Browser/Radix context-menu item activation has a common sequence:
         // ignore disabled/loading rows, apply the menu's dismissal policy, run
         // the action, then stop the pointer from reaching the underlying row or
-        // terminal. Checkbox/dropdown menus such as broadcast target selection
+        // terminal. Checkbox/dropdown menus such as saved-target selection
         // intentionally keep the popover open while still sharing the guard.
         oxideterm_gpui_ui::context_menu::context_menu_action(
             item,
@@ -751,12 +751,6 @@ impl WorkspaceApp {
             .sftp_view()
             .update(cx, |sftp, cx| sftp.dismiss_context_menu(cx))
         {
-            changed = true;
-        }
-        if self.dismiss_terminal_broadcast_menu(cx) {
-            changed = true;
-        }
-        if self.dismiss_terminal_recording_menu() {
             changed = true;
         }
         if self.dismiss_terminal_highlight_popover() {

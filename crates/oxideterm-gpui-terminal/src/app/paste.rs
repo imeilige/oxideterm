@@ -427,8 +427,6 @@ mod tests {
             .unwrap()
         });
         cx.simulate_resize(gpui::size(px(900.0), px(650.0)));
-        let delivered = Rc::new(std::cell::RefCell::new(Vec::new()));
-        let recorder = delivered.clone();
         cx.update(|window, cx| {
             window.activate_window();
             pane.update(cx, |pane, cx| {
@@ -436,9 +434,6 @@ mod tests {
                     .tokens
                     .apply_motion(oxideterm_theme::UiMotionProfile::Off);
                 pane.test_accepts_input = true;
-                pane.set_input_broadcaster(Some(Rc::new(move |kind, bytes, _| {
-                    recorder.borrow_mut().push((kind, bytes.to_vec()));
-                })));
                 pane.pending_paste =
                     Some(Zeroizing::new("echo one\r\necho two\recho three\n".into()));
                 pane.open_paste_editor(window, cx);
@@ -476,21 +471,6 @@ mod tests {
                 "\r\necho one\r\n"
             );
         });
-        assert!(delivered.borrow().is_empty(), "editing must not send input");
-        cx.update(|window, cx| window.draw(cx).clear(cx));
-        let submit = cx.debug_bounds("paste-submit").unwrap().center();
-        cx.simulate_click(submit, gpui::Modifiers::none());
-        assert_eq!(
-            &*delivered.borrow(),
-            &[
-                (TerminalBroadcastInputKind::Protocol, b"\x1b[2~".to_vec()),
-                (
-                    TerminalBroadcastInputKind::Paste,
-                    b"\r\necho one\r\n".to_vec()
-                ),
-            ]
-        );
-        delivered.borrow_mut().clear();
         cx.update(|window, cx| {
             cx.write_to_clipboard(ClipboardItem::new_string("echo cancel".into()));
             pane.update(cx, |pane, cx| pane.edit_clipboard_paste(window, cx));
@@ -502,7 +482,6 @@ mod tests {
             assert!(pane.pending_paste.is_none());
             assert!(pane.pending_paste_prefix.is_none());
         });
-        assert!(delivered.borrow().is_empty(), "cancel must not send input");
     }
 
     #[gpui::test]

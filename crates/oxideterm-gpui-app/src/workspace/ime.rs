@@ -121,8 +121,6 @@ pub(super) enum WorkspaceImeTarget {
     TerminalGitBranchSearch,
     TerminalGitCommitMessage,
     TerminalProjectSearch,
-    TerminalBroadcastGroupName,
-    TerminalCastSearch,
     HostProcessSearch,
     HostProcessRenice,
     HostDockerSearch,
@@ -492,8 +490,6 @@ impl WorkspaceImeTarget {
             Self::TerminalGitBranchSearch => 17,
             Self::TerminalGitCommitMessage => 20,
             Self::TerminalProjectSearch => 19,
-            Self::TerminalBroadcastGroupName => 21,
-            Self::TerminalCastSearch => 3,
             Self::HostProcessSearch => 6,
             Self::HostProcessRenice => 7,
             Self::HostDockerSearch => 8,
@@ -1112,9 +1108,6 @@ impl WorkspaceApp {
 
         let terminal_tab_visible = self.active_tab(cx).is_some_and(is_terminal_tab);
         if terminal_tab_visible {
-            if self.terminal.read(cx).broadcast_group_editor().is_some() {
-                return Some(WorkspaceImeTarget::TerminalBroadcastGroupName);
-            }
             if self.terminal.read(cx).cwd_picker_open() {
                 return Some(WorkspaceImeTarget::TerminalCwdSearch);
             }
@@ -1218,10 +1211,6 @@ impl WorkspaceApp {
             && self.ai_entity.read(cx).chat_ui().editing_message_focused
         {
             return Some(WorkspaceImeTarget::AiMessageEdit);
-        }
-
-        if terminal_tab_visible && self.terminal.read(cx).cast_search_focused() {
-            return Some(WorkspaceImeTarget::TerminalCastSearch);
         }
 
         if let Some(selection) = self.selected_ime_range.as_ref()
@@ -2041,16 +2030,6 @@ impl WorkspaceApp {
                     .project_panel_open()
                     .then(|| terminal.project_query().to_string())
             }
-            WorkspaceImeTarget::TerminalBroadcastGroupName => self
-                .terminal
-                .read(cx)
-                .broadcast_group_editor()
-                .map(|(_, value)| value.to_string()),
-            WorkspaceImeTarget::TerminalCastSearch => self
-                .terminal
-                .read(cx)
-                .cast_search_query()
-                .map(str::to_string),
             WorkspaceImeTarget::HostProcessSearch => self
                 .host_tools
                 .read(cx)
@@ -2889,22 +2868,6 @@ impl WorkspaceApp {
                         terminal.replace_project_query(&key, replacement_range, text)
                     })
                 {
-                    self.show_active_input_caret(cx);
-                    cx.notify();
-                }
-            }
-            WorkspaceImeTarget::TerminalBroadcastGroupName => {
-                if self.terminal.update(cx, |terminal, _cx| {
-                    terminal.replace_broadcast_group_editor_text(replacement_range, text)
-                }) {
-                    self.show_active_input_caret(cx);
-                    cx.notify();
-                }
-            }
-            WorkspaceImeTarget::TerminalCastSearch => {
-                if self.terminal.update(cx, |terminal, cx| {
-                    terminal.replace_cast_search(replacement_range, text, cx)
-                }) {
                     self.show_active_input_caret(cx);
                     cx.notify();
                 }

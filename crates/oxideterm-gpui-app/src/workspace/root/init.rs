@@ -467,7 +467,6 @@ impl WorkspaceApp {
             tab_host,
             _tab_host_subscription: tab_host_subscription,
             search: actions::TerminalSearchState::default(),
-            terminal_recording_menu_open: false,
             terminal_highlight_popover_open: false,
             terminal_trigger_settings_pane: None,
             terminal_trigger_shell_confirmation_pending: false,
@@ -742,7 +741,6 @@ impl WorkspaceApp {
             );
         workspace.sync_terminal_command_sender_appearance(cx);
         workspace.sync_active_terminal_metadata_context(cx);
-        workspace.sync_active_terminal_recording_elapsed_tick(cx);
         workspace.sync_active_privilege_prompt_inline_hint(cx);
         workspace.refresh_terminal_trigger_runtime(cx);
         cx.on_release(|workspace, cx| {

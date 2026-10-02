@@ -1,9 +1,7 @@
 use std::{
-    collections::{HashMap, HashSet, VecDeque, hash_map::DefaultHasher},
+    collections::{HashMap, HashSet, VecDeque},
     env,
-    hash::{Hash, Hasher},
     ops::Range,
-    rc::Rc,
     sync::{
         Arc,
         atomic::{AtomicU64, Ordering},
@@ -13,7 +11,6 @@ use std::{
 
 use anyhow::Result;
 use async_channel::Sender;
-use chrono::Timelike;
 use futures::future::{Either, pending, select};
 use gpui::{
     App, Bounds, ClipboardItem, Context, EventEmitter, FocusHandle, PathPromptOptions, Pixels,
@@ -48,10 +45,6 @@ use crate::privilege_prompt::{
 };
 use crate::terminal_ui::*;
 use crate::terminal_view::*;
-use oxideterm_terminal_recording::{
-    TerminalRecorder, TerminalRecordingOptions, TerminalRecordingState, TerminalRecordingStatus,
-    TerminalRecordingTheme,
-};
 
 mod image_cache;
 mod ime;
@@ -133,7 +126,6 @@ impl TerminalKeybindings {
 pub type SharedTerminalSession = Arc<Mutex<TerminalSession>>;
 pub type TerminalInputInterceptor =
     Arc<dyn Fn(&[u8]) -> TerminalInputInterceptorResult + Send + Sync>;
-pub type TerminalInputBroadcaster = Rc<dyn Fn(TerminalBroadcastInputKind, &[u8], &mut App)>;
 const PRIVILEGE_PROMPT_DEBUG_ENV: &str = "OXIDETERM_PRIVILEGE_DEBUG";
 const TERMINAL_ANIMATION_INTERVAL: Duration = Duration::from_millis(16);
 const SMOOTH_SCROLL_ANIMATION_DURATION: Duration = Duration::from_millis(125);
@@ -158,8 +150,6 @@ pub enum TerminalPaneEvent {
     OutputActivity,
     // CWD payloads stay pane-owned; Workspace only recomputes the active metadata key.
     CurrentDirectoryChanged,
-    // Recording contents stay pane-owned; consumers only reschedule visible elapsed chrome.
-    RecordingStatusChanged,
     // Prompt text and credentials stay pane-owned; consumers only recompute the active hint.
     PrivilegePromptStateChanged,
     // The event carries intent only; Workspace resolves any credential in the active scope.
@@ -175,13 +165,6 @@ pub enum TerminalPaneEvent {
         input: Option<SerialLineEnding>,
         output: Option<SerialLineEnding>,
     },
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum TerminalBroadcastInputKind {
-    Protocol,
-    Text,
-    Paste,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -430,10 +413,6 @@ pub struct TerminalPane {
     snapshot_deferred_since: Option<Instant>,
     snapshot_generation: u64,
     next_snapshot_line_id: u64,
-    terminal_timestamps_enabled: bool,
-    // Visual-only metadata keyed by stable snapshot line identity; never write this
-    // into the PTY buffer, copied text, or search/indexed terminal content.
-    row_timestamps: Arc<TerminalRowTimestampStore>,
     metrics: TerminalMetrics,
     metrics_dirty: bool,
     selection: Option<TerminalSelection>,
@@ -451,7 +430,6 @@ pub struct TerminalPane {
     context_action_requested: Option<TerminalContextAction>,
     pending_trigger_matches: VecDeque<oxideterm_terminal_triggers::TriggerMatched>,
     plugin_input_interceptor: Option<TerminalInputInterceptor>,
-    input_broadcaster: Option<TerminalInputBroadcaster>,
     #[cfg(test)]
     test_accepts_input: bool,
     input_locked: bool,
@@ -495,10 +473,7 @@ pub struct TerminalPane {
     privilege_prompt_expiry_generation: u64,
     privilege_prompt_expiry_task: Option<gpui::Task<()>>,
     command_fact_ledger: CommandFactLedger,
-    broadcast_parent_id: Option<String>,
-    last_broadcast_mark_id: Option<String>,
     ai_command_prompt: Option<AiCommandPrompt>,
-    recorder: Option<TerminalRecorder>,
     bell_flash: bool,
     terminal_exited: bool,
     scroll_input_remainder_px: Pixels,
@@ -506,7 +481,7 @@ pub struct TerminalPane {
     smooth_scroll_animation: Option<SmoothScrollAnimation>,
     smooth_scroll_snapshot_cache: Option<SmoothScrollSnapshotCache>,
     scrollbar_drag: Option<ScrollbarDrag>,
-    // Horizontal panning belongs to the visual timestamp overlay and never
+    // Horizontal panning belongs to the visual overlay chrome and never
     // changes the backing PTY grid or remote window size.
     horizontal_scroll_offset_px: Pixels,
     horizontal_scrollbar_drag: Option<HorizontalScrollbarDrag>,
@@ -619,25 +594,6 @@ struct PendingTerminalCwd {
     path: String,
     command: String,
     created_at: Instant,
-}
-
-#[derive(Clone, Debug)]
-pub(crate) struct TerminalRowTimestamp {
-    pub(crate) label: String,
-    signature: u64,
-    source_signature: u64,
-}
-
-/// Visual metadata follows the emulator row, independent of viewport coordinates.
-#[derive(Clone, Default)]
-pub(crate) struct TerminalRowTimestampStore {
-    pub(crate) entries: HashMap<u64, TerminalRowTimestamp>,
-}
-
-impl TerminalRowTimestampStore {
-    pub(crate) fn get(&self, identity: u64) -> Option<&TerminalRowTimestamp> {
-        self.entries.get(&identity)
-    }
 }
 
 #[derive(Clone)]
@@ -1095,7 +1051,7 @@ impl TerminalPane {
         })
         .detach();
 
-        let mut pane = Self {
+        let pane = Self {
             terminal,
             session_kind,
             serial_session_config: None,
@@ -1117,8 +1073,6 @@ impl TerminalPane {
             snapshot_deferred_since: None,
             snapshot_generation: 1,
             next_snapshot_line_id,
-            terminal_timestamps_enabled: false,
-            row_timestamps: Arc::new(TerminalRowTimestampStore::default()),
             metrics,
             metrics_dirty: false,
             selection: None,
@@ -1134,7 +1088,6 @@ impl TerminalPane {
             context_action_requested: None,
             pending_trigger_matches: VecDeque::new(),
             plugin_input_interceptor: None,
-            input_broadcaster: None,
             #[cfg(test)]
             test_accepts_input: false,
             input_locked: false,
@@ -1182,10 +1135,7 @@ impl TerminalPane {
             privilege_prompt_expiry_generation: 0,
             privilege_prompt_expiry_task: None,
             command_fact_ledger: CommandFactLedger::with_audit(audit_context),
-            broadcast_parent_id: None,
-            last_broadcast_mark_id: None,
             ai_command_prompt: None,
-            recorder: None,
             bell_flash: false,
             terminal_exited: false,
             scroll_input_remainder_px: px(0.0),
@@ -1256,7 +1206,6 @@ impl TerminalPane {
             modem_worker: None,
             _subscriptions: vec![focus_in, focus_out],
         };
-        pane.sync_terminal_output_events_enabled();
         Ok(pane)
     }
 
@@ -1359,49 +1308,11 @@ impl TerminalPane {
             // snapshots still receive the equality fallback used by reset and resize paths.
             snapshot.reuse_unchanged_rows_from(&self.snapshot);
         }
-        self.record_snapshot_row_timestamps(&snapshot);
         self.snapshot_generation = self.snapshot_generation.wrapping_add(1);
         if self.snapshot_generation == 0 {
             self.snapshot_generation = 1;
         }
         snapshot.with_generation(self.snapshot_generation)
-    }
-
-    fn record_snapshot_row_timestamps(&mut self, snapshot: &TerminalSnapshot) {
-        // Match iTerm-style semantics: a row label is the time that row was
-        // last modified, not the time it first became visible in the viewport.
-        let label = current_terminal_timestamp_label();
-        let store = Arc::make_mut(&mut self.row_timestamps);
-        record_timestampable_snapshot_rows(store, snapshot, &label);
-        self.trim_row_timestamps(snapshot);
-    }
-
-    fn trim_row_timestamps(&mut self, snapshot: &TerminalSnapshot) {
-        let store = Arc::make_mut(&mut self.row_timestamps);
-        if snapshot.lines.is_empty() {
-            store.entries.clear();
-            return;
-        }
-        let retained_rows = self
-            .preferences
-            .scrollback_lines
-            .saturating_add(snapshot.rows)
-            .saturating_add(1024)
-            .max(2048);
-        trim_row_timestamp_history(&mut store.entries, retained_rows);
-    }
-
-    pub fn terminal_timestamps_enabled(&self) -> bool {
-        self.terminal_timestamps_enabled
-    }
-
-    pub fn toggle_terminal_timestamps(&mut self, cx: &mut Context<Self>) {
-        self.terminal_timestamps_enabled = !self.terminal_timestamps_enabled;
-        self.horizontal_scroll_offset_px = px(0.0);
-        self.horizontal_scrollbar_drag = None;
-        // Timestamp visibility is paint-only. Do not restamp or resize here:
-        // both would make old scrollback look like it was modified at toggle time.
-        cx.notify();
     }
 
     pub fn shared_session(&self) -> SharedTerminalSession {
@@ -1662,7 +1573,7 @@ impl TerminalPane {
             .prompt_is_waiting_for_secret(Instant::now())
     }
 
-    // A password answers the running command; it neither takes ownership nor belongs in broadcasts.
+    // A password answers the running command; it never takes ownership of the session.
     fn input_answers_privilege_prompt(&self, bytes: &[u8]) -> bool {
         self.privilege_prompt_tracker
             .input_answers_prompt(bytes, Instant::now())
@@ -1679,13 +1590,6 @@ impl TerminalPane {
 
     pub fn has_privilege_prompt_inline_hint(&self) -> bool {
         self.privilege_prompt_inline_hint.is_some()
-    }
-
-    pub(crate) fn sync_terminal_output_events_enabled(&mut self) {
-        let _recording_requires_output = self
-            .recorder
-            .as_ref()
-            .is_some_and(|recorder| recorder.status().state == TerminalRecordingState::Recording);
     }
 
     fn finish_privilege_prompt_tracker_update(
@@ -2353,13 +2257,10 @@ impl TerminalPane {
     }
 
     pub fn paste_text(&mut self, text: &str, cx: &mut Context<Self>) {
-        let secret_entry = self.input_answers_privilege_prompt(text.as_bytes());
-        if self.paste_text_without_broadcast(text, cx) && !secret_entry {
-            self.broadcast_user_input(TerminalBroadcastInputKind::Paste, text.as_bytes(), cx);
-        }
+        self.paste_text_to_terminal(text, cx);
     }
 
-    fn paste_text_without_broadcast(&mut self, text: &str, cx: &mut Context<Self>) -> bool {
+    fn paste_text_to_terminal(&mut self, text: &str, cx: &mut Context<Self>) -> bool {
         if !self.terminal_accepts_input() {
             return false;
         }
@@ -2422,9 +2323,6 @@ impl TerminalPane {
             TerminalCommandMarkDetectionSource::QuickCommand => {
                 oxideterm_audit::AuditSource::QuickCommand
             }
-            TerminalCommandMarkDetectionSource::Broadcast => {
-                oxideterm_audit::AuditSource::Broadcast
-            }
             TerminalCommandMarkDetectionSource::CommandBar => {
                 oxideterm_audit::AuditSource::CommandBar
             }
@@ -2485,8 +2383,8 @@ impl TerminalPane {
             return false;
         }
 
-        // Trigger captures bypass plugin interception, broadcast, recording, and command
-        // history so remote output cannot escape through an unrelated observer.
+        // Trigger captures bypass plugin interception and command history so
+        // remote output cannot escape through an unrelated observer.
         let write_result = {
             let mut terminal = self.terminal.lock();
             if self.input_locked || self.terminal_exited || !terminal.is_interactive() {
@@ -2527,7 +2425,7 @@ impl TerminalPane {
         let bytes = zeroize::Zeroizing::new(bytes);
         let secret_reply = self.input_answers_privilege_prompt(&bytes);
         // Hex input is an opaque protocol payload. Recheck lifecycle after the
-        // plugin hook, then bypass text recording and command observation.
+        // plugin hook, then bypass command observation.
         let write_result = {
             let mut terminal = self.terminal.lock();
             if self.input_locked || self.terminal_exited || !terminal.is_interactive() {
@@ -2695,9 +2593,7 @@ impl TerminalPane {
         if bytes.is_empty() || !self.terminal_accepts_input() {
             return;
         }
-        // AI input remains scoped to its selected pane even while the user has
-        // interactive terminal broadcasting enabled.
-        self.send_user_protocol_bytes_without_broadcast(bytes, cx);
+        self.send_user_protocol_bytes_to_terminal(bytes, cx);
     }
 
     pub fn send_privilege_secret_input_bytes(
@@ -2712,7 +2608,7 @@ impl TerminalPane {
 
         // Privilege Prompt Helper writes an explicitly user-confirmed secret
         // directly to the PTY. It must not pass through plugin interception,
-        // autosuggest/history observation, AI context, or terminal recording.
+        // autosuggest/history observation, or AI context.
         if self.terminal.lock().write_protocol_bytes(bytes).is_ok() {
             let previous_state_generation = self.privilege_prompt_tracker.state_generation();
             self.privilege_prompt_tracker
@@ -2736,54 +2632,6 @@ impl TerminalPane {
 
     pub fn set_plugin_input_interceptor(&mut self, interceptor: Option<TerminalInputInterceptor>) {
         self.plugin_input_interceptor = interceptor;
-    }
-
-    pub fn set_input_broadcaster(&mut self, broadcaster: Option<TerminalInputBroadcaster>) {
-        self.input_broadcaster = broadcaster;
-    }
-
-    pub fn send_broadcast_input(
-        &mut self,
-        kind: TerminalBroadcastInputKind,
-        bytes: &[u8],
-        cx: &mut Context<Self>,
-    ) -> bool {
-        self.send_broadcast_input_with_parent(kind, bytes, None, cx)
-    }
-
-    pub fn send_broadcast_input_with_parent(
-        &mut self,
-        kind: TerminalBroadcastInputKind,
-        bytes: &[u8],
-        parent_id: Option<&str>,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        // Mirrored input uses the target pane's normal interception and PTY
-        // path, but never re-enters the broadcaster and creates a loop.
-        self.broadcast_parent_id = Some(parent_id.unwrap_or_default().to_string());
-        self.last_broadcast_mark_id = None;
-        let sent = match kind {
-            TerminalBroadcastInputKind::Protocol => {
-                self.send_user_protocol_bytes_without_broadcast(bytes, cx)
-            }
-            TerminalBroadcastInputKind::Text => std::str::from_utf8(bytes)
-                .is_ok_and(|text| self.commit_text_without_broadcast(text, cx)),
-            TerminalBroadcastInputKind::Paste => std::str::from_utf8(bytes)
-                .is_ok_and(|text| self.paste_text_without_broadcast(text, cx)),
-        };
-        let command_id = self.last_broadcast_mark_id.take();
-        self.broadcast_parent_id = None;
-        if parent_id.is_some() {
-            self.command_fact_ledger
-                .set_audit_context(self.terminal.lock().audit_context());
-            self.command_fact_ledger.record_dispatch(
-                command_id.as_deref(),
-                parent_id,
-                oxideterm_audit::AuditSource::Broadcast,
-                sent,
-            );
-        }
-        sent
     }
 
     pub fn set_input_locked(&mut self, locked: bool, cx: &mut Context<Self>) {
@@ -3303,10 +3151,7 @@ impl TerminalPane {
         cx: &mut Context<Self>,
     ) -> TerminalEventEffect {
         match event {
-            TerminalEvent::Output(bytes) => {
-                if let Some(recorder) = self.recorder.as_mut() {
-                    recorder.record_output(&bytes);
-                }
+            TerminalEvent::Output(_) => {
                 TerminalEventEffect::default()
             }
             TerminalEvent::TriggerMatched(matched) => {
@@ -3659,9 +3504,6 @@ impl TerminalPane {
         }
 
         if self.terminal.lock().write_protocol_bytes(bytes).is_ok() {
-            if let Some(recorder) = self.recorder.as_mut() {
-                recorder.record_input(&String::from_utf8_lossy(bytes));
-            }
             self.last_terminal_input = Instant::now();
             self.reset_cursor_blink();
             cx.notify();
@@ -3671,13 +3513,10 @@ impl TerminalPane {
     }
 
     pub(crate) fn send_user_protocol_bytes(&mut self, bytes: &[u8], cx: &mut Context<Self>) {
-        let secret_entry = self.input_answers_privilege_prompt(bytes);
-        if self.send_user_protocol_bytes_without_broadcast(bytes, cx) && !secret_entry {
-            self.broadcast_user_input(TerminalBroadcastInputKind::Protocol, bytes, cx);
-        }
+        self.send_user_protocol_bytes_to_terminal(bytes, cx);
     }
 
-    fn send_user_protocol_bytes_without_broadcast(
+    fn send_user_protocol_bytes_to_terminal(
         &mut self,
         bytes: &[u8],
         cx: &mut Context<Self>,
@@ -3697,20 +3536,6 @@ impl TerminalPane {
         false
     }
 
-    fn broadcast_user_input(
-        &self,
-        kind: TerminalBroadcastInputKind,
-        bytes: &[u8],
-        cx: &mut Context<Self>,
-    ) {
-        let Some(broadcaster) = self.input_broadcaster.clone() else {
-            return;
-        };
-        // The callback is synchronous and receives borrowed input so commands
-        // are never retained in pane events, logs, or background tasks.
-        broadcaster(kind, bytes, cx);
-    }
-
     fn send_text(&mut self, text: &str, cx: &mut Context<Self>) -> bool {
         if !self.terminal_accepts_input() {
             return false;
@@ -3718,9 +3543,6 @@ impl TerminalPane {
 
         if self.terminal.lock().write_text(text).is_ok() {
             self.restore_live_output_after_user_input();
-            if let Some(recorder) = self.recorder.as_mut() {
-                recorder.record_input(text);
-            }
             self.last_terminal_input = Instant::now();
             self.reset_cursor_blink();
             cx.notify();
@@ -3778,22 +3600,11 @@ impl TerminalPane {
         {
             return;
         }
-        let broadcast = self.broadcast_parent_id.is_some();
-        let parent_id = self
-            .broadcast_parent_id
-            .as_deref()
-            .filter(|id| !id.is_empty())
-            .map(str::to_string);
-        let source = if broadcast {
-            TerminalCommandMarkDetectionSource::Broadcast
-        } else {
-            TerminalCommandMarkDetectionSource::UserInputObserved
-        };
-        let mark_id =
-            self.begin_command_mark_with_parent(&command, source, parent_id.as_deref(), cx);
-        if broadcast {
-            self.last_broadcast_mark_id = mark_id;
-        }
+        self.begin_command_mark(
+            &command,
+            TerminalCommandMarkDetectionSource::UserInputObserved,
+            cx,
+        );
     }
 
     fn observe_privilege_input(
@@ -3915,13 +3726,10 @@ impl TerminalPane {
             cx.notify();
             return;
         }
-        let secret_entry = self.input_answers_privilege_prompt(text.as_bytes());
-        if self.commit_text_without_broadcast(text, cx) && !secret_entry {
-            self.broadcast_user_input(TerminalBroadcastInputKind::Text, text.as_bytes(), cx);
-        }
+        self.commit_text_to_terminal(text, cx);
     }
 
-    fn commit_text_without_broadcast(&mut self, text: &str, cx: &mut Context<Self>) -> bool {
+    fn commit_text_to_terminal(&mut self, text: &str, cx: &mut Context<Self>) -> bool {
         if !self.terminal_accepts_input() {
             return false;
         }
@@ -4080,9 +3888,6 @@ impl TerminalPane {
         };
         if let Some(snapshot) = next_snapshot {
             self.last_pty_resize = Some(resize);
-            if let Some(recorder) = self.recorder.as_mut() {
-                recorder.record_resize(cols, rows);
-            }
             self.clear_smooth_scroll_remainder();
             self.snapshot = self.stamp_snapshot(snapshot);
             self.mark_terminal_content_changed(cx);
@@ -4101,16 +3906,14 @@ impl TerminalPane {
             .unwrap_or_else(|| gpui::point(px(0.0), px(0.0)))
     }
 
-    fn timestamp_gutter_width(&self) -> f32 {
-        terminal_timestamp_gutter_width(&self.metrics, self.terminal_timestamps_enabled)
-    }
-
     fn terminal_content_padding_x(&self) -> f32 {
-        TERMINAL_CONTENT_PADDING + self.timestamp_gutter_width() + self.command_mark_gutter_width()
+        TERMINAL_CONTENT_PADDING + self.command_mark_gutter_width()
     }
 
+    /// The only scrollable gutter was the timestamp overlay, so the horizontal range
+    /// is now empty. Callers keep clamping against this instead of a literal zero.
     fn terminal_horizontal_scroll_limit(&self) -> Pixels {
-        px(self.timestamp_gutter_width())
+        px(0.0)
     }
 
     fn command_mark_gutter_width(&self) -> f32 {
@@ -4182,109 +3985,6 @@ fn graphics_options_from_preferences(preferences: &TerminalUiPreferences) -> Gra
     }
 }
 
-fn current_terminal_timestamp_label() -> String {
-    let now = chrono::Local::now();
-    terminal_timestamp_label(
-        now.hour(),
-        now.minute(),
-        now.second(),
-        now.timestamp_subsec_millis(),
-    )
-}
-
-fn terminal_timestamp_label(hour: u32, minute: u32, second: u32, millis: u32) -> String {
-    // Bracketed fixed-width labels separate timestamp metadata from terminal
-    // output while keeping the paint-only gutter stable.
-    format!("[{hour:02}:{minute:02}:{second:02}.{millis:03}]")
-}
-
-fn record_timestampable_snapshot_rows(
-    store: &mut TerminalRowTimestampStore,
-    snapshot: &TerminalSnapshot,
-    label: &str,
-) {
-    for row in &snapshot.lines {
-        let key = terminal_row_timestamp_identity(row);
-        if key == 0 {
-            continue;
-        }
-        // The snapshot signature is a cheap invalidation key. Cursor-only changes
-        // still fall through to the content signature comparison below.
-        if store
-            .entries
-            .get(&key)
-            .is_some_and(|timestamp| timestamp.source_signature == row.signature)
-        {
-            continue;
-        }
-
-        if terminal_row_has_timestamp_content(row) {
-            let timestamp_signature = terminal_row_timestamp_signature(row);
-            if let Some(timestamp) = store.entries.get_mut(&key) {
-                if timestamp.signature != timestamp_signature {
-                    timestamp.label = label.to_string();
-                    timestamp.signature = timestamp_signature;
-                }
-                timestamp.source_signature = row.signature;
-            } else {
-                store.entries.insert(
-                    key,
-                    TerminalRowTimestamp {
-                        label: label.to_string(),
-                        signature: timestamp_signature,
-                        source_signature: row.signature,
-                    },
-                );
-            }
-        } else {
-            // Blank viewport rows are recycled later. Removing their metadata
-            // prevents new output from inheriting a stale line-modification time.
-            store.entries.remove(&key);
-        }
-    }
-}
-
-fn trim_row_timestamp_history(
-    row_timestamps: &mut HashMap<u64, TerminalRowTimestamp>,
-    retained_rows: usize,
-) {
-    // IDs are process-wide; other terminals can make them arbitrarily sparse.
-    // Batch pruning bounds memory without scanning the cache on every frame.
-    if row_timestamps.len() <= retained_rows.saturating_add(1024) {
-        return;
-    }
-    let mut identities: Vec<_> = row_timestamps.keys().copied().collect();
-    let remove_count = identities.len() - retained_rows;
-    identities.select_nth_unstable(remove_count);
-    let min_identity = identities[remove_count];
-    row_timestamps.retain(|identity, _| *identity >= min_identity);
-}
-
-fn terminal_row_timestamp_signature(row: &TerminalRow) -> u64 {
-    let mut hasher = DefaultHasher::new();
-    row.wrapped.hash(&mut hasher);
-    for cell in row.cells.iter() {
-        cell.ch.hash(&mut hasher);
-        cell.zerowidth().hash(&mut hasher);
-        cell.wide.hash(&mut hasher);
-        cell.fg.hash(&mut hasher);
-        cell.bg.hash(&mut hasher);
-        cell.attrs.hash(&mut hasher);
-        cell.hyperlink().hash(&mut hasher);
-    }
-    hasher.finish()
-}
-
-fn terminal_row_has_timestamp_content(row: &TerminalRow) -> bool {
-    row.cells
-        .iter()
-        .any(|cell| !cell.ch.is_whitespace() || !cell.zerowidth().is_empty())
-}
-
-fn hex_color(color: u32) -> String {
-    format!("#{:06x}", color & 0x00ff_ffff)
-}
-
 fn build_osc52_clipboard_response(
     allowed: bool,
     read_clipboard: impl FnOnce() -> Option<String>,
@@ -4317,8 +4017,7 @@ fn terminal_grid_span_for_viewport(
     // Browser terminals reserve right-side scrollbar chrome outside the grid.
     // Keep that gutter stable even before scrollback exists so history growth
     // does not resize the PTY and push the scrollbar outside the viewport.
-    // Timestamp labels are a visual overlay and must not change PTY columns;
-    // toggling them should never reflow scrollback or restamp old rows.
+    // The left gutter is paint-only chrome and must never change PTY columns.
     (f32::from(viewport_width)
         - TERMINAL_CONTENT_PADDING * 2.0
         - left_gutter_width
@@ -4329,7 +4028,7 @@ fn terminal_grid_span_for_viewport(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{cell::Cell, collections::HashMap, sync::Arc};
+    use std::{cell::Cell, rc::Rc, sync::Arc};
 
     use gpui::{AppContext, IntoElement, Render, TestAppContext, div};
     use oxideterm_terminal::{TerminalAttrs, TerminalCell, TerminalColor, TerminalCursorShape};
@@ -4478,10 +4177,6 @@ mod tests {
     }
 
     struct TerminalTestRoot;
-
-    struct TerminalBroadcastRecorder {
-        delivered: Vec<(TerminalBroadcastInputKind, Vec<u8>)>,
-    }
 
     impl Render for TerminalTestRoot {
         fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
@@ -4746,58 +4441,6 @@ mod tests {
     }
 
     #[gpui::test]
-    fn direct_user_input_broadcasts_once_for_each_input_path(cx: &mut TestAppContext) {
-        let (_, cx) = cx.add_window_view(|_window, _cx| TerminalTestRoot);
-        let pane = cx.update(|window, cx| {
-            cx.new(|cx| {
-                TerminalPane::new_recording_playback(
-                    DEFAULT_COLS,
-                    DEFAULT_ROWS,
-                    TerminalUiPreferences::default(),
-                    window,
-                    cx,
-                )
-                .expect("test terminal pane")
-            })
-        });
-        let recorder = cx.new(|_| TerminalBroadcastRecorder {
-            delivered: Vec::new(),
-        });
-        let recorder_for_broadcaster = recorder.downgrade();
-        pane.update(cx, |pane, _cx| {
-            pane.test_accepts_input = true;
-            pane.set_input_broadcaster(Some(Rc::new(move |kind, bytes, cx| {
-                let _ = recorder_for_broadcaster.update(cx, |recorder, _cx| {
-                    recorder.delivered.push((kind, bytes.to_vec()));
-                });
-            })));
-        });
-
-        pane.update(cx, |pane, cx| {
-            pane.commit_text("x", cx);
-            pane.send_user_protocol_bytes(b"\x1b[D", cx);
-            pane.paste_text("y", cx);
-        });
-        let delivered = recorder.read_with(cx, |recorder, _cx| recorder.delivered.clone());
-        assert_eq!(
-            delivered.as_slice(),
-            [
-                (TerminalBroadcastInputKind::Text, b"x".to_vec()),
-                (TerminalBroadcastInputKind::Protocol, b"\x1b[D".to_vec()),
-                (TerminalBroadcastInputKind::Paste, b"y".to_vec()),
-            ]
-        );
-
-        pane.update(cx, |pane, cx| {
-            assert!(pane.send_broadcast_input(TerminalBroadcastInputKind::Text, b"z", cx));
-        });
-        assert_eq!(
-            recorder.read_with(cx, |recorder, _cx| recorder.delivered.len()),
-            3
-        );
-    }
-
-    #[gpui::test]
     fn redraw_only_reports_do_not_emit_unread_output_activity(cx: &mut TestAppContext) {
         let (_, cx) = cx.add_window_view(|_window, _cx| TerminalTestRoot);
         let pane = cx.update(|window, cx| {
@@ -4945,16 +4588,8 @@ mod tests {
                 .unwrap()
             })
         });
-        let recorder = cx.new(|_| TerminalBroadcastRecorder {
-            delivered: Vec::new(),
-        });
-        let sink = recorder.downgrade();
         pane.update(cx, |pane, cx| {
             pane.test_accepts_input = true;
-            pane.set_input_broadcaster(Some(Rc::new(move |kind, bytes, cx| {
-                sink.update(cx, |sink, _| sink.delivered.push((kind, bytes.to_vec())))
-                    .unwrap();
-            })));
             let prompt =
                 oxideterm_terminal::detect_terminal_privilege_prompt("[sudo] password for deploy:")
                     .unwrap();
@@ -4980,49 +4615,6 @@ mod tests {
             );
             pane.send_user_protocol_bytes(b"\x03", cx);
             assert!(!pane.ai_waiting_for_secret());
-        });
-        assert_eq!(
-            recorder.read_with(cx, |sink, _| sink.delivered.clone()),
-            vec![(TerminalBroadcastInputKind::Protocol, vec![3])]
-        );
-    }
-
-    #[gpui::test]
-    fn broadcast_submit_marks_only_the_completed_target_command(cx: &mut TestAppContext) {
-        let (_, cx) = cx.add_window_view(|_window, _cx| TerminalTestRoot);
-        let pane = cx.update(|window, cx| {
-            cx.new(|cx| {
-                TerminalPane::new_recording_playback(
-                    DEFAULT_COLS,
-                    DEFAULT_ROWS,
-                    TerminalUiPreferences::default(),
-                    window,
-                    cx,
-                )
-                .unwrap()
-            })
-        });
-        pane.update(cx, |pane, cx| {
-            pane.test_accepts_input = true;
-            pane.settings.command_marks_enabled = true;
-            pane.settings.command_marks_user_input_observed = true;
-            pane.autosuggest_prompt_active = true;
-            assert!(pane.send_broadcast_input(TerminalBroadcastInputKind::Text, b"l", cx));
-            assert!(pane.send_broadcast_input(TerminalBroadcastInputKind::Text, b"s", cx));
-            assert_eq!(pane.input_tracker.state().value, "ls");
-            assert!(pane.command_marks.is_empty());
-            assert!(pane.send_broadcast_input_with_parent(
-                TerminalBroadcastInputKind::Protocol,
-                b"\r",
-                Some("broadcast-batch-1"),
-                cx
-            ));
-            assert_eq!(pane.command_marks.len(), 1);
-            assert_eq!(pane.command_marks[0].command.as_deref(), Some("ls"));
-            assert_eq!(
-                pane.command_marks[0].detection_source,
-                TerminalCommandMarkDetectionSource::Broadcast
-            );
         });
     }
 
@@ -5360,21 +4952,6 @@ mod tests {
         row
     }
 
-    fn timestamp_test_snapshot(row: TerminalRow) -> TerminalSnapshot {
-        TerminalSnapshot {
-            generation: 1,
-            cols: row.cells.len().max(1),
-            rows: 1,
-            cursor_col: 0,
-            cursor_row: 0,
-            cursor_shape: TerminalCursorShape::Block,
-            display_offset: 0,
-            scrollback_lines: 0,
-            lines: vec![row],
-            images: Vec::new(),
-        }
-    }
-
     #[test]
     fn snapshot_line_ids_follow_scrolled_sources_without_reusing_recycled_rows() {
         let mut previous_lines = (0..3)
@@ -5416,141 +4993,6 @@ mod tests {
             vec![11, 12, 20]
         );
         assert_eq!(next_line_id, 21);
-    }
-
-    #[test]
-    fn row_timestamps_track_last_modified_nonblank_content() {
-        let mut store = TerminalRowTimestampStore::default();
-        let blank_snapshot = timestamp_test_snapshot(timestamp_test_row(42, "   "));
-        record_timestampable_snapshot_rows(&mut store, &blank_snapshot, "10:00:00");
-
-        // This fixture uses emulator source identity 42.
-        assert!(!store.entries.contains_key(&42));
-
-        let content_snapshot = timestamp_test_snapshot(timestamp_test_row(42, "ls"));
-        record_timestampable_snapshot_rows(&mut store, &content_snapshot, "10:00:01");
-
-        assert_eq!(
-            store.get(42).map(|timestamp| timestamp.label.as_str()),
-            Some("10:00:01")
-        );
-
-        let unchanged_snapshot =
-            timestamp_test_snapshot(timestamp_test_row_with_cursor(42, "ls", Some(1), true));
-        record_timestampable_snapshot_rows(&mut store, &unchanged_snapshot, "10:00:02");
-        let unchanged_timestamp = store.get(42).expect("timestamped row");
-        assert_eq!(unchanged_timestamp.label, "10:00:01");
-        assert_eq!(
-            unchanged_timestamp.source_signature,
-            unchanged_snapshot.lines[0].signature
-        );
-
-        let changed_snapshot = timestamp_test_snapshot(timestamp_test_row(42, "pwd"));
-        record_timestampable_snapshot_rows(&mut store, &changed_snapshot, "10:00:03");
-        assert_eq!(
-            store.get(42).map(|timestamp| timestamp.label.as_str()),
-            Some("10:00:03")
-        );
-
-        let label = terminal_timestamp_label(1, 2, 3, 4);
-        assert_eq!(label, "[01:02:03.004]");
-        assert_eq!(label.chars().count(), TERMINAL_TIMESTAMP_LABEL_CELLS);
-
-        let cleared_snapshot = timestamp_test_snapshot(timestamp_test_row(42, ""));
-        record_timestampable_snapshot_rows(&mut store, &cleared_snapshot, "10:00:04");
-
-        assert!(!store.entries.contains_key(&42));
-    }
-
-    #[test]
-    fn timestamp_identity_survives_burst_output_and_viewport_jumps() {
-        let mut terminal =
-            TerminalSession::recording_playback(20, 3, GraphicsOptions::default(), 10);
-        terminal.feed_recording_output(b"same\r\nsame\r\nsame\r\nsame\r\nsame\r\nsame\r\nsame\r\nsame\r\nsame\r\nsame\r\nkept\r\nsame");
-        let before = terminal.snapshot();
-        let kept = before
-            .lines
-            .iter()
-            .find(|row| row.text().trim() == "kept")
-            .unwrap();
-        let original_key = terminal_row_timestamp_identity(kept);
-        let mut store = TerminalRowTimestampStore::default();
-        record_timestampable_snapshot_rows(&mut store, &before, "old");
-        terminal.feed_recording_output(b"\r\nsame\r\nsame\r\nsame\r\nsame");
-        let after = terminal.snapshot();
-        record_timestampable_snapshot_rows(&mut store, &after, "new");
-        for row in after.lines.iter().filter(|row| row.text().trim() == "same") {
-            assert_eq!(
-                store
-                    .get(terminal_row_timestamp_identity(row))
-                    .unwrap()
-                    .label,
-                "new"
-            );
-        }
-        terminal.scroll_to_top();
-        let top = terminal.snapshot();
-        record_timestampable_snapshot_rows(&mut store, &top, "scroll");
-        terminal.scroll_to_display_offset(4);
-        let historical = terminal.snapshot();
-        let kept = historical
-            .lines
-            .iter()
-            .find(|row| row.text().trim() == "kept")
-            .unwrap();
-        record_timestampable_snapshot_rows(&mut store, &historical, "scroll");
-        assert_eq!(terminal_row_timestamp_identity(kept), original_key);
-        assert_eq!(store.get(original_key).unwrap().label, "old");
-    }
-
-    #[test]
-    fn timestamp_identity_follows_local_line_deletion_without_moving_other_rows() {
-        let mut terminal =
-            TerminalSession::recording_playback(20, 4, GraphicsOptions::default(), 10);
-        terminal.feed_recording_output(b"fixed\r\nremoved\r\nkept\r\nlast");
-        let before = terminal.snapshot();
-        let mut store = TerminalRowTimestampStore::default();
-        record_timestampable_snapshot_rows(&mut store, &before, "old");
-        terminal.feed_recording_output(b"\x1b[2;1H\x1b[M");
-        let after = terminal.snapshot();
-        assert_eq!(after.scrollback_lines, before.scrollback_lines);
-        record_timestampable_snapshot_rows(&mut store, &after, "new");
-        for text in ["fixed", "kept", "last"] {
-            let row = after
-                .lines
-                .iter()
-                .find(|row| row.text().trim() == text)
-                .unwrap();
-            assert_eq!(
-                store
-                    .get(terminal_row_timestamp_identity(row))
-                    .unwrap()
-                    .label,
-                "old",
-                "{text}"
-            );
-        }
-    }
-
-    #[test]
-    fn timestamp_cache_bounds_sparse_identities_and_revisited_history() {
-        let timestamp = |id: u64| TerminalRowTimestamp {
-            label: id.to_string(),
-            signature: id,
-            source_signature: id,
-        };
-        let mut entries = (0..1100)
-            .map(|id| (id * 1000, timestamp(id)))
-            .collect::<HashMap<_, _>>();
-        trim_row_timestamp_history(&mut entries, 50);
-        assert_eq!(entries.len(), 50);
-        assert!(entries.contains_key(&1_099_000));
-        for id in 0..1100 {
-            entries.insert(id, timestamp(id));
-        }
-        trim_row_timestamp_history(&mut entries, 50);
-        assert_eq!(entries.len(), 50);
-        assert!(!entries.contains_key(&1));
     }
 
     #[gpui::test]

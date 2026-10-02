@@ -68,126 +68,6 @@ fn serial_profile_line_ending(
     }
 }
 
-#[derive(Clone)]
-struct TerminalInputBroadcastRoute {
-    source_pane_id: PaneId,
-    session_id: TerminalSessionId,
-    ai_runtime: gpui::WeakEntity<crate::workspace::ai_runtime_context::AiRuntimeContextEntity>,
-    agent_resources: oxideterm_ai::agent::AgentResourceCoordinator,
-    tab_host: gpui::WeakEntity<tabs::WorkspaceTabHostEntity>,
-    terminal: gpui::WeakEntity<WorkspaceTerminalEntity>,
-}
-
-impl TerminalInputBroadcastRoute {
-    fn broadcaster(self) -> TerminalInputBroadcaster {
-        Rc::new(move |kind, bytes, cx| self.deliver(kind, bytes, cx))
-    }
-
-    fn deliver(&self, kind: TerminalBroadcastInputKind, bytes: &[u8], cx: &mut App) {
-        if let Some(runtime) = self.ai_runtime.upgrade() {
-            if let Some(key) = runtime.read(cx).terminal_resource_key(self.session_id) {
-                if self.agent_resources.has_owner(&key) {
-                    self.agent_resources.invalidate(&key);
-                }
-            }
-        }
-        let Some(tab_host) = self.tab_host.upgrade() else {
-            return;
-        };
-        let Some(terminal) = self.terminal.upgrade() else {
-            return;
-        };
-
-        let (live_panes, mut candidates) = {
-            let tab_host = tab_host.read(cx);
-            let live_panes = tab_host.panes().keys().copied().collect::<HashSet<_>>();
-            let mut candidates = Vec::new();
-            for tab in tab_host.tabs() {
-                if let Some(root) = tab.root_pane.as_ref() {
-                    root.collect_pane_ids(&mut candidates);
-                }
-            }
-            (live_panes, candidates)
-        };
-        candidates
-            .retain(|pane_id| *pane_id != self.source_pane_id && live_panes.contains(pane_id));
-
-        let targets = terminal.update(cx, |terminal, _cx| {
-            terminal.retain_live_broadcast_targets(&live_panes);
-            terminal.filter_broadcast_targets(self.source_pane_id, candidates)
-        });
-        if targets.is_empty() {
-            return;
-        }
-        let explicit_send = matches!(kind, TerminalBroadcastInputKind::Paste)
-            || bytes.contains(&b'\r')
-            || bytes.contains(&b'\n');
-        let mut batch = explicit_send.then(|| {
-            let mut context = oxideterm_audit::AuditContext::current_request()
-                .or_else(oxideterm_audit::AuditContext::current);
-            if let Some(context) = &mut context {
-                context.source = oxideterm_audit::AuditSource::Broadcast;
-            }
-            oxideterm_audit::AuditOperation::in_context(
-                context.as_ref(),
-                oxideterm_audit::AuditCategory::Automation,
-                "broadcast_send_batch",
-                None,
-            )
-        });
-        let parent_id = batch
-            .as_ref()
-            .and_then(oxideterm_audit::AuditOperation::id)
-            .map(str::to_string);
-        let target_count = targets.len();
-        let mut sent_count = 0usize;
-        for pane_id in targets {
-            let session_id = tab_host
-                .read(cx)
-                .tabs()
-                .iter()
-                .find_map(|tab| tab.root_pane.as_ref()?.session_id_for_pane(pane_id));
-            if let Some(runtime) = self.ai_runtime.upgrade() {
-                if let Some(key) =
-                    session_id.and_then(|id| runtime.read(cx).terminal_resource_key(id))
-                {
-                    if self.agent_resources.has_owner(&key) {
-                        self.agent_resources.invalidate(&key);
-                    }
-                }
-            }
-            let Some(pane) = tab_host.read(cx).panes().get(&pane_id).cloned() else {
-                continue;
-            };
-            if pane.update(cx, |pane, cx| {
-                // Borrowed input is delivered synchronously and never retained
-                // outside the target pane's existing zeroizing write path.
-                pane.send_broadcast_input_with_parent(kind, bytes, parent_id.as_deref(), cx)
-            }) {
-                sent_count += 1;
-            }
-        }
-        if let Some(mut batch) = batch.take() {
-            batch.summary(&format!(
-                "targets={target_count}; sent={sent_count}; input_bytes={}",
-                bytes.len()
-            ));
-            batch.finish(
-                if sent_count == target_count {
-                    oxideterm_audit::AuditOutcome::Sent
-                } else if sent_count > 0 {
-                    oxideterm_audit::AuditOutcome::Partial
-                } else {
-                    oxideterm_audit::AuditOutcome::Failed
-                },
-                oxideterm_audit::AuditEvidence::Dispatch,
-                None,
-                None,
-            );
-        }
-    }
-}
-
 impl WorkspaceApp {
     pub(super) fn register_terminal_pane(
         &mut self,
@@ -199,20 +79,6 @@ impl WorkspaceApp {
     ) {
         let window_handle = window.window_handle();
         let terminal_label = pane.read(cx).title().to_string();
-        let broadcaster = TerminalInputBroadcastRoute {
-            source_pane_id: pane_id,
-            session_id,
-            ai_runtime: self.ai_runtime_context.downgrade(),
-            agent_resources: self.ai_entity.read(cx).agents.services.resources.clone(),
-            tab_host: self.tab_host.downgrade(),
-            terminal: self.terminal.downgrade(),
-        }
-        .broadcaster();
-        pane.update(cx, |pane, _cx| {
-            // Weak routing endpoints follow pane remounts without taking
-            // ownership of the pane, its SSH channel, or the physical node.
-            pane.set_input_broadcaster(Some(broadcaster));
-        });
         self.tab_host.update(cx, |tab_host, cx| {
             tab_host.register_terminal_pane(pane_id, session_id, pane, window_handle, cx);
         });
@@ -248,11 +114,6 @@ impl WorkspaceApp {
             TerminalPaneEvent::CurrentDirectoryChanged => {
                 if self.active_pane_id(cx) == Some(pane_id) {
                     self.sync_active_terminal_metadata_context(cx);
-                }
-            }
-            TerminalPaneEvent::RecordingStatusChanged => {
-                if self.active_pane_id(cx) == Some(pane_id) {
-                    self.sync_active_terminal_recording_elapsed_tick(cx);
                 }
             }
             TerminalPaneEvent::SearchStatusChanged => {
@@ -419,9 +280,6 @@ impl WorkspaceApp {
             self.clear_ime_selection();
         }
         self.search.remove(*pane_id);
-        self.terminal.update(cx, |terminal, _| {
-            terminal.sync_groups_mut().remove(*pane_id)
-        });
         self.tab_host
             .update(cx, |tab_host, _cx| tab_host.remove_terminal_pane(*pane_id))
     }
@@ -1085,16 +943,11 @@ impl WorkspaceApp {
                 let Some(pane) = self.tab_host.read(cx).panes().get(pane_id).cloned() else {
                     return div().size_full().into_any_element();
                 };
-                let sync_header = self.render_terminal_sync_member_header(*pane_id, cx);
                 let split = tab_id
                     .and_then(|id| self.tab_by_id(id, cx))
                     .and_then(|tab| tab.root_pane.as_ref())
                     .is_some_and(|root| root.pane_count() > 1);
-                let terminal_top = if sync_header.is_some() {
-                    terminal_command_bar::TERMINAL_SYNC_HEADER_HEIGHT
-                } else {
-                    0.0
-                } + if split { 28.0 } else { 0.0 };
+                let terminal_top = if split { 28.0 } else { 0.0 };
                 let header = div()
                     .absolute()
                     .top_0()
@@ -1109,8 +962,7 @@ impl WorkspaceApp {
                             active,
                             cx,
                         ))
-                    })
-                    .children(sync_header);
+                    });
                 div()
                     .id(("workspace-pane", pane_id.0))
                     .size_full()
@@ -1140,7 +992,6 @@ impl WorkspaceApp {
                                 if tab_id.is_none_or(|id| !this.tab_host.read(cx).is_detached(id)) {
                                     this.sync_active_tab_surface(cx);
                                     this.sync_active_terminal_metadata_context(cx);
-                                    this.sync_active_terminal_recording_elapsed_tick(cx);
                                     this.sync_active_privilege_prompt_inline_hint(cx);
                                 }
                                 if let Some(pane) =

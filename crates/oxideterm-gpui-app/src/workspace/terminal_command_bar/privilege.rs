@@ -363,8 +363,6 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let terminal = self.render_pane_tree(root_pane, window, cx);
-        let recording_status = self.active_terminal_recording_status(cx);
-        let recording_active = recording_status.state != TerminalRecordingState::Idle;
         if self.active_pane(cx).is_none()
             || !self.settings_store.settings().terminal.command_bar.enabled
         {
@@ -372,9 +370,6 @@ impl WorkspaceApp {
                 .size_full()
                 .relative()
                 .child(terminal)
-                .when(recording_active, |surface| {
-                    surface.child(self.render_terminal_recording_controls(recording_status, cx))
-                })
                 .into_any_element();
         }
 
@@ -387,10 +382,7 @@ impl WorkspaceApp {
                     .relative()
                     .flex_1()
                     .min_h(px(0.0))
-                    .child(terminal)
-                    .when(recording_active, |surface| {
-                        surface.child(self.render_terminal_recording_controls(recording_status, cx))
-                    }),
+                    .child(terminal),
             )
             .child(self.render_terminal_command_bar(cx))
             // The toolbar is the sender header. Hidden, compact, and expanded

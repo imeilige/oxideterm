@@ -6,10 +6,10 @@ use oxideterm_settings::PersistedSettings;
 use crate::{
     CloseOtherTabs, ClosePane, CloseTab, CommandPalette, Copy, Cut, Find, FindNext, FindPrev,
     FontDecrease, FontIncrease, FontReset, NewConnection, NewTerminal, NextTab, OpenSettings,
-    PaletteAiSidebar, PaletteBroadcast, PaletteCancelReconnect, PaletteCleanupDead,
+    PaletteAiSidebar, PaletteCancelReconnect, PaletteCleanupDead,
     PaletteDetachTerminal, PaletteDisconnectAll, PaletteEventLog, PaletteHealthCheck,
     PaletteReconnectAll, PaletteResetPanes, Paste, PrevTab, Quit, ShellLauncher, ShowShortcuts,
-    SplitHorizontal, SplitVertical, TerminalRecording, ToggleSidebar, ZenMode,
+    SplitHorizontal, SplitVertical, ToggleSidebar, ZenMode,
 };
 
 pub(crate) fn app_menus(settings: &PersistedSettings) -> Vec<Menu> {
@@ -55,14 +55,6 @@ pub(crate) fn app_menus(settings: &PersistedSettings) -> Vec<Menu> {
                 MenuItem::action(i18n.t("menu.split_vertical"), SplitVertical),
                 MenuItem::action(i18n.t("menu.close_pane"), ClosePane),
                 MenuItem::separator(),
-                MenuItem::action(
-                    i18n.t("command_palette.cmd_broadcast_toggle"),
-                    PaletteBroadcast,
-                ),
-                MenuItem::action(
-                    i18n.t("settings_view.keybindings.actions.terminal.recording"),
-                    TerminalRecording,
-                ),
                 MenuItem::action(
                     i18n.t("command_palette.cmd_detach_terminal"),
                     PaletteDetachTerminal,

@@ -329,7 +329,7 @@ fn terminal_playback_output_pipeline(cx: &mut BenchAppContext<'_, '_>) {
         }
         has_previous_render = true;
         update_samples
-            .push(terminal.feed_recording_output_profiled(&output_chunks[chunk_index], cx));
+            .push(terminal.feed_benchmark_output(&output_chunks[chunk_index], cx));
         chunk_index = (chunk_index + 1) % output_chunks.len();
     });
 

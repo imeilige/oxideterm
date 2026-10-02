@@ -50,7 +50,6 @@ mod sftp;
 mod sidebar;
 mod standalone_connections;
 mod tabs;
-mod terminal_cast;
 mod terminal_command_bar;
 mod terminal_command_sender;
 mod terminal_context_actions;
@@ -58,7 +57,6 @@ mod terminal_cwd;
 mod terminal_entity;
 mod terminal_git;
 mod terminal_project;
-mod terminal_sync_groups;
 mod terminal_triggers_runtime;
 mod version_migration;
 mod virtual_list;
@@ -160,13 +158,13 @@ use oxideterm_gpui_platform::{
 };
 use oxideterm_gpui_terminal::{
     PrivilegePromptMatch, SemanticShellDialect, SharedTerminalCommandHistory,
-    SharedTerminalSession, TerminalAutosuggestLabels, TerminalBroadcastInputKind,
+    SharedTerminalSession, TerminalAutosuggestLabels,
     TerminalCommandSelectionLabels, TerminalContextAction, TerminalHighlightMatchScope,
     TerminalHighlightRenderMode, TerminalHighlightRule as UiHighlightRule,
-    TerminalHighlightRuleSetOverride, TerminalInputBroadcaster,
+    TerminalHighlightRuleSetOverride,
     TerminalKittyFileTransmissionLabels, TerminalModemLabels, TerminalNotice,
     TerminalNoticeVariant, TerminalPane, TerminalPaneEvent, TerminalPasteLabels,
-    TerminalRecordingState, TerminalRecordingStatus, TerminalSearchStatus,
+    TerminalSearchStatus,
     TerminalSerialControlLabels, TerminalTmuxLabels, TerminalTrzszLabels,
     TerminalUiPreferenceOverrides, TerminalUiPreferences, TerminalUiTheme,
     TerminalWorkingDirectorySource, detect_custom_privilege_prompt,
@@ -280,11 +278,11 @@ use crate::{
     CloseOtherTabs, ClosePane, CloseSearch, CloseTab, CommandPalette, Copy, Cut, Find, FindNext,
     FindPrev, FontDecrease, FontIncrease, FontReset, GoToTab1, GoToTab2, GoToTab3, GoToTab4,
     GoToTab5, GoToTab6, GoToTab7, GoToTab8, GoToTab9, NewConnection, NewTerminal, NextTab,
-    OpenSettings, PaletteAiSidebar, PaletteBroadcast, PaletteCancelReconnect, PaletteCleanupDead,
+    OpenSettings, PaletteAiSidebar, PaletteCancelReconnect, PaletteCleanupDead,
     PaletteDetachTerminal, PaletteDisconnectAll, PaletteHealthCheck, PaletteReconnectAll,
     PaletteResetPanes, Paste, PrevTab, Quit, ShellLauncher, ShowShortcuts, SplitHorizontal,
     SplitNavLeft, SplitNavRight, SplitVertical, SwitchLocaleChinese, SwitchLocaleEnglish,
-    TerminalAiPanel, TerminalClearScreen, TerminalFreeTypeMode, TerminalRecording,
+    TerminalAiPanel, TerminalClearScreen, TerminalFreeTypeMode,
     ToggleFullscreen, ToggleSidebar, ZenMode,
 };
 use crate::{assets::LucideIcon, bundled_fonts};
@@ -705,14 +703,13 @@ pub(crate) struct WorkspaceApp {
     tab_host: Entity<tabs::WorkspaceTabHostEntity>,
     _tab_host_subscription: Subscription,
     search: actions::TerminalSearchState,
-    terminal_recording_menu_open: bool,
     terminal_highlight_popover_open: bool,
     // Settings keep the source pane stable while editing session-only trigger overrides.
     terminal_trigger_settings_pane: Option<PaneId>,
     terminal_trigger_shell_confirmation_pending: bool,
     terminal_triggers: settings::TerminalTriggersSettingsState,
     terminal_trigger_runtime: terminal_triggers_runtime::TerminalTriggerRuntimeState,
-    // Runtime panes share one stable saved-profile identity index across triggers and broadcasts.
+    // Runtime panes share one stable saved-profile identity index across triggers.
     terminal_saved_connection_refs:
         HashMap<TerminalSessionId, oxideterm_terminal_triggers::SavedConnectionRef>,
     terminal_semantic_highlight_section_expanded: bool,

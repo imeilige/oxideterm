@@ -442,7 +442,6 @@ pub(crate) enum BrowserPointerCaptureOwner {
     TerminalCommandSenderResize,
     PaneSplitter,
     SettingsSlider,
-    TerminalCastSeekbar,
     HostToolsTabScrollbar,
     TextSelection,
     SftpFileDrag,
@@ -465,7 +464,6 @@ struct BrowserPointerCaptureState {
     terminal_command_sender_resizing: bool,
     pane_splitter_dragging: bool,
     settings_slider_dragging: bool,
-    terminal_cast_seekbar_dragging: bool,
     host_tools_tab_scrollbar_dragging: bool,
     text_selection_dragging: bool,
     sftp_file_dragging: bool,
@@ -542,7 +540,6 @@ impl WorkspaceApp {
             terminal_command_sender_resizing: self.terminal_command_sender.read(cx).is_resizing(),
             pane_splitter_dragging: self.split_drag.is_some(),
             settings_slider_dragging: self.settings_slider_drag.is_some(),
-            terminal_cast_seekbar_dragging: self.terminal.read(cx).cast_seek_dragging(),
             host_tools_tab_scrollbar_dragging,
             text_selection_dragging: self.ime_drag_selection.is_some(),
             sftp_file_dragging: sftp.has_drag_capture(),
@@ -573,8 +570,6 @@ fn resolve_browser_pointer_capture_owner(
         Some(BrowserPointerCaptureOwner::PaneSplitter)
     } else if state.settings_slider_dragging {
         Some(BrowserPointerCaptureOwner::SettingsSlider)
-    } else if state.terminal_cast_seekbar_dragging {
-        Some(BrowserPointerCaptureOwner::TerminalCastSeekbar)
     } else if state.host_tools_tab_scrollbar_dragging {
         Some(BrowserPointerCaptureOwner::HostToolsTabScrollbar)
     } else if state.text_selection_dragging {

@@ -383,9 +383,6 @@ impl CommandFactLedger {
                 })
                 .unwrap_or(match mark.submitted_by.unwrap_or(mark.detection_source) {
                     TerminalCommandMarkDetectionSource::Ai => oxideterm_audit::AuditSource::Ai,
-                    TerminalCommandMarkDetectionSource::Broadcast => {
-                        oxideterm_audit::AuditSource::Broadcast
-                    }
                     TerminalCommandMarkDetectionSource::CommandBar => {
                         oxideterm_audit::AuditSource::CommandBar
                     }
@@ -572,7 +569,6 @@ impl CommandFactLedger {
             fact.source,
             TerminalCommandMarkDetectionSource::CommandBar
                 | TerminalCommandMarkDetectionSource::Ai
-                | TerminalCommandMarkDetectionSource::Broadcast
                 | TerminalCommandMarkDetectionSource::ShellIntegration
         ) {
             return;

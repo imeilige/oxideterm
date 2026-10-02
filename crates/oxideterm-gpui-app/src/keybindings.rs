@@ -7,9 +7,9 @@ use crate::{
     CloseOtherTabs, CloseTab, CommandPalette, Copy, Cut, Find, FontDecrease, FontIncrease,
     FontReset, GoToTab1, GoToTab2, GoToTab3, GoToTab4, GoToTab5, GoToTab6, GoToTab7, GoToTab8,
     GoToTab9, NewConnection, NewTerminal, NextTab, OpenSettings, PaletteAiSidebar,
-    PaletteBroadcast, PaletteEventLog, Paste, PrevTab, Quit, ShellLauncher, ShowShortcuts,
+    PaletteEventLog, Paste, PrevTab, Quit, ShellLauncher, ShowShortcuts,
     SplitHorizontal, SplitNavLeft, SplitNavRight, SplitVertical, TerminalAiPanel,
-    TerminalClearScreen, TerminalFreeTypeMode, TerminalRecording, ToggleFullscreen, ToggleSidebar,
+    TerminalClearScreen, TerminalFreeTypeMode, ToggleFullscreen, ToggleSidebar,
     ZenMode,
 };
 
@@ -461,13 +461,6 @@ pub(crate) static ACTION_DEFINITIONS: LazyLock<Vec<ActionDefinition>> = LazyLock
             ActionScope::Palette,
             KeyCombo::cmd_shift("a"),
             KeyCombo::ctrl_shift("a"),
-        ),
-        // Keep Ctrl+B available as the tmux prefix on Windows and Linux.
-        def(
-            "palette.broadcast",
-            ActionScope::Palette,
-            KeyCombo::cmd("b"),
-            KeyCombo::ctrl_shift("b"),
         ),
     ]);
 
@@ -1445,7 +1438,6 @@ fn push_action_binding(bindings: &mut Vec<KeyBinding>, action_id: &str, combo: &
         "terminal.paste" => push_binding!(Paste),
         "terminal.clearScreen" => push_binding!(TerminalClearScreen),
         "terminal.aiPanel" => push_binding!(TerminalAiPanel),
-        "terminal.recording" => push_binding!(TerminalRecording),
         "terminal.toggleFreeTypeMode" => push_binding!(TerminalFreeTypeMode),
         "terminal.closePanel" => {}
         "split.horizontal" => push_binding!(SplitHorizontal),
@@ -1455,7 +1447,6 @@ fn push_action_binding(bindings: &mut Vec<KeyBinding>, action_id: &str, combo: &
         "split.navRight" => push_binding!(SplitNavRight),
         "palette.eventLog" => push_binding!(PaletteEventLog),
         "palette.aiSidebar" => push_binding!(PaletteAiSidebar),
-        "palette.broadcast" => push_binding!(PaletteBroadcast),
         "app.navBack" | "app.navForward" => {}
         _ => {}
     }

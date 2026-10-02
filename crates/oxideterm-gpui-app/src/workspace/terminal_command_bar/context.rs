@@ -16,7 +16,7 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) -> gpui::Stateful<gpui::Div> {
         // Tauri TerminalCommandBarActions uses a shared h-6/w-6 rounded-md
-        // button for split, broadcast, recording, and cast controls. Keep the
+        // button for the split, sender, and search controls. Keep the
         // geometry local to the terminal bar while routing activation through
         // the workspace button guard shared with FileManager/SFTP actions.
         self.workspace_icon_action_button(

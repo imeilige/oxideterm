@@ -56,7 +56,6 @@ members = [
   "crates/oxideterm-ssh-launch",
   "crates/oxideterm-ssh",
   "crates/oxideterm-terminal",
-  "crates/oxideterm-terminal-recording",
   "crates/oxideterm-terminal-triggers",
   "crates/oxideterm-terminal-encoding",
   "crates/oxideterm-terminal-graphics",

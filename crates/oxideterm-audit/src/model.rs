@@ -249,6 +249,9 @@ pub enum AuditSource {
     User,
     CommandBar,
     QuickCommand,
+    /// Terminal broadcast was removed, but operations carrying this source are
+    /// already sealed into the audit store. The read path fails the whole query
+    /// on an unknown tag, so the variant stays to keep that history readable.
     Broadcast,
     Ai,
     Mcp,

@@ -1,7 +1,6 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
-use super::actions::TerminalBroadcastMenuPlacement;
 use super::ime::WorkspaceImeTarget;
 use super::terminal_git::{
     TerminalGitAiCommitError, TerminalGitBranchError, TerminalGitPanelSection,
@@ -27,7 +26,6 @@ use oxideterm_gpui_ui::{
     action_chip, action_chip_foreground, command_panel, command_panel_body, context_chip,
     entity_list_row, monospace_datum, status_pill,
 };
-use oxideterm_terminal_recording::format_recording_elapsed;
 
 pub(in crate::workspace) mod completion;
 
@@ -38,8 +36,6 @@ mod highlight;
 mod privilege;
 mod sender;
 
-const TERMINAL_BROADCAST_MENU_WIDTH: f32 = 340.0;
-const TERMINAL_BROADCAST_MENU_MAX_HEIGHT: f32 = 520.0;
 const TERMINAL_CWD_MENU_WIDTH: f32 = 520.0;
 const TERMINAL_CWD_MENU_MAX_HEIGHT: f32 = 420.0;
 const TERMINAL_CWD_MENU_MARGIN: f32 = 12.0;
@@ -53,7 +49,6 @@ const TERMINAL_PROJECT_MENU_MARGIN: f32 = 12.0;
 const TERMINAL_COMMAND_CONTEXT_CHIP_MAX_WIDTH: f32 = 260.0; // Keep context chips compact beside command-bar actions.
 const TERMINAL_COMMAND_PROJECT_CHIP_MAX_WIDTH: f32 = 240.0; // Project labels are shorter than cwd/git labels in Tauri.
 const TERMINAL_COMMAND_TOOLBAR_HEIGHT: f32 = 32.0;
-pub(in crate::workspace) const TERMINAL_SYNC_HEADER_HEIGHT: f32 = 26.0;
 pub(in crate::workspace) const TERMINAL_SENDER_COMPACT_HEIGHT: f32 = 32.0;
 const PRIVILEGE_PROMPT_DEBUG_ENV: &str = "OXIDETERM_PRIVILEGE_DEBUG";
 
@@ -455,10 +450,6 @@ fn detect_custom_prompt_from_credentials(
         // shape; otherwise the "custom" kind silently behaves like a no-op.
         detect_custom_privilege_prompt(visible_text, &credential.id, &credential.prompt_patterns)
     })
-}
-
-fn terminal_broadcast_menu_left_for_trigger_right(trigger_right: f32) -> f32 {
-    (trigger_right - TERMINAL_BROADCAST_MENU_WIDTH).max(12.0)
 }
 
 fn terminal_cwd_browse_element_id(path: &str) -> u64 {

@@ -585,7 +585,6 @@ impl WorkspaceApp {
                 this.update_terminal_command_sender_resize(event, window, cx);
                 this.update_split_drag(event, window, cx);
                 this.update_settings_slider_drag(event, cx);
-                this.update_terminal_cast_seek_drag(event, cx);
                 // Continue scrollbar dragging after the pointer leaves its thin hit target.
                 this.update_host_tools_tab_scrollbar_drag(event, cx);
                 this.update_tabbar_scrollbar_drag(event, window, cx);
@@ -782,17 +781,11 @@ impl WorkspaceApp {
             .on_action(cx.listener(|this, _: &TerminalClearScreen, _window, cx| {
                 this.clear_active_terminal_screen(cx);
             }))
-            .on_action(cx.listener(|this, _: &TerminalRecording, _window, cx| {
-                this.toggle_active_terminal_recording(cx);
-            }))
             .on_action(cx.listener(|this, _: &TerminalFreeTypeMode, _window, cx| {
                 this.toggle_free_type_mode(cx);
             }))
             .on_action(cx.listener(|this, _: &PaletteAiSidebar, _window, cx| {
                 let _ = this.toggle_ai_sidebar(cx);
-            }))
-            .on_action(cx.listener(|this, _: &PaletteBroadcast, _window, cx| {
-                this.toggle_terminal_broadcast(cx);
             }))
             .on_action(cx.listener(|this, _: &PaletteDisconnectAll, window, cx| {
                 this.disconnect_all_ssh_nodes_from_palette(window, cx);
@@ -1080,19 +1073,6 @@ impl WorkspaceApp {
                 self.render_ai_sidebar_floating_overlay(window, cx),
                 |root, overlay| root.child(overlay),
             )
-            .when(self.terminal.read(cx).broadcast_menu_open(), |root| {
-                let placement = if self.settings_store.settings().terminal.command_bar.enabled {
-                    actions::TerminalBroadcastMenuPlacement::Bottom(62.0)
-                } else {
-                    actions::TerminalBroadcastMenuPlacement::Top(
-                        effective_titlebar_height + self.tokens.metrics.tabbar_height + 6.0,
-                    )
-                };
-                root.child(self.workspace_context_menu_backdrop(
-                    self.render_terminal_broadcast_menu(placement, cx),
-                    cx,
-                ))
-            })
             .when_some(
                 self.render_detached_tab_return_handoff(window, cx),
                 |root, handoff| root.child(handoff),
@@ -1106,9 +1086,6 @@ impl WorkspaceApp {
             })
             .when_some(self.render_tab_context_menu(window, cx), |root, menu| {
                 root.child(menu)
-            })
-            .when_some(self.render_terminal_cast_player(cx), |root, player| {
-                root.child(player)
             })
             .when_some(self.render_theme_editor_modal(cx), |root, modal| {
                 // Theme editing is a workspace modal, not a settings-pane overlay.
@@ -1250,7 +1227,6 @@ impl WorkspaceApp {
         self.finish_terminal_command_sender_resize(cx);
         self.finish_split_drag(cx);
         self.finish_settings_slider_drag(cx);
-        self.finish_terminal_cast_seek_drag(cx);
         self.finish_host_tools_tab_scrollbar_drag(cx);
         self.finish_tabbar_scrollbar_drag(cx);
         self.finish_ime_selection_drag(cx);

@@ -24,9 +24,7 @@ use parking_lot::Mutex;
 use unicode_width::UnicodeWidthChar;
 use zeroize::Zeroizing;
 
-use crate::app::{
-    TerminalInputHandler, TerminalPane, TerminalRenderedImage, TerminalRowTimestampStore,
-};
+use crate::app::{TerminalInputHandler, TerminalPane, TerminalRenderedImage};
 use crate::command_facts::TransientCommandHighlight;
 use crate::terminal_ui::*;
 use crate::terminal_view::highlight::{TerminalHighlightLayout, terminal_highlights_for_rows};
@@ -82,7 +80,6 @@ pub(crate) struct TerminalElement {
     bidi_enabled: bool,
     input: Option<TerminalElementInput>,
     transparent_background: bool,
-    row_timestamps: Option<Arc<TerminalRowTimestampStore>>,
     layout_cache: Option<Arc<Mutex<TerminalLayoutCache>>>,
     performance_metrics_enabled: bool,
     viewport_rows: usize,
@@ -113,7 +110,6 @@ pub(crate) struct TerminalElementLayout {
     pub(crate) selections: Vec<TerminalRect>,
     pub(crate) images: Vec<TerminalImageLayout>,
     pub(crate) text_runs: Vec<BatchedTextRun>,
-    pub(crate) timestamp_runs: Vec<BatchedTextRun>,
     pub(crate) marked_text: Option<BatchedTextRun>,
     pub(crate) ghost_text: Option<BatchedTextRun>,
     pub(crate) ime_cursor_bounds: Option<Bounds<Pixels>>,
@@ -552,7 +548,6 @@ impl TerminalElement {
             bidi_enabled,
             input,
             transparent_background: false,
-            row_timestamps: None,
             ghost_text: None,
             layout_cache: None,
             performance_metrics_enabled: false,
@@ -667,14 +662,6 @@ impl TerminalElement {
 
     pub(crate) fn command_mark_gutter_width(mut self, width: f32) -> Self {
         self.command_mark_gutter_width = width.max(0.0);
-        self
-    }
-
-    pub(crate) fn row_timestamps(
-        mut self,
-        row_timestamps: Option<Arc<TerminalRowTimestampStore>>,
-    ) -> Self {
-        self.row_timestamps = row_timestamps;
         self
     }
 
@@ -813,7 +800,6 @@ impl TerminalElement {
             .collect::<Vec<_>>();
         images.sort_by_key(|image| (image.image.snapshot.z_index, image.image.snapshot.id.0));
         let mut text_runs = Vec::new();
-        let mut timestamp_runs = Vec::new();
         let mut cached_rows = Vec::new();
         let mut cursor = None;
         let scrollbar = terminal_scrollbar_for_viewport_display_offset(
@@ -891,11 +877,6 @@ impl TerminalElement {
                     &mut cursor,
                 );
             }
-            if let Some(timestamp_run) =
-                self.timestamp_run_for_row(row_index, terminal_row_timestamp_identity(row))
-            {
-                timestamp_runs.push(timestamp_run);
-            }
         }
 
         TerminalElementLayout {
@@ -921,7 +902,6 @@ impl TerminalElement {
             selections,
             images,
             text_runs,
-            timestamp_runs,
             marked_text: self.marked_text.as_ref().and_then(|text| {
                 ime_cursor_bounds?;
                 let marked_col = self
@@ -946,18 +926,6 @@ impl TerminalElement {
             scrollbar,
             cached_rows,
         }
-    }
-
-    fn timestamp_run_for_row(&self, row_index: usize, index: u64) -> Option<BatchedTextRun> {
-        let label = self.row_timestamps.as_ref()?.get(index)?.label.clone();
-        Some(BatchedTextRun {
-            row: row_index,
-            col: 0,
-            cells: TERMINAL_TIMESTAMP_LABEL_CELLS,
-            style: timestamp_text_run(&label, &self.theme, &self.metrics),
-            text: SharedString::from(label),
-            cache: None,
-        })
     }
 
     fn cached_layout_for_bounds(&self, bounds: Bounds<Pixels>) -> Arc<TerminalElementLayout> {
@@ -2142,53 +2110,15 @@ impl Element for TerminalElement {
         if !self.transparent_background {
             window.paint_quad(fill(bounds, rgb(self.theme.background)));
         }
-        let timestamp_gutter_width =
-            terminal_timestamp_gutter_width(&self.metrics, self.row_timestamps.is_some());
-        let viewport_timestamp_origin =
+        let content_origin =
             bounds.origin + point(px(TERMINAL_CONTENT_PADDING), px(TERMINAL_CONTENT_PADDING));
-        let timestamp_origin = viewport_timestamp_origin + point(px(0.0), self.scroll_y_offset);
-        // The timestamp gutter and the terminal grid use separate origins so
-        // timestamps remain a paint-only overlay and never affect text runs.
-        let grid_gutter_width = timestamp_gutter_width + self.command_mark_gutter_width;
-        let viewport_origin = viewport_timestamp_origin + point(px(grid_gutter_width), px(0.0));
+        // The left gutter is paint-only chrome, so the grid origin stays independent of it.
+        let grid_gutter_width = self.command_mark_gutter_width;
+        let viewport_origin = content_origin + point(px(grid_gutter_width), px(0.0));
         let origin =
-            timestamp_origin + point(px(grid_gutter_width) - self.scroll_x_offset, px(0.0));
+            content_origin + point(px(grid_gutter_width) - self.scroll_x_offset, self.scroll_y_offset);
         let grid_viewport_width = px((f32::from(bounds.size.width) - grid_gutter_width).max(0.0));
-        let viewport_mask_bounds = Bounds::new(
-            viewport_timestamp_origin,
-            size(
-                px((f32::from(bounds.size.width) - TERMINAL_CONTENT_PADDING).max(0.0)),
-                px(self.viewport_rows as f32 * self.metrics.line_height_f32()),
-            ),
-        );
 
-        window.with_content_mask(
-            Some(ContentMask {
-                bounds: viewport_mask_bounds,
-            }),
-            |window| {
-                if self.row_timestamps.is_some() {
-                    for run in &layout.timestamp_runs {
-                        paint_text_run(run, timestamp_origin, &self.metrics, window, cx);
-                    }
-                    let divider_x = viewport_timestamp_origin.x
-                        + px((TERMINAL_TIMESTAMP_LABEL_CELLS as f32
-                            + TERMINAL_TIMESTAMP_GUTTER_GAP_CELLS / 2.0)
-                            * self.metrics.cell_width_f32());
-                    let divider_bounds = Bounds::new(
-                        point(divider_x, viewport_timestamp_origin.y),
-                        size(
-                            px(1.0),
-                            px(self.viewport_rows as f32 * self.metrics.line_height_f32()),
-                        ),
-                    );
-                    window.paint_quad(fill(
-                        divider_bounds,
-                        rgba((self.theme.foreground << 8) | 0x2e),
-                    ));
-                }
-            },
-        );
         let grid_mask_bounds = Bounds::new(
             viewport_origin,
             size(
@@ -2340,9 +2270,11 @@ impl Element for TerminalElement {
                 window,
             );
         }
+        // The gutter that used to provide horizontal overflow is gone, so the helper always
+        // reports no scrollable range. Callers still route through it instead of a literal.
         if let Some(horizontal_scrollbar) = terminal_horizontal_scrollbar_for_viewport(
             f32::from(grid_viewport_width) - SCROLLBAR_RESERVED_WIDTH,
-            timestamp_gutter_width,
+            0.0,
             f32::from(self.scroll_x_offset),
         ) {
             paint_horizontal_scrollbar(

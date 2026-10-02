@@ -10,8 +10,8 @@ mod trzsz_worker;
 #[cfg(feature = "bench")]
 pub use app::TerminalPlaybackUpdateTimings;
 pub use app::{
-    SharedTerminalSession, TerminalBroadcastInputKind, TerminalContextAction, TerminalCursorAnchor,
-    TerminalCwdShellIntegrationStatus, TerminalInputBroadcaster, TerminalInputInterceptor,
+    SharedTerminalSession, TerminalContextAction, TerminalCursorAnchor,
+    TerminalCwdShellIntegrationStatus, TerminalInputInterceptor,
     TerminalInputInterceptorResult, TerminalKeybindings, TerminalPane, TerminalPaneEvent,
     TerminalSearchStatus, TerminalSerialAction, TerminalSerialStatus, TerminalShortcut,
     TerminalTelnetAction, TerminalWorkingDirectorySource,
@@ -21,7 +21,6 @@ pub use command_facts::{
     TerminalAutosuggestInputState, TerminalCommandFact, TerminalCommandFactStatus,
 };
 pub use oxideterm_terminal::TerminalOutputProcessor;
-pub use oxideterm_terminal_recording::{TerminalRecordingState, TerminalRecordingStatus};
 pub use oxideterm_terminal_semantic::SemanticShellDialect;
 pub use privilege_prompt::{
     PrivilegePromptConfidence, PrivilegePromptMatch, PrivilegePromptSnapshot,

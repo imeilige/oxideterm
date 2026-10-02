@@ -42,8 +42,6 @@ pub(crate) const SCROLLBAR_WIDTH: f32 = 10.0;
 pub(crate) const SCROLLBAR_GAP: f32 = 0.0;
 pub(crate) const SCROLLBAR_RESERVED_WIDTH: f32 = SCROLLBAR_WIDTH;
 pub(crate) const SCROLLBAR_MIN_THUMB: f32 = 24.0;
-pub(crate) const TERMINAL_TIMESTAMP_LABEL_CELLS: usize = 14;
-pub(crate) const TERMINAL_TIMESTAMP_GUTTER_GAP_CELLS: f32 = 1.0;
 pub(crate) const TERMINAL_SCROLL_MULTIPLIER: f32 = 1.0;
 pub(crate) const CURSOR_BLINK_INTERVAL: Duration = Duration::from_millis(500);
 pub(crate) const TERMINAL_PASTE_PROTECTION: bool = true;
@@ -1011,20 +1009,6 @@ impl TerminalMetrics {
     pub(crate) fn line_height_f32(&self) -> f32 {
         f32::from(self.line_height)
     }
-}
-
-pub(crate) fn terminal_timestamp_gutter_width(metrics: &TerminalMetrics, enabled: bool) -> f32 {
-    if enabled {
-        (TERMINAL_TIMESTAMP_LABEL_CELLS as f32 + TERMINAL_TIMESTAMP_GUTTER_GAP_CELLS)
-            * metrics.cell_width_f32()
-    } else {
-        0.0
-    }
-}
-
-/// Emulator-owned identity is stable across scrolling, eviction and local row movement.
-pub(crate) fn terminal_row_timestamp_identity(row: &TerminalRow) -> u64 {
-    row.source_id as u64
 }
 
 pub(crate) fn fallback_cell_width(window: &mut Window, font: &Font, font_size: Pixels) -> Pixels {

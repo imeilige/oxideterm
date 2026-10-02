@@ -580,8 +580,6 @@ impl WorkspaceApp {
                     | SelectAnchorId::AiContextPopover
                     | SelectAnchorId::AiAutocomplete
             ) && self.has_ai_sidebar_floating_overlay(cx))
-            || (anchor.id == SelectAnchorId::TerminalBroadcastMenu
-                && self.terminal.read(cx).broadcast_menu_open())
             || (anchor.id == SelectAnchorId::TerminalCwdMenu
                 && self.terminal.read(cx).cwd_picker_open())
             || (anchor.id == SelectAnchorId::TerminalGitBranchMenu
@@ -824,13 +822,6 @@ impl WorkspaceApp {
         if self.connection_form_state(cx).open_select.is_some() {
             self.ime_marked_text = None;
             self.close_new_connection_select(cx);
-            changed = true;
-        }
-        if self
-            .terminal
-            .update(cx, |terminal, _cx| terminal.blur_cast_search())
-        {
-            self.ime_marked_text = None;
             changed = true;
         }
         if self.close_terminal_git_branch_picker(cx) {
@@ -1458,11 +1449,6 @@ pub(in crate::workspace) fn select_anchor_tracks_while_closed(anchor_id: SelectA
             | SelectAnchorId::NewConnectionSerialParity
             | SelectAnchorId::NewConnectionSerialFlowControl
             | SelectAnchorId::IdeAgentStatus
-            // Broadcast targets are rendered through the root backdrop, but
-            // Tauri/Radix positions them from the trigger button. Keep the
-            // closed trigger rect warm so the first pointer-down opens at the
-            // command-bar/tabbar button even when the AI sidebar changes root width.
-            | SelectAnchorId::TerminalBroadcastMenu
             // Quick Commands uses Tauri's `min(860px, calc(100% - 1.5rem))`
             // width against the command bar. Keep the bar rect warm so the
             // first open and later resizes can compute the same adaptive width.
@@ -1470,7 +1456,6 @@ pub(in crate::workspace) fn select_anchor_tracks_while_closed(anchor_id: SelectA
             | SelectAnchorId::TerminalCwdMenu
             | SelectAnchorId::TerminalGitBranchMenu
             | SelectAnchorId::TerminalProjectMenu
-            | SelectAnchorId::TerminalCastSeekbar
             | SelectAnchorId::RemoteDesktopResizeMenu(_)
             // Session Manager toolbar menus use window-anchored overlays, so
             // their trigger bounds must be cached before pointer-down.

@@ -4,7 +4,6 @@
 use super::*;
 
 const MAX_TAB_HISTORY: usize = 50;
-const RECORDING_ELAPSED_TICK_INTERVAL: Duration = Duration::from_millis(530);
 
 /// Owns workspace-wide tab identity, terminal mounts, navigation, and close lifecycle.
 pub(in crate::workspace) struct WorkspaceTabHostEntity {
@@ -38,9 +37,6 @@ pub(in crate::workspace) struct WorkspaceTabHostEntity {
     close_confirm_presence: oxideterm_gpui_ui::motion::ExitPresence,
     close_confirm_focused_action: Option<ConfirmDialogAction>,
     close_confirm_exit_task: Option<gpui::Task<()>>,
-    recording_elapsed_pane_id: Option<PaneId>,
-    recording_elapsed_generation: u64,
-    recording_elapsed_task: Option<gpui::Task<()>>,
 }
 
 /// Identifies the single tab and pane currently mounting one terminal session.
@@ -109,9 +105,6 @@ struct TerminalPaneWindowAffinity {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::workspace) enum WorkspaceTabHostEvent {
     CloseProcessCheckReady,
-    RecordingElapsedTick {
-        pane_id: PaneId,
-    },
     TerminalOutputUnread,
     TerminalPaneDelivery {
         pane_id: PaneId,
@@ -178,9 +171,6 @@ impl WorkspaceTabHostEntity {
             close_confirm_presence: oxideterm_gpui_ui::motion::ExitPresence::visible(),
             close_confirm_focused_action: None,
             close_confirm_exit_task: None,
-            recording_elapsed_pane_id: None,
-            recording_elapsed_generation: 0,
-            recording_elapsed_task: None,
         }
     }
 
@@ -762,46 +752,6 @@ impl WorkspaceTabHostEntity {
         let id = TerminalSessionId(self.next_session_id);
         self.next_session_id += 1;
         id
-    }
-
-    pub(in crate::workspace) fn sync_recording_elapsed_tick(
-        &mut self,
-        pane_id: Option<PaneId>,
-        recording: bool,
-        cx: &mut Context<Self>,
-    ) {
-        let pane_id = pane_id.filter(|_| recording);
-        if self.recording_elapsed_pane_id == pane_id
-            && (pane_id.is_none() || self.recording_elapsed_task.is_some())
-        {
-            return;
-        }
-        self.recording_elapsed_pane_id = pane_id;
-        self.recording_elapsed_generation = self.recording_elapsed_generation.wrapping_add(1);
-        self.recording_elapsed_task = None;
-        let Some(pane_id) = pane_id else {
-            return;
-        };
-        let generation = self.recording_elapsed_generation;
-        self.recording_elapsed_task = Some(cx.spawn(async move |tab_host, cx| {
-            loop {
-                Timer::after(RECORDING_ELAPSED_TICK_INTERVAL).await;
-                let should_continue = tab_host
-                    .update(cx, |tab_host, cx| {
-                        if tab_host.recording_elapsed_generation != generation
-                            || tab_host.recording_elapsed_pane_id != Some(pane_id)
-                        {
-                            return false;
-                        }
-                        cx.emit(WorkspaceTabHostEvent::RecordingElapsedTick { pane_id });
-                        true
-                    })
-                    .unwrap_or(false);
-                if !should_continue {
-                    break;
-                }
-            }
-        }));
     }
 
     pub(in crate::workspace) fn bind_terminal_location(
@@ -2364,7 +2314,7 @@ mod tests {
             assert_eq!(tab_host.mount(tab_id), None);
         });
         replacement_pane.update(cx, |_pane, cx| {
-            cx.emit(TerminalPaneEvent::RecordingStatusChanged);
+            cx.emit(TerminalPaneEvent::SearchStatusChanged);
         });
         cx.run_until_parked();
 
@@ -2393,7 +2343,7 @@ mod tests {
                     pane_id: replacement_pane_id,
                     session_id: replacement_session_id,
                     window_handle: main_window_handle,
-                    event: TerminalPaneEvent::RecordingStatusChanged,
+                    event: TerminalPaneEvent::SearchStatusChanged,
                 },
             ]
         );
@@ -2463,26 +2413,6 @@ mod tests {
         assert!(terminal_process_info_has_foreground_child_process(
             &foreground_child
         ));
-    }
-
-    #[gpui::test]
-    fn recording_elapsed_task_follows_only_the_visible_recording_pane(cx: &mut TestAppContext) {
-        let tab_host = cx.new(|_| WorkspaceTabHostEntity::new());
-        tab_host.update(cx, |tab_host, cx| {
-            tab_host.sync_recording_elapsed_tick(Some(PaneId(1)), true, cx);
-            let first_generation = tab_host.recording_elapsed_generation;
-            assert_eq!(tab_host.recording_elapsed_pane_id, Some(PaneId(1)));
-            assert!(tab_host.recording_elapsed_task.is_some());
-
-            tab_host.sync_recording_elapsed_tick(Some(PaneId(2)), true, cx);
-            assert_ne!(tab_host.recording_elapsed_generation, first_generation);
-            assert_eq!(tab_host.recording_elapsed_pane_id, Some(PaneId(2)));
-            assert!(tab_host.recording_elapsed_task.is_some());
-
-            tab_host.sync_recording_elapsed_tick(Some(PaneId(2)), false, cx);
-            assert_eq!(tab_host.recording_elapsed_pane_id, None);
-            assert!(tab_host.recording_elapsed_task.is_none());
-        });
     }
 
     #[gpui::test]

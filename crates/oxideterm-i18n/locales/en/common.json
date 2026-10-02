@@ -64,7 +64,6 @@
     "cmd_close_tab": "Close Current Tab",
     "cmd_split_horizontal": "Split Pane Horizontally",
     "cmd_split_vertical": "Split Pane Vertically",
-    "cmd_broadcast_toggle": "Toggle Broadcast Input",
     "cmd_show_shortcuts": "Keyboard Shortcuts",
     "cmd_show_welcome": "Show Welcome",
     "cmd_show_version_migration": "Show What's New in OxideTerm 2",

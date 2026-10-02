@@ -501,6 +501,8 @@ fn command_mark_confidence(
         TerminalCommandMarkDetectionSource::CommandBar
         | TerminalCommandMarkDetectionSource::QuickCommand
         | TerminalCommandMarkDetectionSource::Ai
+        // Broadcast is no longer produced by any pane path, but the backend enum still
+        // carries the variant, so this match must stay exhaustive over it.
         | TerminalCommandMarkDetectionSource::Broadcast
         | TerminalCommandMarkDetectionSource::ShellIntegration => {
             TerminalCommandMarkConfidence::High

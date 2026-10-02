@@ -286,33 +286,6 @@ pub enum TerminalSemanticScheme {
     Conservative,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub enum TerminalBroadcastTargetKind {
-    Ssh,
-    Mosh,
-    Telnet,
-    Serial,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TerminalBroadcastTargetRef {
-    // Pane IDs are runtime-only; the saved profile ID keeps membership stable across launches.
-    pub kind: TerminalBroadcastTargetKind,
-    pub saved_connection_id: String,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TerminalBroadcastGroup {
-    // The UUID keeps documents and the interactive broadcaster bound across renames.
-    pub id: uuid::Uuid,
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub members: Vec<TerminalBroadcastTargetRef>,
-}
-
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TerminalSettings {
@@ -374,8 +347,6 @@ pub struct TerminalSettings {
     pub free_type_mode: bool,
     pub autosuggest: TerminalAutosuggestSettings,
     pub command_bar: TerminalCommandBarSettings,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub broadcast_groups: Vec<TerminalBroadcastGroup>,
     #[serde(default)]
     pub triggers: TerminalTriggerSettings,
     #[serde(default)]
@@ -504,7 +475,6 @@ impl Default for TerminalSettings {
             free_type_mode: false,
             autosuggest: TerminalAutosuggestSettings::default(),
             command_bar: TerminalCommandBarSettings::default(),
-            broadcast_groups: Vec::new(),
             triggers: TerminalTriggerSettings::default(),
             remote_shell_integration_mode: RemoteShellIntegrationMode::Ask,
             command_marks: TerminalCommandMarksSettings::default(),
@@ -533,7 +503,6 @@ mod tests {
         let mut value = serde_json::to_value(TerminalSettings::default()).expect("settings value");
         for field in [
             "triggers",
-            "broadcastGroups",
             "backspaceSequence",
             "deleteSequence",
             "remoteShellIntegrationMode",
@@ -561,29 +530,9 @@ mod tests {
             RemoteShellIntegrationMode::Ask
         );
         assert!(!settings.triggers.explicit_shell_enabled);
-        assert!(settings.broadcast_groups.is_empty());
     }
 
     #[test]
-    fn terminal_broadcast_groups_round_trip_stable_connection_ids() {
-        let group_id = uuid::Uuid::parse_str("018f5d5e-7b6c-7ef0-a765-32109abcdef0").unwrap();
-        let mut settings = TerminalSettings::default();
-        settings.broadcast_groups.push(TerminalBroadcastGroup {
-            id: group_id,
-            name: "Production".to_string(),
-            members: vec![TerminalBroadcastTargetRef {
-                kind: TerminalBroadcastTargetKind::Ssh,
-                saved_connection_id: "ssh-production-1".to_string(),
-            }],
-        });
-
-        let value = serde_json::to_value(&settings).expect("serialize terminal settings");
-        let restored: TerminalSettings =
-            serde_json::from_value(value).expect("deserialize terminal settings");
-
-        assert_eq!(restored.broadcast_groups, settings.broadcast_groups);
-    }
-
     #[test]
     fn terminal_settings_restore_legacy_boolean_defaults() {
         let defaults: [(&str, bool, fn(&TerminalSettings) -> bool); 11] = [

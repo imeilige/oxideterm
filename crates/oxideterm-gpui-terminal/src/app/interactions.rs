@@ -1138,7 +1138,7 @@ impl TerminalPane {
     fn horizontal_scrollbar_geometry(&self) -> Option<HorizontalScrollbarGeometry> {
         let bounds = self.bounds?;
         let max_scroll = self.terminal_horizontal_scroll_limit();
-        let gutter_width = self.timestamp_gutter_width() + self.command_mark_gutter_width();
+        let gutter_width = self.command_mark_gutter_width();
         let track_width =
             (bounds.size.width - px(gutter_width + SCROLLBAR_RESERVED_WIDTH)).max(px(0.0));
         let scrollbar = terminal_horizontal_scrollbar_for_viewport(
@@ -3380,82 +3380,6 @@ mod tests {
             assert_eq!(pane.autosuggest_selected_index, None);
             assert_eq!(pane.autosuggest_dismissed_query.as_deref(), Some("ls"));
         });
-    }
-
-    #[gpui::test]
-    fn word_shortcuts_send_shell_movement_but_preserve_application_keys(cx: &mut TestAppContext) {
-        let (_, cx) = cx.add_window_view(|_, _| TerminalScrollTestRoot);
-        let pane = cx.update(|window, cx| {
-            cx.set_global(TerminalKeybindings {
-                bindings: vec![
-                    (
-                        gpui::KeyBinding::new("alt-left", gpui::NoAction {}, None),
-                        TerminalShortcut::WordBackward,
-                    ),
-                    (
-                        gpui::KeyBinding::new("alt-right", gpui::NoAction {}, None),
-                        TerminalShortcut::WordForward,
-                    ),
-                ],
-                normalize: |key| Some(key.clone()),
-            });
-            cx.new(|cx| {
-                TerminalPane::new_recording_playback(
-                    20,
-                    2,
-                    TerminalUiPreferences::default(),
-                    window,
-                    cx,
-                )
-                .unwrap()
-            })
-        });
-        let delivered = Rc::new(std::cell::RefCell::new(Vec::new()));
-        let output = delivered.clone();
-        pane.update(cx, |pane, cx| {
-            pane.test_accepts_input = true;
-            pane.set_input_broadcaster(Some(Rc::new(move |_, bytes, _| {
-                output.borrow_mut().push(bytes.to_vec());
-            })));
-            let event = |key, is_held| KeyDownEvent {
-                keystroke: gpui::Keystroke::parse(key).unwrap(),
-                is_held,
-                prefer_character_input: false,
-            };
-            pane.handle_key(&event("alt-left", false), cx);
-            pane.handle_key(&event("alt-right", true), cx);
-            for (enter, exit) in [
-                (b"\x1b[?1049h".as_slice(), b"\x1b[?1049l".as_slice()),
-                (b"\x1b[?1h".as_slice(), b"\x1b[?1l".as_slice()),
-                (b"\x1b[>1u".as_slice(), b"\x1b[<u".as_slice()),
-            ] {
-                pane.terminal.lock().feed_recording_output(enter);
-                pane.handle_key(&event("alt-left", false), cx);
-                pane.handle_key(&event("alt-right", false), cx);
-                pane.terminal.lock().feed_recording_output(exit);
-            }
-            pane.handle_key(&event("alt-left", true), cx);
-            cx.set_global(TerminalKeybindings {
-                bindings: Vec::new(),
-                normalize: |key| Some(key.clone()),
-            });
-            pane.handle_key(&event("alt-right", false), cx);
-        });
-        assert_eq!(
-            delivered.borrow().as_slice(),
-            [
-                b"\x1bb".to_vec(),
-                b"\x1bf".to_vec(),
-                b"\x1b[1;3D".to_vec(),
-                b"\x1b[1;3C".to_vec(),
-                b"\x1bb".to_vec(),
-                b"\x1bf".to_vec(),
-                b"\x1b[1;3D".to_vec(),
-                b"\x1b[1;3C".to_vec(),
-                b"\x1bb".to_vec(),
-                b"\x1b[1;3C".to_vec(),
-            ]
-        );
     }
 
     #[gpui::test]

@@ -93,7 +93,6 @@ pub(in crate::workspace) enum ActiveWindowModalOwner {
         kind: ActiveTabWindowModalKind,
         phase: oxideterm_gpui_ui::motion::ExitPhase,
     },
-    TerminalCastPlayer,
     ThemeEditor {
         phase: oxideterm_gpui_ui::motion::ExitPhase,
     },
@@ -152,7 +151,6 @@ impl ActiveWindowModalOwner {
             Self::HostScheduleLogs => 27,
             Self::TabRename => 29,
             Self::ActiveTabWindowModal { .. } => 30,
-            Self::TerminalCastPlayer => 31,
             Self::ThemeEditor { .. } => 32,
             Self::SettingsSshConfigImport { .. } => 33,
             Self::TerminalCommandSpecsEditor => 34,
@@ -204,7 +202,6 @@ impl ActiveWindowModalOwner {
             | Self::HostTmuxInput
             | Self::HostScheduleLogs
             | Self::TabRename
-            | Self::TerminalCastPlayer
             | Self::TerminalCommandSpecsEditor
             | Self::AiTextEditor
             | Self::CommandPalette
@@ -227,7 +224,6 @@ impl ActiveWindowModalOwner {
                 | Self::HostScheduleLogs
                 | Self::TabRename
                 | Self::ActiveTabWindowModal { .. }
-                | Self::TerminalCastPlayer
                 | Self::ThemeEditor { .. }
                 | Self::SettingsSshConfigImport { .. }
                 | Self::TerminalCommandSpecsEditor
@@ -296,7 +292,6 @@ pub(in crate::workspace) struct ActiveWindowModalProjection {
         Option<connection_monitor::HostToolsWindowModalSnapshot>,
     pub(in crate::workspace) tab_rename_open: bool,
     pub(in crate::workspace) active_tab_modal: Option<ActiveTabWindowModalSnapshot>,
-    pub(in crate::workspace) terminal_cast_player_open: bool,
     pub(in crate::workspace) theme_editor_phase: Option<oxideterm_gpui_ui::motion::ExitPhase>,
     pub(in crate::workspace) settings_ssh_import_phase:
         Option<oxideterm_gpui_ui::motion::ExitPhase>,
@@ -423,9 +418,6 @@ impl ActiveWindowModalProjection {
         let command_palette_owner = self
             .command_palette_open
             .then_some(ActiveWindowModalOwner::CommandPalette);
-        let terminal_cast_owner = self
-            .terminal_cast_player_open
-            .then_some(ActiveWindowModalOwner::TerminalCastPlayer);
         let theme_editor_owner = self
             .theme_editor_phase
             .map(|phase| ActiveWindowModalOwner::ThemeEditor { phase });
@@ -457,7 +449,7 @@ impl ActiveWindowModalProjection {
             .then_some(ActiveWindowModalOwner::MermaidZoom);
 
         // Toasts, select popovers, context menus, drag previews, return
-        // handoffs, the broadcast menu, and AI floating controls are excluded.
+        // handoffs, the saved-target menu, and AI floating controls are excluded.
         // They are transient nonblocking layers and keep their own focused
         // input or Escape handling instead of consuming every window key.
         [
@@ -480,7 +472,6 @@ impl ActiveWindowModalProjection {
             host_tools_owner,
             tab_rename_owner,
             active_tab_owner,
-            terminal_cast_owner,
             theme_editor_owner,
             ssh_import_owner,
             command_specs_owner,
@@ -623,7 +614,6 @@ impl WorkspaceApp {
             host_tools_modal: self.host_tools.read(cx).window_modal_snapshot(),
             tab_rename_open: self.tab_rename_dialog.is_some(),
             active_tab_modal: self.active_tab_window_modal_owner(cx),
-            terminal_cast_player_open: self.terminal.read(cx).cast_player_open(),
             theme_editor_phase,
             settings_ssh_import_phase,
             terminal_command_specs_editor_open: self.terminal_command_specs_editor_open,
@@ -892,15 +882,7 @@ impl WorkspaceApp {
             }
             ActiveWindowModalOwner::ActiveTabWindowModal { kind, .. } => {
                 let _ = self.handle_active_tab_window_modal_key(kind, event, window, cx);
-            }
-            ActiveWindowModalOwner::TerminalCastPlayer => {
-                if self.terminal.read(cx).cast_search_focused() {
-                    self.handle_terminal_cast_search_key(event, cx);
-                } else if event.keystroke.key.as_str() == "escape" {
-                    self.close_terminal_cast_player(cx);
-                }
-            }
-            ActiveWindowModalOwner::ThemeEditor { .. } => {
+            }            ActiveWindowModalOwner::ThemeEditor { .. } => {
                 if event.keystroke.key.as_str() == "escape" {
                     self.close_theme_editor(cx);
                 }
@@ -1038,7 +1020,6 @@ mod tests {
                 kind: ActiveTabWindowModalKind::ForwardDelete,
                 phase: VISIBLE,
             }),
-            terminal_cast_player_open: true,
             theme_editor_phase: Some(VISIBLE),
             settings_ssh_import_phase: Some(VISIBLE),
             oxide_export_phase: Some(VISIBLE),
