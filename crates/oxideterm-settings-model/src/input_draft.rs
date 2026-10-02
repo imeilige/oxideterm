@@ -767,7 +767,7 @@ mod tests {
         assert_eq!(
             serde_json::to_value(settings).unwrap(),
             serde_json::json!({
-                "autoSave":false,"fontFamily":"maple","customFontFamily":"","cjkFontFamily":"PingFang SC","fontWeight":600,
+                "autoSave":false,"fontFamily":"jetbrains","customFontFamily":"","cjkFontFamily":"PingFang SC","fontWeight":600,
                 "fontSize":null,"lineHeight":null,"agentMode":"ask","wordWrap":false
             })
         );
