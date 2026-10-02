@@ -69,33 +69,15 @@ pub(in crate::workspace) fn current_window_size(window: &Window) -> (f32, f32) {
 
 pub(in crate::workspace) fn root_locale_from_settings(language: Language) -> Locale {
     match language {
-        Language::De => Locale::De,
         Language::En => Locale::En,
-        Language::EsEs => Locale::EsEs,
-        Language::FrFr => Locale::FrFr,
-        Language::It => Locale::It,
-        Language::Ja => Locale::Ja,
-        Language::Ko => Locale::Ko,
-        Language::PtBr => Locale::PtBr,
-        Language::Vi => Locale::Vi,
         Language::ZhCn => Locale::ZhCn,
-        Language::ZhTw => Locale::ZhTw,
     }
 }
 
 pub(in crate::workspace) fn settings_language_from_locale(locale: Locale) -> Language {
     match locale {
-        Locale::De => Language::De,
         Locale::En => Language::En,
-        Locale::EsEs => Language::EsEs,
-        Locale::FrFr => Language::FrFr,
-        Locale::It => Language::It,
-        Locale::Ja => Language::Ja,
-        Locale::Ko => Language::Ko,
-        Locale::PtBr => Language::PtBr,
-        Locale::Vi => Language::Vi,
         Locale::ZhCn => Language::ZhCn,
-        Locale::ZhTw => Language::ZhTw,
     }
 }
 

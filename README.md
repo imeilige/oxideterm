@@ -117,7 +117,7 @@ OxideTerm keeps terminal rendering, connection state, reconnect orchestration, f
 | **Forwarding & Networking** | Local, remote, and dynamic SOCKS5 forwarding, saved rules, reconnect-aware restore, remote port detection, connection topology, and ad-hoc socket debugging |
 | **Host Operations & Remote Desktop** | Host monitoring, processes, services, logs, ports, tasks, disks, packages, containers, tmux, built-in RDP and VNC, clipboard, input, reconnect, and viewport-aware sizing |
 | **OxideSens & Automation** | BYOK providers, MCP, local RAG, Agent Skills, approved workspace actions, command policy, chat history, encrypted cloud sync, portable `.oxide` bundles, and a standalone CLI for automation and diagnostics |
-| **Extensions & Personalization** | Manifest-only, capability-scoped WASM, and process plugins, custom tabs and settings, Quick Commands, themes, background images, configurable shortcuts, and 11 interface languages |
+| **Extensions & Personalization** | Manifest-only, capability-scoped WASM, and process plugins, custom tabs and settings, Quick Commands, themes, background images, configurable shortcuts, and 2 interface languages (Chinese and English) |
 
 ---
 
@@ -342,7 +342,7 @@ cargo run -p oxideterm-cli -- --config-dir ./fixture-config doctor --strict
 | **Plugin runtime** | Wasmtime/WASI, sidecar WASM, and process paths | Controlled WASM host calls; process plugins are local and not OS-sandboxed |
 | **AI streaming** | SSE (OpenAI/Anthropic/Gemini) | In-process, no IPC boundary |
 | **RAG** | BM25 + HNSW vector index | CJK bigram tokenizer, RRF fusion |
-| **i18n** | oxideterm-i18n (custom) | Built-in loader, 11 shipped locales |
+| **i18n** | oxideterm-i18n (custom) | Built-in loader, 2 shipped locales (Chinese and English) |
 
 ---
 

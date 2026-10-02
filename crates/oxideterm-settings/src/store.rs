@@ -618,6 +618,7 @@ mod tests {
     use serde_json::json;
 
     use super::*;
+    use crate::Language;
 
     #[test]
     fn settings_change_summary_exposes_only_known_section_names() {
@@ -742,6 +743,33 @@ mod tests {
             serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
         assert_eq!(raw["version"], SETTINGS_SCHEMA_VERSION);
         assert!(raw.get("settings").is_some());
+    }
+
+    #[test]
+    fn a_retired_locale_only_costs_the_language_choice() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let path = tempdir.path().join("settings.json");
+        fs::write(
+            &path,
+            serde_json::to_vec_pretty(&json!({
+                "version": SETTINGS_SCHEMA_VERSION,
+                "settings": {
+                    "general": {"language": "de"},
+                    "terminal": {"fontSize": 21},
+                },
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+
+        let load = load_settings_from_path(&path).unwrap();
+
+        // A locale that no longer ships must not make the document unreadable:
+        // the retired tag resolves to the default language while every other
+        // setting in the same file survives.
+        assert!(!load.recovered_from_corrupt_file);
+        assert_eq!(load.settings.general.language, Language::ZhCn);
+        assert_eq!(load.settings.terminal.font_size, 21);
     }
 
     #[test]

@@ -18,31 +18,13 @@ pub const MAX_HIGHLIGHT_PATTERN_LENGTH: usize = 512;
 
 pub type ExtraFields = Map<String, Value>;
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize, Default)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Default)]
 pub enum Language {
-    #[serde(rename = "zh-CN")]
     #[default]
+    #[serde(rename = "zh-CN")]
     ZhCn,
     #[serde(rename = "en")]
     En,
-    #[serde(rename = "fr-FR")]
-    FrFr,
-    #[serde(rename = "ja")]
-    Ja,
-    #[serde(rename = "es-ES")]
-    EsEs,
-    #[serde(rename = "pt-BR")]
-    PtBr,
-    #[serde(rename = "vi")]
-    Vi,
-    #[serde(rename = "ko")]
-    Ko,
-    #[serde(rename = "de")]
-    De,
-    #[serde(rename = "it")]
-    It,
-    #[serde(rename = "zh-TW")]
-    ZhTw,
 }
 
 impl Language {
@@ -50,16 +32,24 @@ impl Language {
         match self {
             Self::ZhCn => "zh-CN",
             Self::En => "en",
-            Self::FrFr => "fr-FR",
-            Self::Ja => "ja",
-            Self::EsEs => "es-ES",
-            Self::PtBr => "pt-BR",
-            Self::Vi => "vi",
-            Self::Ko => "ko",
-            Self::De => "de",
-            Self::It => "it",
-            Self::ZhTw => "zh-TW",
         }
+    }
+}
+
+impl<'de> Deserialize<'de> for Language {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        // Catalog coverage was narrowed to Chinese and English, but a settings
+        // file written by an older build still names a retired locale. Resolve
+        // unknown tags to the default here so a stale language costs the user
+        // nothing but the language choice, instead of failing the whole
+        // document and resetting every other setting to its default.
+        Ok(match String::deserialize(deserializer)?.as_str() {
+            "en" => Self::En,
+            _ => Self::default(),
+        })
     }
 }
 

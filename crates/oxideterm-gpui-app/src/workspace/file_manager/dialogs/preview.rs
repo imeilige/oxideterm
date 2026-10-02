@@ -1724,7 +1724,7 @@ impl WorkspaceApp {
         };
         let datetime = datetime.with_timezone(&chrono::Local);
         match self.i18n.locale() {
-            Locale::ZhCn | Locale::ZhTw => datetime.format("%Y年%-m月%-d日").to_string(),
+            Locale::ZhCn => datetime.format("%Y年%-m月%-d日").to_string(),
             _ => datetime.format("%b %-d, %Y").to_string(),
         }
     }

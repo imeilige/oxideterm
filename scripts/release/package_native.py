@@ -1020,12 +1020,8 @@ def windows_protocol_unregistration_script(identity: ReleaseIdentity) -> str:
 
 
 def windows_installer_languages(identity: ReleaseIdentity) -> str:
-    languages = (
-        ("en", "English"), ("zh-CN", "SimpChinese"), ("zh-TW", "TradChinese"),
-        ("de", "German"), ("es-ES", "Spanish"), ("fr-FR", "French"),
-        ("it", "Italian"), ("ja", "Japanese"), ("ko", "Korean"),
-        ("pt-BR", "PortugueseBR"), ("vi", "Vietnamese"),
-    )
+    # Must stay in step with the locale catalogs the app actually ships.
+    languages = (("en", "English"), ("zh-CN", "SimpChinese"))
     lines = []
     for locale, language in languages:
         catalog = ROOT_DIR / "crates" / "oxideterm-i18n" / "locales" / locale / "common.json"

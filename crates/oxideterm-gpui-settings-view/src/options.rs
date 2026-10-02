@@ -384,20 +384,8 @@ pub fn settings_slider_anchor_id(slider: SettingsSlider) -> SelectAnchorId {
     }
 }
 
-pub fn language_options() -> [Language; 11] {
-    [
-        Language::De,
-        Language::En,
-        Language::EsEs,
-        Language::FrFr,
-        Language::It,
-        Language::Ko,
-        Language::PtBr,
-        Language::Vi,
-        Language::Ja,
-        Language::ZhCn,
-        Language::ZhTw,
-    ]
+pub fn language_options() -> [Language; 2] {
+    [Language::En, Language::ZhCn]
 }
 
 pub fn cycle_sftp_conflict(settings: &mut PersistedSettings) {

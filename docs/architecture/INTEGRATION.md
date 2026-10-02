@@ -6,9 +6,9 @@
 
 ### 1.1 装配方式
 
-11 个语言 × 18 个领域文件 = 198 个 JSON，在编译期用 `include_str!` 打进二进制（`crates/oxideterm-i18n/src/lib.rs:13` 起，每个语言一个 `&[&str]` 数组）。
+2 个语言（简体中文、英文）× 18 个领域文件 = 36 个 JSON，在编译期用 `include_str!` 打进二进制（`crates/oxideterm-i18n/src/lib.rs:8` 起，每个语言一个 `&[&str]` 数组）。
 
-这意味着**切换语言不需要读磁盘、不需要网络**，代价是二进制里固定带 198 份文案。
+这意味着**切换语言不需要读磁盘、不需要网络**，代价是二进制里固定带 36 份文案。
 
 ### 1.2 查找与回退
 
@@ -22,9 +22,9 @@ pub fn t(&self, key: &str) -> String {                    // :276
 
 三级回退：当前语言 → 英文 → 显示键名。**最后一级是刻意设计**——漏翻译会立刻在界面上暴露成 `"settings_view.help.xxx"` 这样的裸键，而不是静默显示空白。
 
-### 1.3 懒加载
+### 1.3 装配时机
 
-`ensure_catalog`（`:282`）按需解析 JSON。启动时只预载当前语言和英文（`:258`），其余在首次切换到时解析并缓存。测试 `loads_only_active_locale_and_fallback_until_switch`（`:405`）锁定这个行为。
+`ensure_catalog`（`:284`）按需解析 JSON 并缓存。语言收窄到 2 个之后，`I18n::new` 预载的「当前语言 + 英文回退」已经覆盖全部语言表，所以懒加载不再是有意义的优化，机制保留但恒定命中缓存。
 
 ### 1.4 一致性保障
 
@@ -32,7 +32,7 @@ pub fn t(&self, key: &str) -> String {                    // :276
 
 | 机制 | 位置 | 检查什么 |
 |---|---|---|
-| Rust 单测 | `locale_catalogs_have_the_same_complete_key_set`（`lib.rs:424`） | 11 个语言必须有**完全相同**的键集合 |
+| Rust 单测 | `locale_catalogs_have_the_same_complete_key_set` | 2 个语言必须有**完全相同**的键集合 |
 | Python 审计 | `scripts/quality/audit_i18n.py` | 源码引用的键是否都存在、占位符是否一致、非英语言是否还是英文原文 |
 
 第二条会输出 "English-copy warnings"——提醒某语言的文案其实没翻译。这是有意的质量提示，不是错误。
@@ -149,7 +149,7 @@ opt-level = 3
 
 | 检查 | 位置 |
 |---|---|
-| i18n 键集合一致 | `crates/oxideterm-i18n/src/lib.rs:424` 单测 |
+| i18n 键集合一致 | `locale_catalogs_have_the_same_complete_key_set` 单测 |
 | i18n 引用完整性 + 占位符 | `scripts/quality/audit_i18n.py` |
 | 打包产物校验 | `scripts/release/verify_native_package.py` |
 | 打包脚本自身 | `scripts/tests/test_package_native.py`（63 个测试） |

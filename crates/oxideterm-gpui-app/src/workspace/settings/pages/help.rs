@@ -285,17 +285,8 @@ impl WorkspaceApp {
 
     pub(in crate::workspace) fn language_label(&self, language: Language) -> String {
         match language {
-            Language::De => "Deutsch",
             Language::En => "English",
-            Language::EsEs => "Español (España)",
-            Language::FrFr => "Français (France)",
-            Language::It => "Italiano",
-            Language::Ko => "한국어",
-            Language::PtBr => "Português (Brasil)",
-            Language::Vi => "Tiếng Việt",
-            Language::Ja => "日本語",
             Language::ZhCn => "简体中文",
-            Language::ZhTw => "繁體中文",
         }
         .to_string()
     }

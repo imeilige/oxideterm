@@ -100,14 +100,22 @@ class WindowsInstallerScriptTests(unittest.TestCase):
             installer_path=Path(r"C:\dist\OxideTerm_setup.exe"),
             icon_path=Path(r"C:\icons\icon.ico"),
         )
-        for language in (
-            "English", "SimpChinese", "TradChinese", "German", "Spanish",
-            "French", "Italian", "Japanese", "Korean", "PortugueseBR", "Vietnamese",
-        ):
+        # NSIS MUI token per shipped catalog. The last assertion pins this map
+        # to the locale directories on disk, so adding a catalog without
+        # installer copy — or leaving a retired one wired up — fails here.
+        expected = {"English": "en", "SimpChinese": "zh-CN"}
+        for language in expected:
             with self.subTest(language=language):
                 self.assertIn(f'!insertmacro MUI_LANGUAGE "{language}"', script)
                 self.assertIn(f'LangString CloseRunningApplication ${{LANG_{language.upper()}}}', script)
                 self.assertIn(f'LangString ApplicationCloseFailed ${{LANG_{language.upper()}}}', script)
+
+        shipped = {
+            path.name
+            for path in (package_native.ROOT_DIR / "crates" / "oxideterm-i18n" / "locales").iterdir()
+            if path.is_dir()
+        }
+        self.assertEqual(set(expected.values()), shipped)
         self.assertIn("OxideTerm GPUI Preview 仍在运行", script)
         self.assertNotIn("{{app}}", script)
         self.assertNotIn("{{path}}", script)

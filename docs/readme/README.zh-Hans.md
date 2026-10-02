@@ -116,7 +116,7 @@ OxideTerm 将连接、文件、转发、主机工具、自动化与 AI 上下文
 | **转发与网络** | 本地、远程与动态 SOCKS5 转发、已保存规则与 Socket 调试 |
 | **主机运维与远程桌面** | 监控、进程、服务、日志、端口、任务、磁盘、软件包、容器、tmux、RDP 与 VNC |
 | **OxideSens 与自动化** | 自有 AI 服务商、MCP、本地 RAG、Agent Skills、已批准操作、加密云同步与 CLI |
-| **扩展与个性化** | manifest-only、WASM 与进程插件、自定义标签页、快速命令、主题、背景图片、快捷键与 11 种界面语言 |
+| **扩展与个性化** | manifest-only、WASM 与进程插件、自定义标签页、快速命令、主题、背景图片、快捷键与 2 种界面语言（中文和英文） |
 
 ---
 
@@ -304,7 +304,7 @@ cargo run -p oxideterm-cli -- --config-dir ./fixture-config doctor --strict
 | AI 与检索 | SSE + BM25 + HNSW | 提供商流式传输、CJK 双字词与 RRF 融合 |
 | 编辑器 | tree-sitter（语法）、自定义缓冲区 | 多语言，基于 SFTP |
 | 加密 | ChaCha20-Poly1305 + Argon2id | AEAD + 内存困难型 KDF（256 MB） |
-| 国际化 | oxideterm-i18n | 内置加载器，内置 11 种界面语言 |
+| 国际化 | oxideterm-i18n | 内置加载器，内置 2 种界面语言（中文和英文） |
 
 ## 安全
 

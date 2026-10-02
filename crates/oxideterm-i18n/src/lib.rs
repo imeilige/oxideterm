@@ -25,166 +25,6 @@ const EN_PARTS: &[&str] = &[
     include_str!("../locales/en/graphics.json"),
     include_str!("../locales/en/ai.json"),
 ];
-const DE_PARTS: &[&str] = &[
-    include_str!("../locales/de/common.json"),
-    include_str!("../locales/de/menu.json"),
-    include_str!("../locales/de/sidebar.json"),
-    include_str!("../locales/de/settings.json"),
-    include_str!("../locales/de/settings_view.json"),
-    include_str!("../locales/de/sessionManager.json"),
-    include_str!("../locales/de/modals.json"),
-    include_str!("../locales/de/connections.json"),
-    include_str!("../locales/de/eventLog.json"),
-    include_str!("../locales/de/profiler.json"),
-    include_str!("../locales/de/forwards.json"),
-    include_str!("../locales/de/sftp.json"),
-    include_str!("../locales/de/ssh.json"),
-    include_str!("../locales/de/terminal.json"),
-    include_str!("../locales/de/mosh.json"),
-    include_str!("../locales/de/fileManager.json"),
-    include_str!("../locales/de/graphics.json"),
-    include_str!("../locales/de/ai.json"),
-];
-const ES_ES_PARTS: &[&str] = &[
-    include_str!("../locales/es-ES/common.json"),
-    include_str!("../locales/es-ES/menu.json"),
-    include_str!("../locales/es-ES/sidebar.json"),
-    include_str!("../locales/es-ES/settings.json"),
-    include_str!("../locales/es-ES/settings_view.json"),
-    include_str!("../locales/es-ES/sessionManager.json"),
-    include_str!("../locales/es-ES/modals.json"),
-    include_str!("../locales/es-ES/connections.json"),
-    include_str!("../locales/es-ES/eventLog.json"),
-    include_str!("../locales/es-ES/profiler.json"),
-    include_str!("../locales/es-ES/forwards.json"),
-    include_str!("../locales/es-ES/sftp.json"),
-    include_str!("../locales/es-ES/ssh.json"),
-    include_str!("../locales/es-ES/terminal.json"),
-    include_str!("../locales/es-ES/mosh.json"),
-    include_str!("../locales/es-ES/fileManager.json"),
-    include_str!("../locales/es-ES/graphics.json"),
-    include_str!("../locales/es-ES/ai.json"),
-];
-const FR_FR_PARTS: &[&str] = &[
-    include_str!("../locales/fr-FR/common.json"),
-    include_str!("../locales/fr-FR/menu.json"),
-    include_str!("../locales/fr-FR/sidebar.json"),
-    include_str!("../locales/fr-FR/settings.json"),
-    include_str!("../locales/fr-FR/settings_view.json"),
-    include_str!("../locales/fr-FR/sessionManager.json"),
-    include_str!("../locales/fr-FR/modals.json"),
-    include_str!("../locales/fr-FR/connections.json"),
-    include_str!("../locales/fr-FR/eventLog.json"),
-    include_str!("../locales/fr-FR/profiler.json"),
-    include_str!("../locales/fr-FR/forwards.json"),
-    include_str!("../locales/fr-FR/sftp.json"),
-    include_str!("../locales/fr-FR/ssh.json"),
-    include_str!("../locales/fr-FR/terminal.json"),
-    include_str!("../locales/fr-FR/mosh.json"),
-    include_str!("../locales/fr-FR/fileManager.json"),
-    include_str!("../locales/fr-FR/graphics.json"),
-    include_str!("../locales/fr-FR/ai.json"),
-];
-const IT_PARTS: &[&str] = &[
-    include_str!("../locales/it/common.json"),
-    include_str!("../locales/it/menu.json"),
-    include_str!("../locales/it/sidebar.json"),
-    include_str!("../locales/it/settings.json"),
-    include_str!("../locales/it/settings_view.json"),
-    include_str!("../locales/it/sessionManager.json"),
-    include_str!("../locales/it/modals.json"),
-    include_str!("../locales/it/connections.json"),
-    include_str!("../locales/it/eventLog.json"),
-    include_str!("../locales/it/profiler.json"),
-    include_str!("../locales/it/forwards.json"),
-    include_str!("../locales/it/sftp.json"),
-    include_str!("../locales/it/ssh.json"),
-    include_str!("../locales/it/terminal.json"),
-    include_str!("../locales/it/mosh.json"),
-    include_str!("../locales/it/fileManager.json"),
-    include_str!("../locales/it/graphics.json"),
-    include_str!("../locales/it/ai.json"),
-];
-const JA_PARTS: &[&str] = &[
-    include_str!("../locales/ja/common.json"),
-    include_str!("../locales/ja/menu.json"),
-    include_str!("../locales/ja/sidebar.json"),
-    include_str!("../locales/ja/settings.json"),
-    include_str!("../locales/ja/settings_view.json"),
-    include_str!("../locales/ja/sessionManager.json"),
-    include_str!("../locales/ja/modals.json"),
-    include_str!("../locales/ja/connections.json"),
-    include_str!("../locales/ja/eventLog.json"),
-    include_str!("../locales/ja/profiler.json"),
-    include_str!("../locales/ja/forwards.json"),
-    include_str!("../locales/ja/sftp.json"),
-    include_str!("../locales/ja/ssh.json"),
-    include_str!("../locales/ja/terminal.json"),
-    include_str!("../locales/ja/mosh.json"),
-    include_str!("../locales/ja/fileManager.json"),
-    include_str!("../locales/ja/graphics.json"),
-    include_str!("../locales/ja/ai.json"),
-];
-const KO_PARTS: &[&str] = &[
-    include_str!("../locales/ko/common.json"),
-    include_str!("../locales/ko/menu.json"),
-    include_str!("../locales/ko/sidebar.json"),
-    include_str!("../locales/ko/settings.json"),
-    include_str!("../locales/ko/settings_view.json"),
-    include_str!("../locales/ko/sessionManager.json"),
-    include_str!("../locales/ko/modals.json"),
-    include_str!("../locales/ko/connections.json"),
-    include_str!("../locales/ko/eventLog.json"),
-    include_str!("../locales/ko/profiler.json"),
-    include_str!("../locales/ko/forwards.json"),
-    include_str!("../locales/ko/sftp.json"),
-    include_str!("../locales/ko/ssh.json"),
-    include_str!("../locales/ko/terminal.json"),
-    include_str!("../locales/ko/mosh.json"),
-    include_str!("../locales/ko/fileManager.json"),
-    include_str!("../locales/ko/graphics.json"),
-    include_str!("../locales/ko/ai.json"),
-];
-const PT_BR_PARTS: &[&str] = &[
-    include_str!("../locales/pt-BR/common.json"),
-    include_str!("../locales/pt-BR/menu.json"),
-    include_str!("../locales/pt-BR/sidebar.json"),
-    include_str!("../locales/pt-BR/settings.json"),
-    include_str!("../locales/pt-BR/settings_view.json"),
-    include_str!("../locales/pt-BR/sessionManager.json"),
-    include_str!("../locales/pt-BR/modals.json"),
-    include_str!("../locales/pt-BR/connections.json"),
-    include_str!("../locales/pt-BR/eventLog.json"),
-    include_str!("../locales/pt-BR/profiler.json"),
-    include_str!("../locales/pt-BR/forwards.json"),
-    include_str!("../locales/pt-BR/sftp.json"),
-    include_str!("../locales/pt-BR/ssh.json"),
-    include_str!("../locales/pt-BR/terminal.json"),
-    include_str!("../locales/pt-BR/mosh.json"),
-    include_str!("../locales/pt-BR/fileManager.json"),
-    include_str!("../locales/pt-BR/graphics.json"),
-    include_str!("../locales/pt-BR/ai.json"),
-];
-const VI_PARTS: &[&str] = &[
-    include_str!("../locales/vi/common.json"),
-    include_str!("../locales/vi/menu.json"),
-    include_str!("../locales/vi/sidebar.json"),
-    include_str!("../locales/vi/settings.json"),
-    include_str!("../locales/vi/settings_view.json"),
-    include_str!("../locales/vi/sessionManager.json"),
-    include_str!("../locales/vi/modals.json"),
-    include_str!("../locales/vi/connections.json"),
-    include_str!("../locales/vi/eventLog.json"),
-    include_str!("../locales/vi/profiler.json"),
-    include_str!("../locales/vi/forwards.json"),
-    include_str!("../locales/vi/sftp.json"),
-    include_str!("../locales/vi/ssh.json"),
-    include_str!("../locales/vi/terminal.json"),
-    include_str!("../locales/vi/mosh.json"),
-    include_str!("../locales/vi/fileManager.json"),
-    include_str!("../locales/vi/graphics.json"),
-    include_str!("../locales/vi/ai.json"),
-];
 const ZH_CN_PARTS: &[&str] = &[
     include_str!("../locales/zh-CN/common.json"),
     include_str!("../locales/zh-CN/menu.json"),
@@ -205,40 +45,11 @@ const ZH_CN_PARTS: &[&str] = &[
     include_str!("../locales/zh-CN/graphics.json"),
     include_str!("../locales/zh-CN/ai.json"),
 ];
-const ZH_TW_PARTS: &[&str] = &[
-    include_str!("../locales/zh-TW/common.json"),
-    include_str!("../locales/zh-TW/menu.json"),
-    include_str!("../locales/zh-TW/sidebar.json"),
-    include_str!("../locales/zh-TW/settings.json"),
-    include_str!("../locales/zh-TW/settings_view.json"),
-    include_str!("../locales/zh-TW/sessionManager.json"),
-    include_str!("../locales/zh-TW/modals.json"),
-    include_str!("../locales/zh-TW/connections.json"),
-    include_str!("../locales/zh-TW/eventLog.json"),
-    include_str!("../locales/zh-TW/profiler.json"),
-    include_str!("../locales/zh-TW/forwards.json"),
-    include_str!("../locales/zh-TW/sftp.json"),
-    include_str!("../locales/zh-TW/ssh.json"),
-    include_str!("../locales/zh-TW/terminal.json"),
-    include_str!("../locales/zh-TW/mosh.json"),
-    include_str!("../locales/zh-TW/fileManager.json"),
-    include_str!("../locales/zh-TW/graphics.json"),
-    include_str!("../locales/zh-TW/ai.json"),
-];
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Locale {
-    De,
     En,
-    EsEs,
-    FrFr,
-    It,
-    Ja,
-    Ko,
-    PtBr,
-    Vi,
     ZhCn,
-    ZhTw,
 }
 
 #[derive(Clone, Debug)]
@@ -305,14 +116,6 @@ impl I18n {
             .get(&locale)
             .and_then(|catalog| catalog.get(key).map(str::to_string))
     }
-
-    #[cfg(test)]
-    fn loaded_catalog_count(&self) -> usize {
-        self.catalogs
-            .read()
-            .expect("native locale catalog lock poisoned")
-            .len()
-    }
 }
 
 impl Default for I18n {
@@ -344,17 +147,8 @@ impl LocaleCatalog {
 
 fn locale_parts(locale: Locale) -> &'static [&'static str] {
     match locale {
-        Locale::De => DE_PARTS,
         Locale::En => EN_PARTS,
-        Locale::EsEs => ES_ES_PARTS,
-        Locale::FrFr => FR_FR_PARTS,
-        Locale::It => IT_PARTS,
-        Locale::Ja => JA_PARTS,
-        Locale::Ko => KO_PARTS,
-        Locale::PtBr => PT_BR_PARTS,
-        Locale::Vi => VI_PARTS,
         Locale::ZhCn => ZH_CN_PARTS,
-        Locale::ZhTw => ZH_TW_PARTS,
     }
 }
 
@@ -402,16 +196,6 @@ mod tests {
     }
 
     #[test]
-    fn loads_only_active_locale_and_fallback_until_switch() {
-        let mut i18n = I18n::new(Locale::ZhCn);
-        assert_eq!(i18n.loaded_catalog_count(), 2);
-
-        i18n.set_locale(Locale::Ja);
-        assert_eq!(i18n.loaded_catalog_count(), 3);
-        assert_eq!(i18n.t("menu.new_terminal"), "新しいターミナル");
-    }
-
-    #[test]
     #[should_panic(expected = "duplicate native locale key")]
     fn duplicate_keys_are_rejected() {
         let _ = LocaleCatalog::from_json_parts(&[
@@ -424,19 +208,7 @@ mod tests {
     fn locale_catalogs_have_the_same_complete_key_set() {
         use std::collections::BTreeSet;
 
-        let locales = [
-            Locale::De,
-            Locale::En,
-            Locale::EsEs,
-            Locale::FrFr,
-            Locale::It,
-            Locale::Ja,
-            Locale::Ko,
-            Locale::PtBr,
-            Locale::Vi,
-            Locale::ZhCn,
-            Locale::ZhTw,
-        ];
+        let locales = [Locale::En, Locale::ZhCn];
         let english_keys: BTreeSet<_> = LocaleCatalog::from_json_parts(EN_PARTS)
             .messages
             .into_keys()
@@ -462,29 +234,8 @@ mod tests {
         let expected = [
             ("language.english", "English"),
             ("language.simplified_chinese", "简体中文"),
-            ("language.traditional_chinese", "繁體中文"),
-            ("language.german", "Deutsch"),
-            ("language.spanish", "Español"),
-            ("language.french", "Français"),
-            ("language.italian", "Italiano"),
-            ("language.japanese", "日本語"),
-            ("language.korean", "한국어"),
-            ("language.portuguese_brazil", "Português (Brasil)"),
-            ("language.vietnamese", "Tiếng Việt"),
         ];
-        let locales = [
-            Locale::De,
-            Locale::En,
-            Locale::EsEs,
-            Locale::FrFr,
-            Locale::It,
-            Locale::Ja,
-            Locale::Ko,
-            Locale::PtBr,
-            Locale::Vi,
-            Locale::ZhCn,
-            Locale::ZhTw,
-        ];
+        let locales = [Locale::En, Locale::ZhCn];
 
         for locale in locales {
             let i18n = I18n::new(locale);

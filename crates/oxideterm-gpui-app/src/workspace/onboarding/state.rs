@@ -30,19 +30,8 @@ pub(in crate::workspace) const ONBOARDING_FONT_OPTIONS: [(FontFamily, &str, bool
     (FontFamily::Custom, "Custom...", false),
 ];
 
-pub(in crate::workspace) const ONBOARDING_LANGUAGES: [(Language, &str); 11] = [
-    (Language::En, "English"),
-    (Language::ZhCn, "简体中文"),
-    (Language::ZhTw, "繁體中文"),
-    (Language::Ja, "日本語"),
-    (Language::Ko, "한국어"),
-    (Language::FrFr, "Français"),
-    (Language::De, "Deutsch"),
-    (Language::EsEs, "Español"),
-    (Language::It, "Italiano"),
-    (Language::PtBr, "Português (BR)"),
-    (Language::Vi, "Tiếng Việt"),
-];
+pub(in crate::workspace) const ONBOARDING_LANGUAGES: [(Language, &str); 2] =
+    [(Language::En, "English"), (Language::ZhCn, "简体中文")];
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::workspace) enum OnboardingStep {

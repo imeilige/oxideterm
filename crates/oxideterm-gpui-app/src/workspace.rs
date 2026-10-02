@@ -284,10 +284,8 @@ use crate::{
     PaletteDetachTerminal, PaletteDisconnectAll, PaletteHealthCheck, PaletteReconnectAll,
     PaletteResetPanes, Paste, PrevTab, Quit, ShellLauncher, ShowShortcuts, SplitHorizontal,
     SplitNavLeft, SplitNavRight, SplitVertical, SwitchLocaleChinese, SwitchLocaleEnglish,
-    SwitchLocaleFrench, SwitchLocaleGerman, SwitchLocaleItalian, SwitchLocaleJapanese,
-    SwitchLocaleKorean, SwitchLocalePortugueseBrazil, SwitchLocaleSpanish,
-    SwitchLocaleTraditionalChinese, SwitchLocaleVietnamese, TerminalAiPanel, TerminalClearScreen,
-    TerminalFreeTypeMode, TerminalRecording, ToggleFullscreen, ToggleSidebar, ZenMode,
+    TerminalAiPanel, TerminalClearScreen, TerminalFreeTypeMode, TerminalRecording,
+    ToggleFullscreen, ToggleSidebar, ZenMode,
 };
 use crate::{assets::LucideIcon, bundled_fonts};
 use oxideterm_gpui_markdown::{
