@@ -543,15 +543,14 @@ impl WorkspaceApp {
                 && settings.ai.enabled,
             context_sidebar_motion_generation: 0,
             context_sidebar_motion: oxideterm_gpui_ui::motion::SidebarMotion::new(
-                if settings.sidebar_ui.ai_sidebar_collapsed
-                    || settings.sidebar_ui.zen_mode
-                    || !settings.ai.enabled
-                {
+                if settings.sidebar_ui.ai_sidebar_collapsed || settings.sidebar_ui.zen_mode {
                     0.0
                 } else {
                     initial_context_sidebar_width
                 },
             ),
+            context_sidebar_width: initial_context_sidebar_width,
+            context_sidebar_resizing: false,
             ai_entity,
             acp_entity,
             skill_registry,

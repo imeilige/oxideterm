@@ -85,7 +85,7 @@ impl WorkspaceApp {
         &mut self,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let expanded_width = self.ai_entity.read(cx).chat_ui().sidebar_width;
+        let expanded_width = self.context_sidebar_width;
         self.context_sidebar_motion
             .retarget(if self.context_sidebar_visible() {
                 expanded_width
@@ -122,7 +122,7 @@ impl WorkspaceApp {
         &mut self,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        context_sidebar_frame_chrome(self.ai_entity.read(cx).chat_ui().sidebar_width)
+        context_sidebar_frame_chrome(self.context_sidebar_width)
             .child(self.render_context_right_sidebar_region(cx))
             .into_any_element()
     }
@@ -311,7 +311,7 @@ impl WorkspaceApp {
         let theme = self.tokens.ui;
         let hotzone = sidebar_resize_hotzone_chrome(
             "context-right-sidebar-resize-hotzone",
-            if self.ai_entity.read(cx).chat_ui().sidebar_resizing {
+            if self.context_sidebar_resizing {
                 rgb(theme.accent)
             } else {
                 self.workspace_chrome_divider()

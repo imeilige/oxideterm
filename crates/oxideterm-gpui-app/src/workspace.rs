@@ -761,6 +761,10 @@ pub(crate) struct WorkspaceApp {
     context_sidebar_rendered: bool,
     context_sidebar_motion_generation: u64,
     context_sidebar_motion: oxideterm_gpui_ui::motion::SidebarMotion,
+    /// Context sidebar width and drag state. These used to live in the
+    /// assistant entity, but the sidebar survives the assistant removal.
+    context_sidebar_width: f32,
+    context_sidebar_resizing: bool,
     ai_entity: Entity<ai_state::AiWorkspaceEntity>,
     acp_entity: Entity<acp_workspace::AcpWorkspaceEntity>,
     skill_registry: std::sync::Arc<parking_lot::RwLock<oxideterm_skills::SkillRegistry>>,

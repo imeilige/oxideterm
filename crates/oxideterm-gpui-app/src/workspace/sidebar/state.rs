@@ -111,11 +111,8 @@ impl WorkspaceApp {
     }
 
     fn set_context_sidebar_rendered_with_motion(&mut self, visible: bool, cx: &mut Context<Self>) {
-        self.context_sidebar_motion.retarget(if visible {
-            self.ai_entity.read(cx).chat_ui().sidebar_width
-        } else {
-            0.0
-        });
+        self.context_sidebar_motion
+            .retarget(if visible { self.context_sidebar_width } else { 0.0 });
         self.context_sidebar_motion_generation =
             self.context_sidebar_motion_generation.wrapping_add(1);
         let generation = self.context_sidebar_motion_generation;
@@ -450,9 +447,7 @@ impl WorkspaceApp {
             .sidebar_ui
             .ai_sidebar_collapsed = true;
         self.set_context_sidebar_rendered_with_motion(false, cx);
-        self.ai_entity.update(cx, |ai, _cx| {
-            ai.set_chat_sidebar_resizing(false);
-        });
+        self.context_sidebar_resizing = false;
         self.sidebar_resize_hotzone_hovered = false;
         self.sync_host_tools_lifecycle(false, cx);
         self.clear_ai_sidebar_keyboard_focus(cx);
@@ -473,14 +468,12 @@ impl WorkspaceApp {
             AI_SIDEBAR_ABSOLUTE_MIN_WIDTH,
             AI_SIDEBAR_ABSOLUTE_MAX_WIDTH,
         );
-        if (next_width - self.ai_entity.read(cx).chat_ui().sidebar_width).abs() < f32::EPSILON {
+        if (next_width - self.context_sidebar_width).abs() < f32::EPSILON {
             return false;
         }
         // Same repaint contract as the main sidebar: pointer capture may keep
         // sending moves after the width is clamped at a boundary.
-        self.ai_entity.update(cx, |ai, _cx| {
-            ai.set_chat_sidebar_width(next_width);
-        });
+        self.context_sidebar_width = next_width;
         self.context_sidebar_motion.settle(next_width);
         cx.notify();
         true
@@ -492,12 +485,10 @@ impl WorkspaceApp {
         window: &Window,
         cx: &mut Context<Self>,
     ) {
-        let was_resizing = self.ai_entity.read(cx).chat_ui().sidebar_resizing;
+        let was_resizing = self.context_sidebar_resizing;
         self.context_sidebar_motion_generation =
             self.context_sidebar_motion_generation.wrapping_add(1);
-        self.ai_entity.update(cx, |ai, _cx| {
-            ai.set_chat_sidebar_resizing(true);
-        });
+        self.context_sidebar_resizing = true;
         // Mirror the browser sidebar: the first press updates the width from
         // the pointer position so a resize drag is visible before the next move.
         let width_changed = self.set_ai_sidebar_width(
@@ -505,8 +496,7 @@ impl WorkspaceApp {
             f32::from(window.viewport_size().width),
             cx,
         );
-        self.context_sidebar_motion
-            .settle(self.ai_entity.read(cx).chat_ui().sidebar_width);
+        self.context_sidebar_motion.settle(self.context_sidebar_width);
         if !was_resizing && !width_changed {
             cx.notify();
         }
@@ -518,7 +508,7 @@ impl WorkspaceApp {
         window: &Window,
         cx: &mut Context<Self>,
     ) {
-        if !self.ai_entity.read(cx).chat_ui().sidebar_resizing {
+        if !self.context_sidebar_resizing {
             return;
         }
         if !event.dragging() {
@@ -537,14 +527,12 @@ impl WorkspaceApp {
     }
 
     pub(in crate::workspace) fn finish_ai_sidebar_resize(&mut self, cx: &mut Context<Self>) {
-        if self.ai_entity.read(cx).chat_ui().sidebar_resizing {
-            let sidebar_width = self
-                .ai_entity
-                .update(cx, |ai, _cx| ai.finish_chat_sidebar_resize());
+        if self.context_sidebar_resizing {
+            self.context_sidebar_resizing = false;
             self.settings_store
                 .settings_mut()
                 .sidebar_ui
-                .ai_sidebar_width = sidebar_width.round() as i64;
+                .ai_sidebar_width = self.context_sidebar_width.round() as i64;
             self.persist_sidebar_settings_store(cx);
             cx.notify();
         }
@@ -574,14 +562,13 @@ impl WorkspaceApp {
             self.tokens.metrics.sidebar_max_width,
         );
         let context_width = clamp_responsive_sidebar_width(
-            self.ai_entity.read(cx).chat_ui().sidebar_width,
+            self.context_sidebar_width,
             viewport_width,
             AI_SIDEBAR_ABSOLUTE_MIN_WIDTH,
             AI_SIDEBAR_ABSOLUTE_MAX_WIDTH,
         );
         let primary_changed = (primary_width - self.sidebar_width).abs() >= f32::EPSILON;
-        let context_changed =
-            (context_width - self.ai_entity.read(cx).chat_ui().sidebar_width).abs() >= f32::EPSILON;
+        let context_changed = (context_width - self.context_sidebar_width).abs() >= f32::EPSILON;
         if !primary_changed && !context_changed {
             return;
         }
@@ -596,9 +583,7 @@ impl WorkspaceApp {
             });
         }
         if context_changed {
-            self.ai_entity.update(cx, |ai, _cx| {
-                ai.set_chat_sidebar_width(context_width);
-            });
+            self.context_sidebar_width = context_width;
             self.context_sidebar_motion
                 .settle(if self.context_sidebar_visible() {
                     context_width
