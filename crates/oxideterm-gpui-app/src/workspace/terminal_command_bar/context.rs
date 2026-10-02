@@ -615,7 +615,9 @@ impl WorkspaceApp {
                 if event.click_count >= 2 {
                     match entry_kind {
                         terminal_cwd::TerminalCwdVisibleEntryKind::File => {
-                            this.insert_terminal_cwd_file_path(path.clone(), cx);
+                            // File rows only listed paths for command text; with no
+                            // command editor they must not attempt a `cd` that the
+                            // shell would reject.
                         }
                         _ => this.select_terminal_cwd_path(
                             path.clone(),

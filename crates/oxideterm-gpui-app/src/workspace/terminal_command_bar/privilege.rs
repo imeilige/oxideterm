@@ -385,9 +385,6 @@ impl WorkspaceApp {
                     .child(terminal),
             )
             .child(self.render_terminal_command_bar(cx))
-            // The toolbar is the sender header. Hidden, compact, and expanded
-            // layouts all retain the same document and running jobs below it.
-            .child(self.render_terminal_command_sender_panel(window, cx))
             .into_any_element()
     }
 

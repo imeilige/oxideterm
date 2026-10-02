@@ -1,35 +1,5 @@
 use super::*;
 
-pub(super) fn put_terminal_history_entry(
-    entries: &mut HashMap<String, TerminalHistoryEntry>,
-    command: String,
-    source: TerminalHistorySource,
-    last_used_at: i64,
-    count_use: bool,
-    sequence: usize,
-) {
-    let normalized = normalize_terminal_autosuggest_command(&command);
-    if normalized.is_empty() || normalized.len() > 2000 {
-        return;
-    }
-    entries
-        .entry(normalized.clone())
-        .and_modify(|entry| {
-            entry.last_used_at = entry.last_used_at.max(last_used_at);
-            entry.sequence = sequence;
-            if count_use {
-                entry.uses = entry.uses.saturating_add(1);
-            }
-        })
-        .or_insert(TerminalHistoryEntry {
-            command: normalized,
-            source,
-            last_used_at,
-            uses: 1,
-            sequence,
-        });
-}
-
 pub(super) fn normalize_terminal_command_suggestions(
     suggestions: Vec<TerminalCommandSuggestion>,
 ) -> Vec<TerminalCommandSuggestion> {

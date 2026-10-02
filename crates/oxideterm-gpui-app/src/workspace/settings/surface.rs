@@ -1045,7 +1045,6 @@ impl WorkspaceApp {
                 }
             });
         }
-        self.sync_terminal_command_sender_appearance(cx);
         self.sync_active_terminal_metadata_context(cx);
     }
 }

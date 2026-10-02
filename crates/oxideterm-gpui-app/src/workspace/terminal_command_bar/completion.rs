@@ -1,7 +1,6 @@
 // Compact Rich Input consumes history here; the remaining providers still back settings data.
 #![allow(dead_code, unused_imports)]
 
-use super::actions::classify_command_risk;
 use super::*;
 use oxideterm_sftp::{FileType as RemotePathFileType, ListFilter, SortOrder};
 
@@ -9,19 +8,15 @@ mod common;
 mod engine;
 mod fig_provider;
 mod fig_specs;
-mod history_provider;
 mod path_provider;
-mod render;
 mod types;
 
 pub(self) use common::{
     infer_terminal_ssh_identity_from_buffer, normalize_terminal_command_suggestions,
-    put_terminal_history_entry, terminal_command_risk_score_penalty, terminal_cwd_looks_remote,
+    terminal_command_risk_score_penalty, terminal_cwd_looks_remote,
 };
 pub(self) use fig_provider::{active_fig_arg_type, terminal_command_fig_suggestions};
-pub(self) use fig_specs::{
-    normalize_terminal_path_token, should_run_terminal_path_provider, terminal_command_bar_now_ms,
-};
+pub(self) use fig_specs::{normalize_terminal_path_token, should_run_terminal_path_provider};
 pub(self) use oxideterm_terminal::{TerminalShellParseResult, TerminalShellToken};
 pub(self) use oxideterm_terminal::{
     escape_terminal_path_for_shell, load_local_shell_history_commands,
@@ -30,8 +25,8 @@ pub(self) use oxideterm_terminal::{
 };
 pub(self) use types::{
     TerminalCommandContext, TerminalCommandContextType, TerminalFigArgType, TerminalFigOptionSpec,
-    TerminalFigSpec, TerminalFigSubcommandSpec, TerminalHistoryEntry, TerminalHistorySource,
-    TerminalPathCacheEntry, TerminalPathCompletionCache, TerminalPathEntry, TerminalPathParts,
+    TerminalFigSpec, TerminalFigSubcommandSpec, TerminalPathCacheEntry, TerminalPathCompletionCache,
+    TerminalPathEntry, TerminalPathParts,
 };
 
 // Preserve the settings UI path while keeping the implementation module private.

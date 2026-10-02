@@ -363,25 +363,6 @@ impl WorkspaceApp {
         let command_palette =
             cx.new(|_| command_palette::CommandPaletteEntity::new(forwarding_runtime.clone()));
         let command_palette_observation = cx.observe(&command_palette, |_, _, cx| cx.notify());
-        let sender_context_menu_labels = oxideterm_gpui_editor::EditorContextMenuLabels {
-            copy: i18n.t("menu.copy"),
-            cut: i18n.t("fileManager.cut"),
-            paste: i18n.t("menu.paste"),
-            select_all: i18n.t("fileManager.selectAll"),
-        };
-        let compact_sender_placeholder = i18n.t("terminal.command_bar.command_placeholder");
-        let expanded_sender_placeholder = i18n.t("terminal.sender.placeholder");
-        let terminal_command_sender = cx.new(|cx| {
-            terminal_command_sender::TerminalCommandSenderEntity::new(
-                tokens,
-                compact_sender_placeholder,
-                expanded_sender_placeholder,
-                sender_context_menu_labels,
-                cx,
-            )
-        });
-        let terminal_command_sender_observation =
-            cx.observe(&terminal_command_sender, |_, _, cx| cx.notify());
         let mut workspace = Self {
             focus_handle,
             main_window_tabs: WorkspaceWindowTabState::new(),
@@ -408,8 +389,6 @@ impl WorkspaceApp {
             terminal_rule_highlight_section_expanded: true,
             terminal_command_context_highlight_section_expanded: true,
             terminal_selection_highlight_section_expanded: true,
-            terminal_command_sender,
-            _terminal_command_sender_observation: terminal_command_sender_observation,
             local_terminal_command_history,
             ssh_terminal_command_histories: HashMap::new(),
             detached_local_terminals: HashMap::new(),
@@ -646,7 +625,6 @@ impl WorkspaceApp {
                 default_session_tree_path().with_file_name("standalone_sessions.json"),
                 &workspace.connection_store,
             );
-        workspace.sync_terminal_command_sender_appearance(cx);
         workspace.sync_active_terminal_metadata_context(cx);
         workspace.sync_active_privilege_prompt_inline_hint(cx);
         workspace.refresh_terminal_trigger_runtime(cx);
@@ -931,7 +909,6 @@ impl WorkspaceApp {
                 copy: self.i18n.t("terminal.command_selection.copy"),
                 copy_title: self.i18n.t("terminal.command_selection.copy_title"),
                 copy_command: self.i18n.t("terminal.command_selection.copy_command"),
-                fill_command_bar: self.i18n.t("terminal.command_selection.fill_command_bar"),
                 insert_selection_into_command: self
                     .i18n
                     .t("terminal.command_selection.insert_selection_into_command"),

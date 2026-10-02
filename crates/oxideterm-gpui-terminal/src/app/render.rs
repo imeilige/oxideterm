@@ -1863,11 +1863,6 @@ impl TerminalPane {
             .command_selection_labels
             .copy_command
             .clone();
-        let fill_command_bar_label = self
-            .preferences
-            .command_selection_labels
-            .fill_command_bar
-            .clone();
         let insert_selection_label = self
             .preferences
             .command_selection_labels
@@ -1994,18 +1989,6 @@ impl TerminalPane {
                         cx,
                     ))
                     .child(context_menu_separator(tokens))
-                    .child(self.render_terminal_context_menu_item(
-                        fill_command_bar_label,
-                        !menu.has_selection,
-                        |this, _event, _window, cx| {
-                            this.request_context_action(
-                                TerminalContextAction::FillCommandBarFromSelection,
-                                true,
-                                cx,
-                            );
-                        },
-                        cx,
-                    ))
                     .child(self.render_terminal_context_menu_item(
                         find_label,
                         false,

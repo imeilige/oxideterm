@@ -7,7 +7,7 @@ use gpui::{
     UTF16Selection, Window, font, point, px, rgb,
 };
 use oxideterm_editor_core::utf16::{
-    byte_index_for_utf16, control_k_delete_end, floor_char_boundary, line_end_for_utf16_offset,
+    control_k_delete_end, floor_char_boundary, line_end_for_utf16_offset,
     line_range_for_utf16_offset, line_ranges_utf16, line_start_for_utf16_offset,
     next_utf16_boundary, next_word_boundary, previous_utf16_boundary, previous_word_boundary,
     replace_utf16, transpose_text_at_utf16_offset, utf16_offset_for_byte_index,
@@ -115,7 +115,6 @@ pub(super) enum WorkspaceImeTarget {
     ShortcutsModalSearch,
     ActiveSessionSearch,
     Search(PaneId),
-    TerminalCommandSenderCompact,
     TerminalCwdSearch,
     TerminalGitBranchSearch,
     TerminalGitCommitMessage,
@@ -479,7 +478,6 @@ impl WorkspaceImeTarget {
             Self::ShortcutsModalSearch => 5,
             Self::ActiveSessionSearch => 22,
             Self::Search(pane_id) => (1_u64 << 63) | pane_id.0,
-            Self::TerminalCommandSenderCompact => 2,
             Self::TerminalCwdSearch => 18,
             Self::TerminalGitBranchSearch => 17,
             Self::TerminalGitCommitMessage => 20,
@@ -793,37 +791,16 @@ impl InputHandler for WorkspaceInputHandler {
 
     fn bounds_for_range(
         &mut self,
-        range_utf16: Range<usize>,
+        _range_utf16: Range<usize>,
         _window: &mut Window,
         cx: &mut App,
     ) -> Option<Bounds<Pixels>> {
         let target = self.active_ime_target(cx)?;
-        self.view.update(cx, |view, cx| {
+        self.view.update(cx, |view, _cx| {
             let bounds = view
                 .text_input_anchors
                 .bounds(target.anchor_id())
                 .unwrap_or(self.fallback_bounds);
-            let viewport = match target {
-                WorkspaceImeTarget::TerminalCommandSenderCompact => view
-                    .terminal_command_sender
-                    .read(cx)
-                    .active_compact_viewport(),
-                _ => None,
-            };
-            if let Some(viewport) = viewport {
-                let visible_text = view.ime_text_with_marked_text_for_target(target, cx)?;
-                let byte_index = byte_index_for_utf16(&visible_text, range_utf16.end);
-                if let Some(position) = viewport.position_for_byte_index(byte_index) {
-                    // Keep the platform candidate window aligned with the scrolled caret.
-                    return Some(Bounds {
-                        origin: point(position.x, bounds.bottom()),
-                        size: gpui::size(
-                            px(view.tokens.metrics.form_caret_width),
-                            bounds.size.height,
-                        ),
-                    });
-                }
-            }
             Some(Bounds {
                 origin: bounds.origin + point(px(0.0), bounds.size.height),
                 size: bounds.size,
@@ -1070,11 +1047,6 @@ impl WorkspaceApp {
 
             if self.terminal.read(cx).project_panel_open() {
                 return Some(WorkspaceImeTarget::TerminalProjectSearch);
-            }
-
-            let sender = self.terminal_command_sender.read(cx);
-            if sender.is_visible() && !sender.is_expanded() && sender.compact_focused() {
-                return Some(WorkspaceImeTarget::TerminalCommandSenderCompact);
             }
         }
 
@@ -1504,25 +1476,6 @@ impl WorkspaceApp {
             return Some(index.min(text_len));
         }
 
-        let viewport = match target {
-            WorkspaceImeTarget::TerminalCommandSenderCompact => self
-                .terminal_command_sender
-                .read(cx)
-                .active_compact_viewport(),
-            _ => None,
-        };
-        if let Some(viewport) = viewport {
-            if let Some(byte_index) = viewport.byte_index_for_position(position) {
-                let visible_text = self
-                    .ime_text_with_marked_text_for_target(target, cx)
-                    .unwrap_or_else(|| text.clone());
-                return Some(utf16_offset_for_byte_index(
-                    &visible_text,
-                    byte_index.min(visible_text.len()),
-                ));
-            }
-        }
-
         let bounds = self.text_input_anchors.bounds(target.anchor_id())?;
         let padding =
             Self::ime_target_horizontal_padding(target, self.tokens.metrics.ui_control_padding_x);
@@ -1838,9 +1791,6 @@ impl WorkspaceApp {
                 // across long JSON and command lines.
                 super::settings_mono_font_family(self.settings_store.settings())
             }
-            WorkspaceImeTarget::TerminalCommandSenderCompact => {
-                super::settings_mono_font_family(self.settings_store.settings())
-            }
             _ => tauri_ui_font_family(&self.settings_store.settings().appearance.ui_font_family),
         }
     }
@@ -1862,11 +1812,6 @@ impl WorkspaceApp {
                 .panes
                 .get(&pane_id)
                 .map(|search| search.query.clone()),
-            WorkspaceImeTarget::TerminalCommandSenderCompact => self
-                .terminal_command_sender
-                .read(cx)
-                .active_compact_draft()
-                .map(str::to_string),
             WorkspaceImeTarget::TerminalCwdSearch => {
                 let terminal = self.terminal.read(cx);
                 terminal
@@ -2589,21 +2534,6 @@ impl WorkspaceApp {
                 if self.search.replace_query(pane_id, replacement_range, text) {
                     self.update_search_query_for_pane(pane_id, true, cx);
                 }
-            }
-            WorkspaceImeTarget::TerminalCommandSenderCompact => {
-                let mut draft = Zeroizing::new(
-                    self.terminal_command_sender
-                        .read(cx)
-                        .active_compact_draft()
-                        .unwrap_or_default()
-                        .to_string(),
-                );
-                replace_utf16(&mut draft, replacement_range, text);
-                self.terminal_command_sender.update(cx, |sender, cx| {
-                    sender.replace_active_compact_text(std::mem::take(&mut *draft), cx);
-                });
-                self.show_active_input_caret(cx);
-                cx.notify();
             }
             WorkspaceImeTarget::TerminalCwdSearch => {
                 if self.terminal.update(cx, |terminal, _cx| {

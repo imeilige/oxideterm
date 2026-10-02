@@ -569,7 +569,6 @@ pub(crate) enum FreeTypeDragAction {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TerminalContextAction {
-    FillCommandBarFromSelection,
     OpenSearch,
     OpenSessionTriggers,
 }
@@ -2356,19 +2355,6 @@ impl TerminalPane {
         true
     }
 
-    pub fn send_command_sender_line(&mut self, line: &str, cx: &mut Context<Self>) -> bool {
-        let mut input = zeroize::Zeroizing::new(line.replace("\r\n", "\r").replace('\n', "\r"));
-        input.push('\r');
-        self.send_command_sender_text(&input, true, cx)
-    }
-
-    pub fn send_command_sender_text_chunk(&mut self, text: &str, cx: &mut Context<Self>) -> bool {
-        if text.is_empty() {
-            return false;
-        }
-        self.send_command_sender_text(text, false, cx)
-    }
-
     pub fn send_trigger_text(
         &mut self,
         text: &str,
@@ -2412,137 +2398,6 @@ impl TerminalPane {
 
     pub fn take_trigger_matches(&mut self) -> Vec<oxideterm_terminal_triggers::TriggerMatched> {
         self.pending_trigger_matches.drain(..).collect()
-    }
-
-    pub fn send_command_sender_raw_bytes(&mut self, bytes: &[u8], cx: &mut Context<Self>) -> bool {
-        if bytes.is_empty() || !self.terminal_accepts_input() {
-            return false;
-        }
-        let Some(bytes) = self.apply_plugin_input_interceptor(bytes) else {
-            return false;
-        };
-        let bytes = zeroize::Zeroizing::new(bytes);
-        let secret_reply = self.input_answers_privilege_prompt(&bytes);
-        // Hex input is an opaque protocol payload. Recheck lifecycle after the
-        // plugin hook, then bypass command observation.
-        let write_result = {
-            let mut terminal = self.terminal.lock();
-            if self.input_locked || self.terminal_exited || !terminal.is_interactive() {
-                return false;
-            }
-            if terminal.kind() == TerminalSessionKind::Serial {
-                terminal.send_serial_bytes(&bytes)
-            } else {
-                terminal.write_protocol_bytes(&bytes)
-            }
-        };
-        if write_result.is_err() {
-            if !secret_reply {
-                self.audit_terminal_data_send("binary", bytes.len(), false);
-            }
-            return false;
-        }
-        if !secret_reply {
-            self.audit_terminal_data_send("binary", bytes.len(), true);
-        }
-        self.last_terminal_input = Instant::now();
-        self.reset_cursor_blink();
-        self.restore_live_output_after_user_input();
-        cx.notify();
-        true
-    }
-
-    fn send_command_sender_text(
-        &mut self,
-        text: &str,
-        whole_line: bool,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        if text.is_empty() || !self.terminal_accepts_input() {
-            return false;
-        }
-        let Some(bytes) = self.apply_plugin_input_interceptor(text.as_bytes()) else {
-            return false;
-        };
-        let bytes = zeroize::Zeroizing::new(bytes);
-        // The plugin can run arbitrary code, so the lifecycle check and write
-        // must share the same terminal-session lock after interception.
-        let write_result = {
-            let mut terminal = self.terminal.lock();
-            if self.input_locked || self.terminal_exited || !terminal.is_interactive() {
-                return false;
-            }
-            match std::str::from_utf8(&bytes) {
-                Ok(text) if terminal.kind() == TerminalSessionKind::Serial => {
-                    terminal.send_serial_text(text)
-                }
-                Ok(text) => terminal.write_text(text),
-                Err(_) if terminal.kind() == TerminalSessionKind::Serial => {
-                    terminal.send_serial_bytes(&bytes)
-                }
-                Err(_) => terminal.write_protocol_bytes(&bytes),
-            }
-        };
-        if write_result.is_err() {
-            if whole_line {
-                self.command_fact_ledger
-                    .set_audit_context(self.terminal.lock().audit_context());
-                self.command_fact_ledger.record_dispatch(
-                    None,
-                    None,
-                    oxideterm_audit::AuditSource::CommandBar,
-                    false,
-                );
-            } else {
-                self.audit_terminal_data_send("text_chunk", bytes.len(), false);
-            }
-            return false;
-        }
-
-        // Only a complete, non-secret line gets a tentative command mark;
-        // partial and opaque sends remain dispatch records until the shell reports more.
-        let privilege =
-            self.observe_privilege_input("command-sender-text", &bytes, Instant::now(), cx);
-        let at_shell_prompt = self.shell_integration_status.detected
-            && self.shell_integration_status.state == ShellIntegrationLifecycleState::Prompt;
-        if whole_line && privilege != PrivilegeInputObservation::SecretEntry && at_shell_prompt {
-            let command = std::str::from_utf8(&bytes)
-                .ok()
-                .map(|text| text.trim_end_matches(['\r', '\n']))
-                .filter(|text| !text.trim().is_empty());
-            if let Some(command) = command {
-                let command_id = self.begin_command_mark(
-                    command,
-                    TerminalCommandMarkDetectionSource::CommandBar,
-                    cx,
-                );
-                self.command_fact_ledger
-                    .set_audit_context(self.terminal.lock().audit_context());
-                self.command_fact_ledger.record_dispatch(
-                    command_id.as_deref(),
-                    None,
-                    oxideterm_audit::AuditSource::CommandBar,
-                    true,
-                );
-            } else {
-                self.audit_terminal_data_send("text_line", bytes.len(), true);
-            }
-        } else if privilege != PrivilegeInputObservation::SecretEntry {
-            self.audit_terminal_data_send(
-                if whole_line {
-                    "text_line"
-                } else {
-                    "text_chunk"
-                },
-                bytes.len(),
-                true,
-            );
-        }
-        self.last_terminal_input = Instant::now();
-        self.reset_cursor_blink();
-        self.restore_live_output_after_user_input();
-        cx.notify();
-        true
     }
 
     fn audit_terminal_data_send(&self, mode: &str, input_bytes: usize, sent: bool) {

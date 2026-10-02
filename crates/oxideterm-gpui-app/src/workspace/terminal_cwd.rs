@@ -15,8 +15,7 @@ use oxideterm_environment::{
     CurrentDirectoryEntry, CurrentDirectoryEntryKind, CurrentDirectoryKey, CurrentDirectoryScope,
     CurrentDirectorySnapshot, CurrentDirectorySource, current_directory_cd_command,
     current_directory_parent, current_directory_path_is_explicit, current_directory_report_command,
-    current_directory_shell_path_argument, list_local_current_directory,
-    sort_current_directory_entries,
+    list_local_current_directory, sort_current_directory_entries,
 };
 use oxideterm_sftp::{FileType as RemotePathFileType, ListFilter, SortOrder};
 use oxideterm_ssh::NodeId;
@@ -989,22 +988,6 @@ impl WorkspaceApp {
         cx.notify();
     }
 
-    pub(in crate::workspace) fn insert_terminal_cwd_file_path(
-        &mut self,
-        path: String,
-        cx: &mut Context<Self>,
-    ) {
-        let Some(argument) = current_directory_shell_path_argument(&path) else {
-            return;
-        };
-
-        // File rows compose the active sender draft without running shell input
-        // or changing the current directory.
-        self.append_terminal_command_sender_text(&argument, true, cx);
-        self.close_terminal_cwd_picker(cx);
-        cx.notify();
-    }
-
     pub(in crate::workspace) fn handle_terminal_cwd_picker_key(
         &mut self,
         event: &KeyDownEvent,
@@ -1055,7 +1038,9 @@ impl WorkspaceApp {
                 if let Some(entry) = selected {
                     match entry.kind {
                         TerminalCwdVisibleEntryKind::File => {
-                            self.insert_terminal_cwd_file_path(entry.path, cx);
+                            // File rows only listed paths for command text; with no
+                            // command editor they must not attempt a `cd` that the
+                            // shell would reject.
                         }
                         _ => self.select_terminal_cwd_path(
                             entry.path,

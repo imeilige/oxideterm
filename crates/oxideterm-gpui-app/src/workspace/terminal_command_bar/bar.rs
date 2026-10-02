@@ -58,14 +58,6 @@ impl WorkspaceApp {
         let target_indicator_is_local =
             is_local_terminal && target_label == self.i18n.t("terminal.command_bar.local_shell");
         let can_split = self.can_split_active_pane(cx);
-        let (command_sender_visible, command_sender_expanded, command_sender_running_count) = {
-            let sender = self.terminal_command_sender.read(cx);
-            (
-                sender.is_visible(),
-                sender.is_expanded(),
-                sender.running_count(),
-            )
-        };
         let highlight_override_active = self.active_terminal_highlight_override(cx);
         let bar = div()
             .relative()
@@ -107,42 +99,6 @@ impl WorkspaceApp {
                             .flex_1()
                             .min_w(px(0.0))
                             .overflow_hidden()
-                            .child(self.terminal_command_action_button(
-                                if command_sender_visible {
-                                    LucideIcon::ChevronDown
-                                } else {
-                                    LucideIcon::ChevronRight
-                                },
-                                rgb(theme.text_muted),
-                                false,
-                                Some(if command_sender_visible {
-                                    rgba(0x00000000)
-                                } else {
-                                    rgba((theme.bg_hover << 8) | 0x99)
-                                }),
-                                "terminal-command-sender-visibility",
-                                if command_sender_visible {
-                                    self.i18n.t("terminal.sender.hide")
-                                } else {
-                                    self.i18n.t("terminal.sender.show")
-                                },
-                                |this, _event, window, cx| {
-                                    let visible = this
-                                        .terminal_command_sender
-                                        .update(cx, |sender, cx| sender.toggle_visible(cx));
-                                    if visible {
-                                        this.terminal_command_sender.update(cx, |sender, cx| {
-                                            sender.set_compact_focused(true, cx);
-                                        });
-                                        this.clear_ime_selection();
-                                        window.focus(&this.focus_handle, cx);
-                                    } else {
-                                        this.focus_active_pane(window, cx);
-                                    }
-                                    cx.stop_propagation();
-                                },
-                                cx,
-                            ))
                             .child(self.render_terminal_target_indicator(
                                 target_label,
                                 target_indicator_is_local,
@@ -226,76 +182,6 @@ impl WorkspaceApp {
                                     },
                                     cx,
                                 ))
-                            })
-                            .child(self.terminal_command_action_button(
-                                LucideIcon::ListChecks,
-                                if command_sender_expanded {
-                                    rgb(theme.accent)
-                                } else if command_sender_running_count > 0 {
-                                    rgb(theme.warning)
-                                } else {
-                                    rgb(theme.text_muted)
-                                },
-                                false,
-                                Some(if command_sender_expanded {
-                                    rgba((theme.accent << 8) | 0x26)
-                                } else {
-                                    rgba(0x00000000)
-                                }),
-                                "terminal-command-sender-toggle",
-                                if command_sender_expanded {
-                                    self.i18n.t("terminal.sender.collapse")
-                                } else if command_sender_running_count > 0 {
-                                    format!(
-                                        "{} ({})",
-                                        self.i18n.t("terminal.sender.running"),
-                                        command_sender_running_count
-                                    )
-                                } else {
-                                    self.i18n.t("terminal.sender.expand")
-                                },
-                                move |this, _event, window, cx| {
-                                    let expanding =
-                                        !this.terminal_command_sender.read(cx).is_expanded();
-                                    if expanding {
-                                        this.close_terminal_command_overlays(cx);
-                                        this.ime_marked_text = None;
-                                    }
-                                    this.terminal_command_sender.update(cx, |sender, cx| {
-                                        sender.toggle_expanded(cx);
-                                    });
-                                    let sender_id =
-                                        this.terminal_command_sender.read(cx).active_document_id();
-                                    if expanding {
-                                        this.focus_terminal_command_sender_editor(
-                                            sender_id, window, cx,
-                                        );
-                                    } else {
-                                        this.terminal_command_sender.update(cx, |sender, cx| {
-                                            sender.set_compact_focused(true, cx);
-                                        });
-                                        this.clear_ime_selection();
-                                        window.focus(&this.focus_handle, cx);
-                                    }
-                                    cx.stop_propagation();
-                                },
-                                cx,
-                            ))
-                            .when(command_sender_running_count > 0, |actions| {
-                                actions.child(
-                                    div()
-                                        .h(px(20.0))
-                                        .min_w(px(20.0))
-                                        .px(px(5.0))
-                                        .flex()
-                                        .items_center()
-                                        .justify_center()
-                                        .rounded_full()
-                                        .bg(rgba((theme.warning << 8) | 0x24))
-                                        .text_size(px(10.0))
-                                        .text_color(rgb(theme.warning))
-                                        .child(command_sender_running_count.to_string()),
-                                )
                             })
                             .when_some(active_pane_id, |actions, pane_id| {
                                 // Capture the visible pane so the shortcut cannot retarget after a tab switch.

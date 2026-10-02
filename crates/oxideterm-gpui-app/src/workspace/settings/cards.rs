@@ -675,13 +675,6 @@ impl WorkspaceApp {
             self.ime_marked_text = None;
             self.clear_ime_selection();
         }
-        if self.terminal_command_sender.read(cx).compact_focused() {
-            self.terminal_command_sender.update(cx, |sender, cx| {
-                sender.set_compact_focused(false, cx);
-            });
-            self.ime_marked_text = None;
-            changed = true;
-        }
         if self
             .settings_workspace
             .update(cx, |settings, cx| settings.blur_settings_entity_input(cx))

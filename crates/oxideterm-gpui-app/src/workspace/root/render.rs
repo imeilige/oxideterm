@@ -358,9 +358,6 @@ impl WorkspaceApp {
                 } else if this.handle_terminal_git_branch_picker_key(event, cx) {
                     window.prevent_default();
                     cx.stop_propagation();
-                } else if this.handle_compact_terminal_command_sender_key(event, window, cx) {
-                    window.prevent_default();
-                    cx.stop_propagation();
                 } else if active_ime_target.is_some()
                     && this.handle_active_text_input_navigation(&event.keystroke, cx)
                 {
@@ -439,14 +436,13 @@ impl WorkspaceApp {
                 } else if this.handle_privilege_prompt_helper_key(event, window, cx) {
                     window.prevent_default();
                     cx.stop_propagation();
-                } else if this.terminal_command_sender_editor_focused(window, cx)
-                    || (window.context_stack().iter().any(|context| {
-                        context
-                            .primary()
-                            .is_some_and(|entry| entry.key == "TextEditor")
-                    }) && cx
-                        .try_global::<oxideterm_gpui_editor::EditorKeybindings>()
-                        .is_some_and(|bindings| bindings.resolve(&event.keystroke).is_some()))
+                } else if window.context_stack().iter().any(|context| {
+                    context
+                        .primary()
+                        .is_some_and(|entry| entry.key == "TextEditor")
+                }) && cx
+                    .try_global::<oxideterm_gpui_editor::EditorKeybindings>()
+                    .is_some_and(|bindings| bindings.resolve(&event.keystroke).is_some())
                 {
                     // The editor owns its complete key model, including Tab and
                     // navigation keys that otherwise fall through to the pane.
@@ -559,7 +555,6 @@ impl WorkspaceApp {
                 this.update_embedded_sftp_sidebar_resize(event, window, cx);
                 this.update_sftp_pane_resize(event, window, cx);
                 this.update_sftp_queue_resize(event, window, cx);
-                this.update_terminal_command_sender_resize(event, window, cx);
                 this.update_split_drag(event, window, cx);
                 this.update_settings_slider_drag(event, cx);
                 // Continue scrollbar dragging after the pointer leaves its thin hit target.
@@ -1092,8 +1087,7 @@ impl WorkspaceApp {
             ) => CursorStyle::ClosedHand,
             Some(
                 browser_behavior::BrowserPointerCaptureOwner::EmbeddedSftpSidebarResize
-                | browser_behavior::BrowserPointerCaptureOwner::SftpQueueResize
-                | browser_behavior::BrowserPointerCaptureOwner::TerminalCommandSenderResize,
+                | browser_behavior::BrowserPointerCaptureOwner::SftpQueueResize,
             ) => CursorStyle::ResizeRow,
             _ => CursorStyle::ResizeColumn,
         };
@@ -1115,7 +1109,6 @@ impl WorkspaceApp {
                 this.update_embedded_sftp_sidebar_resize(event, window, cx);
                 this.update_sftp_pane_resize(event, window, cx);
                 this.update_sftp_queue_resize(event, window, cx);
-                this.update_terminal_command_sender_resize(event, window, cx);
                 this.update_host_tools_tab_scrollbar_drag(event, cx);
                 cx.stop_propagation();
             }))
@@ -1141,7 +1134,6 @@ impl WorkspaceApp {
         self.finish_embedded_sftp_sidebar_resize(cx);
         self.finish_sftp_pane_resize(cx);
         self.finish_sftp_queue_resize(cx);
-        self.finish_terminal_command_sender_resize(cx);
         self.finish_split_drag(cx);
         self.finish_settings_slider_drag(cx);
         self.finish_host_tools_tab_scrollbar_drag(cx);

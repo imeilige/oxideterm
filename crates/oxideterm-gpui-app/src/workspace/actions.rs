@@ -608,14 +608,6 @@ impl WorkspaceApp {
             return true;
         }
 
-        if self
-            .terminal_command_sender
-            .update(cx, |sender, _cx| sender.dismiss_compact_suggestions())
-        {
-            cx.notify();
-            return true;
-        }
-
         false
     }
 
@@ -649,10 +641,6 @@ impl WorkspaceApp {
             return;
         }
 
-        if self.terminal_command_sender_editor_focused(window, cx) {
-            // Child editor handlers own the bubble path while focused.
-            return;
-        }
         if active_ime_should_defer_input_key(
             self.active_ime_target(cx).is_some(),
             self.ime_marked_text.is_some(),

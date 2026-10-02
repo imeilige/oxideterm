@@ -150,7 +150,7 @@ fn ssh_worker_output_reaches_a_painted_pane_without_followup_output(cx: &mut Tes
         cx.run_until_parked();
         if !sent_input && started.elapsed() >= Duration::from_millis(10) {
             pane.update(cx, |pane, cx| {
-                pane.send_command_sender_text_chunk("paint-input", cx);
+                pane.send_trigger_text("paint-input", false, cx);
             });
             sent_input = true;
         }

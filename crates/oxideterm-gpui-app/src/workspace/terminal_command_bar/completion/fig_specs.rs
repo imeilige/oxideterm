@@ -1145,13 +1145,6 @@ fn infer_terminal_home_from_cwd(cwd: &str) -> Option<String> {
     cwd.starts_with("/root").then(|| "/root".to_string())
 }
 
-pub(super) fn terminal_command_bar_now_ms() -> i64 {
-    SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .map(|duration| duration.as_millis() as i64)
-        .unwrap_or_default()
-}
-
 #[cfg(test)]
 mod terminal_fig_registry_tests {
     use super::{

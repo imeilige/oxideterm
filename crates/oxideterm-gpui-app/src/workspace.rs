@@ -43,7 +43,6 @@ mod sidebar;
 mod standalone_connections;
 mod tabs;
 mod terminal_command_bar;
-mod terminal_command_sender;
 mod terminal_context_actions;
 mod terminal_cwd;
 mod terminal_entity;
@@ -538,8 +537,6 @@ pub(crate) struct WorkspaceApp {
     terminal_rule_highlight_section_expanded: bool,
     terminal_command_context_highlight_section_expanded: bool,
     terminal_selection_highlight_section_expanded: bool,
-    terminal_command_sender: Entity<terminal_command_sender::TerminalCommandSenderEntity>,
-    _terminal_command_sender_observation: Subscription,
     local_terminal_command_history: SharedTerminalCommandHistory,
     // Runtime history follows NodeRouter identity without owning or prolonging the transport.
     ssh_terminal_command_histories: HashMap<NodeId, SharedTerminalCommandHistory>,

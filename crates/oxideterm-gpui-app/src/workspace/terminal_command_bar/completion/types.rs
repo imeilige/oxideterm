@@ -1,32 +1,5 @@
 use super::*;
 
-#[derive(Clone)]
-pub(super) struct TerminalHistoryEntry {
-    pub(super) command: String,
-    pub(super) source: TerminalHistorySource,
-    pub(super) last_used_at: i64,
-    pub(super) uses: usize,
-    pub(super) sequence: usize,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum TerminalHistorySource {
-    Runtime,
-    LocalHistory,
-}
-
-impl TerminalHistorySource {
-    pub(super) fn label_key(self) -> &'static str {
-        match self {
-            Self::Runtime => "terminal.command_bar.source_runtime",
-            // Tauri's command-bar history provider preserves these underlying
-            // autosuggest sources internally, but renders completion rows with
-            // the generic history source badge.
-            Self::LocalHistory => "terminal.command_bar.source_history",
-        }
-    }
-}
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum TerminalCommandContextType {
     Terminal,

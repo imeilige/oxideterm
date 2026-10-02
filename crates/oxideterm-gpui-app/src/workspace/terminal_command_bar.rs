@@ -34,7 +34,6 @@ mod context;
 mod git;
 mod highlight;
 mod privilege;
-mod sender;
 
 const TERMINAL_CWD_MENU_WIDTH: f32 = 520.0;
 const TERMINAL_CWD_MENU_MAX_HEIGHT: f32 = 420.0;

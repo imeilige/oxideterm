@@ -27,7 +27,6 @@ use oxideterm_terminal_graphics::{
 mod activity;
 mod backpressure;
 mod color;
-mod command_sender;
 mod data;
 mod editor_integration;
 mod local_graphics_event_loop;
@@ -54,10 +53,6 @@ pub use tmux::{
 
 pub use activity::TerminalActivityReceiver;
 pub use alacritty_terminal::term::TermMode;
-pub use command_sender::{
-    TerminalSenderFrame, TerminalSenderInputMode, TerminalSenderPacing, TerminalSenderPlan,
-    TerminalSenderPlanError, build_terminal_sender_plan,
-};
 pub use data::{
     GraphicsOptions, KittyFileTransmissionControl, TerminalAttrs, TerminalCell, TerminalColor,
     TerminalCursorShape, TerminalImageAnimationState, TerminalImageData, TerminalImageFrame,
