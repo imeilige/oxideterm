@@ -2,10 +2,6 @@ use super::*;
 
 pub(in crate::workspace) const HELP_LEGAL_MARKDOWN: &str =
     include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../LEGAL.md"));
-const HELP_THIRD_PARTY_MARKDOWN: &str = include_str!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../THIRD_PARTY_NOTICES.md"
-));
 
 pub(in crate::workspace) const HELP_LEGAL_NOTICE_WIDTH: f32 = 760.0;
 pub(in crate::workspace) const HELP_LEGAL_NOTICE_HEIGHT: f32 = 720.0;
@@ -18,7 +14,6 @@ impl WorkspaceApp {
     ) -> AnyElement {
         match section_index {
             0 => self.help_diagnostics_card(cx),
-            1 => self.help_legal_card(cx),
             _ => div().into_any_element(),
         }
     }
@@ -54,50 +49,6 @@ impl WorkspaceApp {
                 cx,
             ),
         ])
-    }
-
-    pub(in crate::workspace) fn help_legal_card(&self, cx: &mut Context<Self>) -> AnyElement {
-        let copyright = self.i18n_with(
-            "settings_view.help.copyright",
-            &[
-                ("year", chrono::Local::now().format("%Y").to_string()),
-                ("author", "AnalyseDeCircuit".to_string()),
-            ],
-        );
-
-        div()
-            .flex()
-            .flex_col()
-            .items_center()
-            .gap(px(4.0))
-            .text_size(px(self.tokens.metrics.ui_text_xs))
-            .text_color(rgb(self.tokens.ui.text_muted))
-            .child(self.render_selectable_text_scoped(
-                "settings-help-legal",
-                "copyright",
-                copyright,
-                self.tokens.ui.text_muted,
-                cx,
-            ))
-            .child(self.render_selectable_text_scoped(
-                "settings-help-legal",
-                "license",
-                self.i18n.t("settings_view.help.license"),
-                self.tokens.ui.text_muted,
-                cx,
-            ))
-            .child(self.help_outline_button(
-                self.i18n.t("settings_view.help.third_party_notices"),
-                LucideIcon::BookOpen,
-                |this, _event, _window, cx| {
-                    this.settings_legal_notice_scroll = MarkdownVirtualListScrollHandle::new();
-                    this.overlay.update(cx, |overlay, cx| {
-                        overlay.open_confirm(WorkspaceOverlayConfirmKind::ThirdPartyNotices, cx);
-                    });
-                },
-                cx,
-            ))
-            .into_any_element()
     }
 
     pub(in crate::workspace) fn help_action_row(
@@ -205,11 +156,7 @@ impl WorkspaceApp {
         let Some(snapshot) = self.overlay.read(cx).confirm_snapshot() else {
             return false;
         };
-        if !matches!(
-            snapshot.kind,
-            WorkspaceOverlayConfirmKind::LegalNotice
-                | WorkspaceOverlayConfirmKind::ThirdPartyNotices
-        ) {
+        if snapshot.kind != WorkspaceOverlayConfirmKind::LegalNotice {
             return false;
         }
         if snapshot.phase == oxideterm_gpui_ui::motion::ExitPhase::Exiting {
@@ -243,17 +190,9 @@ impl WorkspaceApp {
         let Some(snapshot) = self.overlay.read(cx).confirm_snapshot() else {
             return div().into_any_element();
         };
-        if !matches!(
-            snapshot.kind,
-            WorkspaceOverlayConfirmKind::LegalNotice
-                | WorkspaceOverlayConfirmKind::ThirdPartyNotices
-        ) {
+        if snapshot.kind != WorkspaceOverlayConfirmKind::LegalNotice {
             return div().into_any_element();
         }
-        let third_party = matches!(
-            snapshot.kind,
-            WorkspaceOverlayConfirmKind::ThirdPartyNotices
-        );
         let mut options = self.localized_markdown_options();
         options.base_font_size = self.tokens.metrics.ui_text_sm;
         options.block_gap = 8.0;
@@ -278,19 +217,11 @@ impl WorkspaceApp {
                     dialog_header(&self.tokens)
                         .child(dialog_title(
                             &self.tokens,
-                            self.i18n.t(if third_party {
-                                "settings_view.help.third_party_notices"
-                            } else {
-                                "settings_view.help.disclaimer"
-                            }),
+                            self.i18n.t("settings_view.help.disclaimer"),
                         ))
                         .child(dialog_description(
                             &self.tokens,
-                            self.i18n.t(if third_party {
-                                "settings_view.help.third_party_notices_description"
-                            } else {
-                                "settings_view.help.legal_notice_description"
-                            }),
+                            self.i18n.t("settings_view.help.legal_notice_description"),
                         )),
                 )
                 .child(
@@ -303,11 +234,7 @@ impl WorkspaceApp {
                         .child(markdown_virtual_with_code_actions(
                             "settings-help-legal-notice-markdown",
                             &self.tokens,
-                            if third_party {
-                                HELP_THIRD_PARTY_MARKDOWN
-                            } else {
-                                HELP_LEGAL_MARKDOWN
-                            },
+                            HELP_LEGAL_MARKDOWN,
                             &options,
                             &self.settings_legal_notice_scroll,
                             &code_actions,

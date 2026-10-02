@@ -1095,8 +1095,6 @@
       "open": "開く",
       "legal_notice_description": "この通知はアプリに同梱されており、リポジトリの LEGAL.md ファイルと一致します。",
       "legal_notice_close": "閉じる",
-      "license": "OxideTerm は GNU 一般公衆利用許諾書 v3.0 (GPL-3.0) のもとで公開されているオープンソースソフトウェアです。",
-      "copyright": "Copyright © {{year}} {{author}}",
       "shortcut_keyboard_shortcuts": "キーボードショートカット",
       "retry": "再試行",
       "memory_diagnostics_title": "Memory Diagnostics",
@@ -1130,9 +1128,7 @@
       "memory_no_providers": "No frontend diagnostics providers reported data yet.",
       "memory_export_warning": "Exported diagnostics contain counts, estimates, paths or session identifiers only. Terminal output, AI message text, API keys and environment values are not included.",
       "memory_open": "Open",
-      "memory_close": "Close",
-      "third_party_notices": "第三者に関する表記",
-      "third_party_notices_description": "同梱の依存ライブラリと画像の帰属表示、および原ライセンスへのリンク。"
+      "memory_close": "Close"
     },
     "errors": {
       "create_group_failed": "グループの作成に失敗しました: {{error}}",

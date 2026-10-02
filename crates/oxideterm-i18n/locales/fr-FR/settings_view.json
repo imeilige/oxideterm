@@ -1095,8 +1095,6 @@
       "open": "Ouvrir",
       "legal_notice_description": "Cette notice est intégrée à l'application et correspond au fichier LEGAL.md du dépôt.",
       "legal_notice_close": "Fermer",
-      "license": "OxideTerm est un logiciel libre sous licence GNU General Public License v3.0 (GPL-3.0).",
-      "copyright": "Copyright © {{year}} {{author}}",
       "shortcut_keyboard_shortcuts": "Raccourcis clavier",
       "retry": "Réessayer",
       "memory_diagnostics_title": "Memory Diagnostics",
@@ -1130,9 +1128,7 @@
       "memory_no_providers": "No frontend diagnostics providers reported data yet.",
       "memory_export_warning": "Exported diagnostics contain counts, estimates, paths or session identifiers only. Terminal output, AI message text, API keys and environment values are not included.",
       "memory_open": "Open",
-      "memory_close": "Close",
-      "third_party_notices": "Mentions de tiers",
-      "third_party_notices_description": "Attribution des dépendances et illustrations incluses, avec des liens vers leurs licences originales."
+      "memory_close": "Close"
     },
     "errors": {
       "create_group_failed": "Échec de la création du groupe : {{error}}",

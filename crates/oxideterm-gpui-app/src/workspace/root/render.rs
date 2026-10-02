@@ -1194,11 +1194,7 @@ impl WorkspaceApp {
             )
             .when(
                 overlay_confirm_snapshot.as_ref().is_some_and(|snapshot| {
-                    matches!(
-                        &snapshot.kind,
-                        WorkspaceOverlayConfirmKind::LegalNotice
-                            | WorkspaceOverlayConfirmKind::ThirdPartyNotices
-                    )
+                    snapshot.kind == WorkspaceOverlayConfirmKind::LegalNotice
                 }),
                 |root| root.child(self.render_help_legal_notice_dialog(cx)),
             )

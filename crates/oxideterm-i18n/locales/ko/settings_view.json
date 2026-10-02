@@ -1095,8 +1095,6 @@
       "open": "열기",
       "legal_notice_description": "이 고지는 앱에 포함되어 있으며 저장소의 LEGAL.md 파일과 일치합니다.",
       "legal_notice_close": "닫기",
-      "license": "OxideTerm은 GNU 일반 공중 사용 허가서 v3.0 (GPL-3.0) 하에 배포되는 오픈 소스 소프트웨어입니다.",
-      "copyright": "Copyright © {{year}} {{author}}",
       "shortcut_keyboard_shortcuts": "키보드 단축키",
       "retry": "재시도",
       "memory_diagnostics_title": "Memory Diagnostics",
@@ -1130,9 +1128,7 @@
       "memory_no_providers": "No frontend diagnostics providers reported data yet.",
       "memory_export_warning": "Exported diagnostics contain counts, estimates, paths or session identifiers only. Terminal output, AI message text, API keys and environment values are not included.",
       "memory_open": "Open",
-      "memory_close": "Close",
-      "third_party_notices": "타사 고지",
-      "third_party_notices_description": "포함된 의존성과 그래픽의 저작자 표시 및 원본 라이선스 링크입니다."
+      "memory_close": "Close"
     },
     "errors": {
       "create_group_failed": "그룹 생성 실패: {{error}}",

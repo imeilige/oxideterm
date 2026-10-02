@@ -46,7 +46,6 @@ pub(in crate::workspace) enum WorkspaceOverlayIntent {
 pub(in crate::workspace) enum WorkspaceOverlayConfirmKind {
     SettingsReset,
     LegalNotice,
-    ThirdPartyNotices,
     NodeDisconnect {
         node_id: NodeId,
         display_name: Arc<str>,
@@ -321,8 +320,7 @@ impl WorkspaceOverlayEntity {
                     WorkspaceOverlayConfirmKind::SettingsReset => {
                         WorkspaceOverlayConfirmOwnerKind::SettingsReset
                     }
-                    WorkspaceOverlayConfirmKind::LegalNotice
-                    | WorkspaceOverlayConfirmKind::ThirdPartyNotices => {
+                    WorkspaceOverlayConfirmKind::LegalNotice => {
                         WorkspaceOverlayConfirmOwnerKind::LegalNotice
                     }
                     WorkspaceOverlayConfirmKind::NodeDisconnect { .. } => {
@@ -408,8 +406,7 @@ impl WorkspaceOverlayEntity {
                         node_id: node_id.clone(),
                     })
                 }
-                WorkspaceOverlayConfirmKind::LegalNotice
-                | WorkspaceOverlayConfirmKind::ThirdPartyNotices => None,
+                WorkspaceOverlayConfirmKind::LegalNotice => None,
             }
         } else {
             None
@@ -2177,12 +2174,12 @@ mod tests {
             );
             assert!(overlay.confirm_exit_task.is_some());
 
-            overlay.open_confirm(WorkspaceOverlayConfirmKind::ThirdPartyNotices, cx);
+            overlay.open_confirm(WorkspaceOverlayConfirmKind::SettingsReset, cx);
             assert!(overlay.confirm_exit_task.is_none());
             assert_eq!(
                 overlay.confirm_snapshot(),
                 Some(WorkspaceOverlayConfirmSnapshot {
-                    kind: WorkspaceOverlayConfirmKind::ThirdPartyNotices,
+                    kind: WorkspaceOverlayConfirmKind::SettingsReset,
                     phase: oxideterm_gpui_ui::motion::ExitPhase::Visible,
                     focused_action: None,
                 })

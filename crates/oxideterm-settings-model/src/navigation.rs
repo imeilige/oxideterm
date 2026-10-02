@@ -213,9 +213,10 @@ pub fn settings_tab_section_count(
         SettingsTab::Keybindings => {
             keybinding_settings_section_count(dynamic.visible_keybinding_scope_count)
         }
-        // Diagnostics and the legal notice remain; the version, tech-stack,
-        // resources, and safety cards were retired with the update feature.
-        SettingsTab::Help => 2,
+        // The Help page only owns the diagnostics card. The version, tech-stack,
+        // resources, and safety cards went with the update feature, and the
+        // copyright/legal footer now lives in the onboarding disclaimer only.
+        SettingsTab::Help => 1,
     }
 }
 
