@@ -25,9 +25,8 @@ pub(in crate::workspace) const ONBOARDING_THEME_IDS: [&str; 8] = [
     "rose-pine",
 ];
 
-pub(in crate::workspace) const ONBOARDING_FONT_OPTIONS: [(FontFamily, &str, bool); 3] = [
+pub(in crate::workspace) const ONBOARDING_FONT_OPTIONS: [(FontFamily, &str, bool); 2] = [
     (FontFamily::Jetbrains, "JetBrains Mono NF (Subset)", true),
-    (FontFamily::Maple, "Maple Mono NF CN (Subset)", true),
     (FontFamily::Custom, "Custom...", false),
 ];
 

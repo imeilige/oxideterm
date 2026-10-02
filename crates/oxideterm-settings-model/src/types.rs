@@ -84,7 +84,6 @@ pub enum SettingsSelect {
     IdeFontFamily,
     IdeCjkFontFamily,
     TerminalFontFamily,
-    TerminalCjkFontFamily,
     TerminalEncoding,
     TerminalBackspaceSequence,
     TerminalDeleteSequence,
@@ -450,7 +449,6 @@ impl SettingsInput {
         match self {
             Self::SettingsSearch => SETTINGS_SEARCH_INPUT_ANCHOR_KEY,
             Self::TerminalCustomFontFamily => 19,
-            Self::TerminalCjkFontFamily => 24,
             Self::TerminalFontSize => 1,
             Self::TerminalFontWeight => 21,
             Self::TerminalScrollback => 33_000,
@@ -556,6 +554,7 @@ impl SettingsInput {
             Self::ManagedKeyPastePassphrase => 30_005,
             Self::ManagedKeyRenameName => 30_006,
             Self::PluginSetting(index) => PLUGIN_SETTING_INPUT_ANCHOR_BASE + index as u64,
+            _ => 0,
         }
     }
 

@@ -574,7 +574,7 @@ impl WorkspaceApp {
         sort_session_manager_items(items, manager.sort_field, manager.sort_direction);
     }
 
-    fn session_manager_grid_columns(&self, window: &Window, cx: &App) -> (usize, usize) {
+    fn session_manager_grid_columns(&self, window: &Window, _cx: &App) -> (usize, usize) {
         let settings = self.settings_store.settings();
         let mut available_width = f32::from(window.viewport_size().width);
         if !settings.sidebar_ui.zen_mode {

@@ -981,7 +981,7 @@ impl WorkspaceApp {
     pub(in crate::workspace) fn welcome_main_content_width(
         &self,
         window: &Window,
-        cx: &App,
+        _cx: &App,
     ) -> f32 {
         let settings = self.settings_store.settings();
         let mut available_width = f32::from(window.viewport_size().width);

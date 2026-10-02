@@ -2372,9 +2372,8 @@ mod cache_tests {
 
     fn test_metrics() -> TerminalMetrics {
         TerminalMetrics {
-            font: terminal_font_with_family_and_cjk(
+            font: terminal_font_with_family(
                 TERMINAL_FONT,
-                None,
                 TERMINAL_FONT_LIGATURES,
                 TERMINAL_FONT_WEIGHT,
             ),

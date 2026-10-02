@@ -565,8 +565,6 @@ impl WorkspaceApp {
             .terminal_page;
         match (terminal_page, section_index - 1) {
             (TerminalSettingsPage::Display, 0) => {
-                let custom_cjk = self.settings_workspace.read(cx).terminal_cjk_font_custom
-                    || cjk_font_is_custom(&settings.terminal.cjk_font_family);
                 let mut rows = vec![self.select_setting_row(
                     "settings_view.terminal.font_family",
                     "settings_view.terminal.font_family_hint",
@@ -583,33 +581,6 @@ impl WorkspaceApp {
                             SettingsInput::TerminalCustomFontFamily,
                             settings.terminal.custom_font_family.clone(),
                             "'Sarasa Fixed SC', 'Fira Code', monospace".to_string(),
-                            SETTINGS_TERMINAL_CUSTOM_FONT_INPUT_WIDTH,
-                            cx,
-                        ),
-                        cx,
-                    ));
-                }
-                rows.push(self.card_separator());
-                rows.push(self.select_setting_row(
-                    "settings_view.terminal.cjk_font_family",
-                    "settings_view.terminal.cjk_font_family_hint",
-                    SettingsSelect::TerminalCjkFontFamily,
-                    if custom_cjk {
-                        self.i18n.t("settings_view.terminal.cjk_font_custom")
-                    } else {
-                        terminal_cjk_font_label(&settings.terminal.cjk_font_family, &self.i18n)
-                    },
-                    self.tokens.metrics.settings_select_width,
-                    cx,
-                ));
-                if custom_cjk {
-                    rows.push(self.setting_row(
-                        "settings_view.terminal.custom_cjk_font",
-                        "settings_view.terminal.custom_cjk_font_hint",
-                        self.settings_text_input_control(
-                            SettingsInput::TerminalCjkFontFamily,
-                            settings.terminal.cjk_font_family.clone(),
-                            "PingFang SC".to_string(),
                             SETTINGS_TERMINAL_CUSTOM_FONT_INPUT_WIDTH,
                             cx,
                         ),

@@ -1781,7 +1781,6 @@ impl TerminalPane {
                 .set_trzsz_policy(preferences.trzsz_policy.clone());
         }
         let metrics_changed = self.preferences.font_family != preferences.font_family
-            || self.preferences.cjk_font_family != preferences.cjk_font_family
             || self.preferences.font_ligatures != preferences.font_ligatures
             || self.preferences.font_size.to_bits() != preferences.font_size.to_bits()
             || self.preferences.font_weight.to_bits() != preferences.font_weight.to_bits()

@@ -82,32 +82,11 @@ pub fn compact_decimal(value: f64) -> String {
 pub fn font_family_options() -> &'static [FontFamily] {
     &[
         FontFamily::Jetbrains,
-        FontFamily::Maple,
         FontFamily::Cascadia,
         FontFamily::Consolas,
         FontFamily::Menlo,
         FontFamily::Custom,
     ]
-}
-
-pub fn terminal_cjk_font_options() -> &'static [&'static str] {
-    &[
-        "",
-        oxideterm_settings::MAPLE_MONO_SUBSET_FAMILY,
-        "Sarasa Fixed SC",
-        "Noto Sans Mono CJK SC",
-        "Noto Sans Mono CJK TC",
-        "Noto Sans Mono CJK JP",
-        "Noto Sans Mono CJK KR",
-        "PingFang SC",
-        "Hiragino Sans GB",
-        "Microsoft YaHei UI",
-        "Malgun Gothic",
-    ]
-}
-
-pub fn cjk_font_is_custom(family: &str) -> bool {
-    !terminal_cjk_font_options().contains(&family.trim())
 }
 
 pub fn terminal_encoding_options() -> &'static [TerminalEncoding] {

@@ -5,16 +5,10 @@ use anyhow::Result;
 use gpui::{AssetSource, SharedString};
 
 // SVG has its own font database; only regular faces are needed for its bundled fallbacks.
-const SVG_FONTS: &[(&str, BundledTerminalFace)] = &[
-    (
-        "fonts/JetBrainsMono/JetBrainsMonoNerdFontMono-Subset-Regular.ttf",
-        BundledTerminalFace::JetBrainsRegular,
-    ),
-    (
-        "fonts/MapleMono/MapleMono-NF-CN-Subset-Regular.ttf",
-        BundledTerminalFace::MapleRegular,
-    ),
-];
+const SVG_FONTS: &[(&str, BundledTerminalFace)] = &[(
+    "fonts/JetBrainsMono/JetBrainsMonoNerdFontMono-Subset-Regular.ttf",
+    BundledTerminalFace::JetBrainsRegular,
+)];
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum LucideIcon {
@@ -643,18 +637,11 @@ mod tests {
     fn svg_font_assets_are_loadable_and_keep_latin_and_cjk_coverage() {
         let assets = NativeAssets;
         let paths = assets.list("fonts").unwrap();
-        let expected = [
-            (
-                "fonts/JetBrainsMono/JetBrainsMonoNerdFontMono-Subset-Regular.ttf",
-                oxideterm_settings::JETBRAINS_MONO_SUBSET_FAMILY,
-                'A',
-            ),
-            (
-                "fonts/MapleMono/MapleMono-NF-CN-Subset-Regular.ttf",
-                oxideterm_settings::MAPLE_MONO_SUBSET_FAMILY,
-                '中',
-            ),
-        ];
+        let expected = [(
+            "fonts/JetBrainsMono/JetBrainsMonoNerdFontMono-Subset-Regular.ttf",
+            oxideterm_settings::JETBRAINS_MONO_SUBSET_FAMILY,
+            'A',
+        )];
         assert_eq!(
             paths
                 .iter()

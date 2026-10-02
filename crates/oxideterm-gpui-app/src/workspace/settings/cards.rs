@@ -311,20 +311,12 @@ impl WorkspaceApp {
         let font_family = terminal
             .font_family
             .terminal_family_name(&terminal.custom_font_family);
-        // An empty CJK override reuses the primary family and lets the editor's
-        // platform fallback chain resolve the remaining scripts.
-        let configured_cjk_family = terminal.cjk_font_family.trim();
-        let font_fallback_family =
-            oxideterm_gpui_ui::css_font_family_head(if configured_cjk_family.is_empty() {
-                &font_family
-            } else {
-                configured_cjk_family
-            })
-            .map(|family| family.to_string());
+        // Without a dedicated CJK override the editor relies on the platform
+        // fallback chain to resolve the remaining scripts.
         SurfaceEditorTypography {
             font_family,
             font_weight: terminal.font_weight as f32,
-            font_fallback_family,
+            font_fallback_family: None,
             font_size: terminal.font_size as f32,
             line_height: terminal.line_height as f32,
         }

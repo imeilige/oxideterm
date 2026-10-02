@@ -70,7 +70,6 @@ pub(crate) const TERMINAL_COMMAND_MARKS_SHOW_HOVER_ACTIONS: bool = true;
 #[derive(Clone)]
 pub struct TerminalUiPreferences {
     pub font_family: String,
-    pub cjk_font_family: Option<String>,
     pub font_ligatures: bool,
     pub font_size: f32,
     pub font_weight: f32,
@@ -171,7 +170,6 @@ impl Default for TerminalUiPreferences {
     fn default() -> Self {
         Self {
             font_family: TERMINAL_FONT.to_string(),
-            cjk_font_family: None,
             font_ligatures: TERMINAL_FONT_LIGATURES,
             font_size: TERMINAL_FONT_SIZE,
             font_weight: TERMINAL_FONT_WEIGHT,
@@ -986,9 +984,8 @@ impl TerminalMetrics {
     ) -> Self {
         let font_size = px(preferences.font_size);
         let line_height = px(preferences.font_size * preferences.line_height);
-        let font = terminal_font_with_family_and_cjk(
+        let font = terminal_font_with_family(
             &preferences.font_family,
-            preferences.cjk_font_family.as_deref(),
             preferences.font_ligatures,
             preferences.font_weight,
         );
@@ -1048,9 +1045,8 @@ pub(crate) fn fallback_cell_width(window: &mut Window, font: &Font, font_size: P
         .width
 }
 
-pub(crate) fn terminal_font_with_family_and_cjk(
+pub(crate) fn terminal_font_with_family(
     family: &str,
-    cjk_family: Option<&str>,
     font_ligatures: bool,
     font_weight: f32,
 ) -> Font {
@@ -1069,19 +1065,6 @@ pub(crate) fn terminal_font_with_family_and_cjk(
         &mut fallback_families,
         oxideterm_settings::JETBRAINS_MONO_SUBSET_FAMILY,
     );
-    if let Some(cjk_family) = cjk_family {
-        push_font_fallback(&mut fallback_families, cjk_family);
-    }
-    if cjk_family.is_none_or(|family| {
-        family.trim().is_empty() || family.trim() == oxideterm_settings::MAPLE_MONO_SUBSET_FAMILY
-    }) {
-        // The large bundled CJK fallback is available only for Auto or an explicit Maple choice.
-        push_font_fallback(
-            &mut fallback_families,
-            oxideterm_settings::MAPLE_MONO_SUBSET_FAMILY,
-        );
-        push_font_fallback(&mut fallback_families, "Maple Mono NF CN");
-    }
     for fallback in [
         "JetBrainsMono Nerd Font",
         "JetBrains Mono NF (Subset)",
@@ -1157,12 +1140,7 @@ mod tests {
 
     #[test]
     fn custom_font_stack_uses_first_family_and_preserves_fallback_order() {
-        let font = terminal_font_with_family_and_cjk(
-            "\"Maple Mono\",\"Maple Mono NF CN\"",
-            None,
-            false,
-            400.0,
-        );
+        let font = terminal_font_with_family("\"Maple Mono\",\"Maple Mono NF CN\"", false, 400.0);
         let fallbacks = font.fallbacks.expect("terminal font fallbacks");
 
         assert_eq!(font.family.as_ref(), "Maple Mono");

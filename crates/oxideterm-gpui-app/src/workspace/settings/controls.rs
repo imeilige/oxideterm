@@ -344,58 +344,6 @@ impl WorkspaceApp {
                 }
                 Some(popup)
             }
-            (SettingsTab::Terminal, SettingsSelect::TerminalCjkFontFamily) => {
-                let mut popup = select_overlay_popup(&self.tokens, width);
-                let current_family = settings.terminal.cjk_font_family.trim();
-                let custom = self.settings_workspace.read(cx).terminal_cjk_font_custom
-                    || cjk_font_is_custom(current_family);
-                for &family in terminal_cjk_font_options() {
-                    popup = popup.child(select_option_action(
-                        select_option(
-                            &self.tokens,
-                            terminal_cjk_font_label(family, &self.i18n),
-                            !custom && family == current_family,
-                        ),
-                        false,
-                        false,
-                        cx.listener(move |this, _event, _window, cx| {
-                            this.close_settings_select();
-                            this.settings_workspace.update(cx, |state, _| {
-                                state.terminal_cjk_font_custom = false;
-                            });
-                            this.edit_settings(
-                                |settings| settings.terminal.cjk_font_family = family.to_string(),
-                                cx,
-                            );
-                            cx.stop_propagation();
-                        }),
-                    ));
-                }
-                popup = popup.child(select_option_action(
-                    select_option(
-                        &self.tokens,
-                        self.i18n.t("settings_view.terminal.cjk_font_custom"),
-                        custom,
-                    ),
-                    false,
-                    false,
-                    cx.listener(|this, _, window, cx| {
-                        this.settings_workspace.update(cx, |state, _| {
-                            state.terminal_cjk_font_custom = true;
-                        });
-                        let value = this
-                            .settings_store
-                            .settings()
-                            .terminal
-                            .cjk_font_family
-                            .clone();
-                        this.focus_settings_input(SettingsInput::TerminalCjkFontFamily, value, cx);
-                        window.focus(&this.focus_handle, cx);
-                        cx.stop_propagation();
-                    }),
-                ));
-                Some(popup)
-            }
             (SettingsTab::Terminal, SettingsSelect::TerminalEncoding) => {
                 let mut popup = select_overlay_popup(&self.tokens, width);
                 for &encoding in terminal_encoding_options() {

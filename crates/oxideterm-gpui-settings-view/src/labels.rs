@@ -54,22 +54,10 @@ pub fn ide_agent_label(mode: IdeAgentMode, i18n: &I18n) -> String {
 pub fn font_family_label(family: FontFamily) -> String {
     match family {
         FontFamily::Jetbrains => "JetBrains Mono NF (Subset) ✓".to_string(),
-        FontFamily::Maple => "Maple Mono NF CN (Subset) ✓".to_string(),
         FontFamily::Cascadia => "Cascadia Code".to_string(),
         FontFamily::Consolas => "Consolas".to_string(),
         FontFamily::Menlo => "Menlo".to_string(),
         FontFamily::Custom => "Custom...".to_string(),
-    }
-}
-
-pub fn terminal_cjk_font_label(family: &str, i18n: &I18n) -> String {
-    let family = family.trim();
-    if family.is_empty() {
-        i18n.t("settings_view.terminal.cjk_font_auto")
-    } else if family == oxideterm_settings::MAPLE_MONO_SUBSET_FAMILY {
-        "Maple Mono NF CN (Subset) ✓".to_string()
-    } else {
-        family.to_string()
     }
 }
 

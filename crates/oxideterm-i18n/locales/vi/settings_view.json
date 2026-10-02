@@ -101,9 +101,6 @@
       "keep_running_on_close_hint": "Sau khi đóng cửa sổ, OxideTerm sẽ tiếp tục chạy trong nền."
     },
     "terminal": {
-      "cjk_font_custom": "Tùy chỉnh…",
-      "custom_cjk_font": "Phông chữ CJK tùy chỉnh",
-      "custom_cjk_font_hint": "Nhập tên đầy đủ của phông chữ đã cài đặt. Để trống để tự động chọn phông chữ thay thế.",
       "input_keyboard": "Bàn phím và gợi ý nhập",
       "input_mouse_links": "Chuột và liên kết",
       "input_clipboard": "Sao chép và dán",
@@ -117,8 +114,6 @@
       "custom_font_stack": "Danh sách phông tùy chỉnh",
       "custom_font_stack_hint": "Nhập tên phông theo thứ tự ưu tiên, phân cách bằng dấu phẩy",
       "cjk_font_family": "Phông tiếng Trung / CJK",
-      "cjk_font_family_hint": "Phông dự phòng cho ký tự Trung, Nhật và Hàn. Auto tiếp tục dùng chuỗi dự phòng đi kèm và của hệ thống.",
-      "cjk_font_auto": "Auto · dự phòng thông minh",
       "font_preview": "Xem trước phông chữ",
       "font_size": "Cỡ chữ",
       "font_size_hint": "Kích thước ký tự terminal",

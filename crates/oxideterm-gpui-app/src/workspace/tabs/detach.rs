@@ -123,7 +123,7 @@ impl WorkspaceApp {
         window: &Window,
         titlebar_visible: bool,
         zen_mode: bool,
-        cx: &App,
+        _cx: &App,
     ) {
         if zen_mode {
             self.main_window_tabbar_drop_bounds = None;

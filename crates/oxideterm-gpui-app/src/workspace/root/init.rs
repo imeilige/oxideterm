@@ -731,8 +731,7 @@ impl WorkspaceApp {
             workspace.ensure_ai_chat_initialized(cx);
             workspace.bootstrap_ai_mcp_registry(cx);
         }
-        if workspace.version_migration.open {
-            }
+        if workspace.version_migration.open {}
         workspace.bootstrap_cloud_sync_controller(cx);
         workspace.sync_ssh_config_sync_service();
         workspace.restore_session_tree_snapshot();
@@ -770,16 +769,6 @@ impl WorkspaceApp {
         kind: &TabKind,
         cx: &mut Context<Self>,
     ) -> TerminalUiPreferences {
-        // The large CJK fallback is terminal-only, so keep an empty workspace
-        // lean and register it immediately before the first terminal is built.
-        let cjk_font_family = &self.settings_store.settings().terminal.cjk_font_family;
-        if let Err(error) =
-            bundled_fonts::load_terminal_cjk_fallback_regular(&cx.text_system(), cjk_font_family)
-        {
-            eprintln!(
-                "failed to load bundled CJK terminal fallback; falling back to system fonts: {error}"
-            );
-        }
         let mut preferences = self.terminal_preferences(cx);
         if *kind == TabKind::LocalTerminal {
             preferences.command_history = self.local_terminal_command_history.clone();
@@ -957,7 +946,6 @@ impl WorkspaceApp {
             font_family: terminal
                 .font_family
                 .terminal_family_name(&terminal.custom_font_family),
-            cjk_font_family: terminal_cjk_font_family_preference(&terminal.cjk_font_family),
             font_ligatures: terminal.font_ligatures,
             font_size: terminal.font_size as f32,
             font_weight: terminal.font_weight as f32,

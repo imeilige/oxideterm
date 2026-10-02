@@ -1,7 +1,6 @@
-use std::{env, fs, path::PathBuf};
+use std::env;
 
 fn main() {
-    compress_maple_fonts();
     println!("cargo:rerun-if-changed=resources/windows/app.rc");
     println!("cargo:rerun-if-changed=resources/icons/icon.ico");
 
@@ -15,22 +14,4 @@ fn main() {
     embed_resource::compile("resources/windows/app.rc", embed_resource::NONE)
         .manifest_optional()
         .expect("failed to embed OxideTerm Windows application resources");
-}
-
-fn compress_maple_fonts() {
-    let output = PathBuf::from(env::var_os("OUT_DIR").expect("Cargo must set OUT_DIR"));
-    // Only the regular face is registered at runtime, so compressing and
-    // embedding the bold and italic frames would spend 9.5 MiB of release DMG
-    // on faces no code path loads.
-    for style in ["Regular"] {
-        let name = format!("MapleMono-NF-CN-Subset-{style}.ttf");
-        let source = PathBuf::from("resources/fonts/MapleMono").join(&name);
-        println!("cargo:rerun-if-changed={}", source.display());
-        let bytes = fs::read(&source).expect("failed to read bundled MapleMono font");
-        // Keep each face independent so registering one style never expands the whole family.
-        let compressed =
-            zstd::bulk::compress(&bytes, 19).expect("failed to compress bundled MapleMono font");
-        fs::write(output.join(format!("{name}.zst")), compressed)
-            .expect("failed to write compressed MapleMono font");
-    }
 }

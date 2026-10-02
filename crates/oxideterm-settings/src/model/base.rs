@@ -18,8 +18,7 @@ pub const MAX_HIGHLIGHT_PATTERN_LENGTH: usize = 512;
 
 pub type ExtraFields = Map<String, Value>;
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[derive(Default)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize, Default)]
 pub enum Language {
     #[serde(rename = "zh-CN")]
     #[default]
@@ -45,7 +44,6 @@ pub enum Language {
     #[serde(rename = "zh-TW")]
     ZhTw,
 }
-
 
 impl Language {
     pub fn as_str(self) -> &'static str {
@@ -196,7 +194,6 @@ pub enum TerminalDeleteSequence {
 pub enum FontFamily {
     #[default]
     Jetbrains,
-    Maple,
     Cascadia,
     Consolas,
     Menlo,
@@ -204,7 +201,6 @@ pub enum FontFamily {
 }
 
 pub const JETBRAINS_MONO_SUBSET_FAMILY: &str = "JetBrainsMono NFM";
-pub const MAPLE_MONO_SUBSET_FAMILY: &str = "Maple Mono NF CN";
 
 impl FontFamily {
     pub fn terminal_family_name(self, custom: &str) -> String {
@@ -213,7 +209,6 @@ impl FontFamily {
         }
         match self {
             Self::Jetbrains => JETBRAINS_MONO_SUBSET_FAMILY.to_string(),
-            Self::Maple => MAPLE_MONO_SUBSET_FAMILY.to_string(),
             Self::Cascadia => "Cascadia Code".to_string(),
             Self::Consolas => "Consolas".to_string(),
             Self::Menlo => "Menlo".to_string(),

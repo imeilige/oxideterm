@@ -80,7 +80,7 @@ impl TerminalPane {
                 &self.theme.tokens,
                 self.preferences.font_family.clone(),
                 self.preferences.font_weight,
-                self.preferences.cjk_font_family.clone(),
+                None,
                 self.preferences.font_size,
                 self.preferences.line_height,
                 true,

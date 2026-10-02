@@ -59,22 +59,30 @@ impl WorkspaceApp {
             self.i18n.t("ai.input.placeholder")
         };
         let input = self.render_ai_multiline_input(
-            WorkspaceImeTarget::AiChatInput, placeholder, enabled, cx,
+            WorkspaceImeTarget::AiChatInput,
+            placeholder,
+            enabled,
+            cx,
         );
-        let send_disabled = !enabled || !model_selected || self.ai_entity.read(cx).chat_ui().draft.trim().is_empty();
-        let action_focused = self.ai_entity.read(cx).chat_ui().footer_focus == Some(AiChatFooterAction::Submit)
+        let send_disabled = !enabled
+            || !model_selected
+            || self.ai_entity.read(cx).chat_ui().draft.trim().is_empty();
+        let action_focused = self.ai_entity.read(cx).chat_ui().footer_focus
+            == Some(AiChatFooterAction::Submit)
             && (self.ai_entity.read(cx).chat_is_loading() || !send_disabled);
         let can_supplement = self.ai_entity.read(cx).can_supplement_agent();
         let loading = self.ai_entity.read(cx).chat_is_loading();
         let action = ai_send_button(
             &self.tokens,
-            self.i18n.t(if self.ai_entity.read(cx).active_user_question().is_some() {
-                "ai.questions.answer"
-            } else if loading {
-                "ai.queue.enqueue"
-            } else {
-                "ai.input.send_btn"
-            }),
+            self.i18n.t(
+                if self.ai_entity.read(cx).active_user_question().is_some() {
+                    "ai.questions.answer"
+                } else if loading {
+                    "ai.queue.enqueue"
+                } else {
+                    "ai.input.send_btn"
+                },
+            ),
             send_disabled,
             action_focused,
         );
@@ -99,7 +107,13 @@ impl WorkspaceApp {
                     SelectableTextRole::PlainDocument,
                     "ai-input-footer",
                     "thinking",
-                    self.i18n.t(if self.ai_entity.read(cx).active_user_question().is_some() { "ai.questions.waiting" } else { "ai.input.thinking" }),
+                    self.i18n.t(
+                        if self.ai_entity.read(cx).active_user_question().is_some() {
+                            "ai.questions.waiting"
+                        } else {
+                            "ai.input.thinking"
+                        },
+                    ),
                     self.tokens.ui.accent,
                     cx,
                 )))
@@ -118,10 +132,20 @@ impl WorkspaceApp {
             .gap(px(6.0))
             .when(loading, |row| {
                 row.child(self.agent_control(
-                    "ai-stop-running-group".into(), self.i18n.t("ai.input.stop"),
-                    ai_stop_button(&self.tokens, self.i18n.t("ai.input.stop"),
-                        Self::render_lucide_icon(LucideIcon::StopCircle, 12.0, rgb(self.tokens.ui.error)), false),
-                    |this, _, cx| this.cancel_ai_chat_stream(cx), cx,
+                    "ai-stop-running-group".into(),
+                    self.i18n.t("ai.input.stop"),
+                    ai_stop_button(
+                        &self.tokens,
+                        self.i18n.t("ai.input.stop"),
+                        Self::render_lucide_icon(
+                            LucideIcon::StopCircle,
+                            12.0,
+                            rgb(self.tokens.ui.error),
+                        ),
+                        false,
+                    ),
+                    |this, _, cx| this.cancel_ai_chat_stream(cx),
+                    cx,
                 ))
             })
             .when(loading && !send_disabled, |row| {
@@ -354,7 +378,7 @@ impl WorkspaceApp {
     pub(in crate::workspace) fn ai_editor_text_width(
         &self,
         target: WorkspaceImeTarget,
-        cx: &App,
+        _cx: &App,
     ) -> f32 {
         let sidebar_width = self.context_sidebar_width;
         let text_width = if target == WorkspaceImeTarget::AiMessageEdit {
@@ -571,32 +595,27 @@ impl WorkspaceApp {
                             }),
                     )
                     .when(supported, |row| {
-                        row.child(
-                            self.workspace_toolbar_action_button(
-                                self.i18n.t("ai.acp.authenticate"),
-                                None,
-                                ToolbarButtonOptions {
-                                    button: ButtonOptions {
-                                        variant: ButtonVariant::Secondary,
-                                        size: ButtonSize::Sm,
-                                        radius: ButtonRadius::Md,
-                                        disabled: false,
-                                    },
-                                    height: Some(28.0),
-                                    font_size: Some(self.tokens.metrics.ui_text_xs),
-                                    ..ToolbarButtonOptions::default()
+                        row.child(self.workspace_toolbar_action_button(
+                            self.i18n.t("ai.acp.authenticate"),
+                            None,
+                            ToolbarButtonOptions {
+                                button: ButtonOptions {
+                                    variant: ButtonVariant::Secondary,
+                                    size: ButtonSize::Sm,
+                                    radius: ButtonRadius::Md,
+                                    disabled: false,
                                 },
-                                cx.listener(move |this, _event, _window, cx| {
-                                    this.acp_entity.update(cx, |entity, _cx| {
-                                        entity.authenticate(
-                                            &target_conversation_id,
-                                            method_id.clone(),
-                                        );
-                                    });
-                                    cx.stop_propagation();
-                                }),
-                            ),
-                        )
+                                height: Some(28.0),
+                                font_size: Some(self.tokens.metrics.ui_text_xs),
+                                ..ToolbarButtonOptions::default()
+                            },
+                            cx.listener(move |this, _event, _window, cx| {
+                                this.acp_entity.update(cx, |entity, _cx| {
+                                    entity.authenticate(&target_conversation_id, method_id.clone());
+                                });
+                                cx.stop_propagation();
+                            }),
+                        ))
                     }),
             );
         }
@@ -894,7 +913,11 @@ impl WorkspaceApp {
         oxideterm_gpui_ui::confirm::confirm_dialog_with_focus_motion(
             &self.tokens,
             "ai-safety-confirm-motion",
-            self.ai_entity.read(cx).chat_ui().safety_confirm_presence.phase(),
+            self.ai_entity
+                .read(cx)
+                .chat_ui()
+                .safety_confirm_presence
+                .phase(),
             ConfirmDialogView {
                 variant: ConfirmDialogVariant::Danger,
                 title: div()
@@ -1040,18 +1063,20 @@ impl WorkspaceApp {
             },
             !acp_backend_active,
         )
-        .when(!acp_backend_active, |indicator| indicator.on_mouse_down(
-            MouseButton::Left,
-            cx.listener(|this, _event, _window, cx| {
-                let next_open = !this.ai_entity.read(cx).chat_ui().context_popover_open;
-                this.close_ai_sidebar_popovers(cx);
-                this.ai_entity.update(cx, |ai, _cx| {
-                    ai.set_chat_popover_open(AiChatPopover::Context, next_open);
-                });
-                cx.stop_propagation();
-                cx.notify();
-            }),
-        ));
+        .when(!acp_backend_active, |indicator| {
+            indicator.on_mouse_down(
+                MouseButton::Left,
+                cx.listener(|this, _event, _window, cx| {
+                    let next_open = !this.ai_entity.read(cx).chat_ui().context_popover_open;
+                    this.close_ai_sidebar_popovers(cx);
+                    this.ai_entity.update(cx, |ai, _cx| {
+                        ai.set_chat_popover_open(AiChatPopover::Context, next_open);
+                    });
+                    cx.stop_propagation();
+                    cx.notify();
+                }),
+            )
+        });
         if acp_backend_active {
             return indicator.into_any_element();
         }
@@ -1244,7 +1269,9 @@ impl WorkspaceApp {
                     )),
             )
             .when(
-                self.ai_entity.read(cx).conversation_state()
+                self.ai_entity
+                    .read(cx)
+                    .conversation_state()
                     .active_conversation()
                     .is_some_and(|conversation| conversation.messages.len() >= 4),
                 |popover| {
@@ -1261,51 +1288,51 @@ impl WorkspaceApp {
                                 .px(px(12.0))
                                 .py(px(8.0))
                                 .child(
-                                div()
-                                    .w_full()
-                                    .flex()
-                                    .items_center()
-                                    .justify_center()
-                                    .gap(px(6.0))
-                                    .rounded_none()
-                                    .px(px(12.0))
-                                    .py(px(6.0))
-                                    .text_size(px(11.0))
-                                    .font_weight(gpui::FontWeight::MEDIUM)
-                                    .text_color(rgb(self.tokens.ui.text))
-                                    .cursor_pointer()
-                                    .hover(|style| {
-                                        style.bg(rgba((self.tokens.ui.border << 8) | 0x33))
-                                    })
-                                    .child(Self::render_lucide_icon(
-                                        LucideIcon::Archive,
-                                        12.0,
-                                        rgb(self.tokens.ui.text),
-                                    ))
-                                    // Popover command label mirrors Tauri select-none button text.
-                                    .child(self.render_display_text_with_role(
-                                        SelectableTextRole::NonSelectable,
-                                        "ai-context-popover-action",
-                                        "compress",
-                                        self.i18n.t("ai.context.compress_dialog"),
-                                        self.tokens.ui.text,
-                                        cx,
-                                    ))
-                                    .on_mouse_down(
-                                        MouseButton::Left,
-                                        cx.listener(|this, _event, _window, cx| {
-                                            this.ai_entity.update(cx, |ai, _cx| {
-                                                ai.set_chat_popover_open(
-                                                    AiChatPopover::Context,
-                                                    false,
-                                                );
-                                            });
-                                            this.start_ai_compact_conversation(cx);
-                                            cx.stop_propagation();
-                                            cx.notify();
-                                        }),
-                                    ),
-                            ),
+                                    div()
+                                        .w_full()
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .gap(px(6.0))
+                                        .rounded_none()
+                                        .px(px(12.0))
+                                        .py(px(6.0))
+                                        .text_size(px(11.0))
+                                        .font_weight(gpui::FontWeight::MEDIUM)
+                                        .text_color(rgb(self.tokens.ui.text))
+                                        .cursor_pointer()
+                                        .hover(|style| {
+                                            style.bg(rgba((self.tokens.ui.border << 8) | 0x33))
+                                        })
+                                        .child(Self::render_lucide_icon(
+                                            LucideIcon::Archive,
+                                            12.0,
+                                            rgb(self.tokens.ui.text),
+                                        ))
+                                        // Popover command label mirrors Tauri select-none button text.
+                                        .child(self.render_display_text_with_role(
+                                            SelectableTextRole::NonSelectable,
+                                            "ai-context-popover-action",
+                                            "compress",
+                                            self.i18n.t("ai.context.compress_dialog"),
+                                            self.tokens.ui.text,
+                                            cx,
+                                        ))
+                                        .on_mouse_down(
+                                            MouseButton::Left,
+                                            cx.listener(|this, _event, _window, cx| {
+                                                this.ai_entity.update(cx, |ai, _cx| {
+                                                    ai.set_chat_popover_open(
+                                                        AiChatPopover::Context,
+                                                        false,
+                                                    );
+                                                });
+                                                this.start_ai_compact_conversation(cx);
+                                                cx.stop_propagation();
+                                                cx.notify();
+                                            }),
+                                        ),
+                                ),
                         )
                 },
             );
@@ -1364,7 +1391,9 @@ impl WorkspaceApp {
         let model = config
             .as_ref()
             .map(|config| config.model.clone())
-            .unwrap_or_else(|| active_model_selection(settings.ai.active_model.as_deref()).unwrap_or_default());
+            .unwrap_or_else(|| {
+                active_model_selection(settings.ai.active_model.as_deref()).unwrap_or_default()
+            });
         let max_tokens = config
             .as_ref()
             .map(|config| self.ai_active_model_context_window(config))
@@ -1376,7 +1405,11 @@ impl WorkspaceApp {
                 &ai.chat_ui().message_signature_cache,
             )
         };
-        let conversation = self.ai_entity.read(cx).conversation_state().active_conversation();
+        let conversation = self
+            .ai_entity
+            .read(cx)
+            .conversation_state()
+            .active_conversation();
         if let Some(prepared) = self
             .ai_entity
             .read(cx)
@@ -1398,8 +1431,7 @@ impl WorkspaceApp {
                     && conversation.is_some_and(|conversation| {
                         conversation.messages.last().is_some_and(|message| {
                             message.role == AiChatRole::User
-                                || (message.role == AiChatRole::Assistant
-                                    && message.is_streaming)
+                                || (message.role == AiChatRole::Assistant && message.is_streaming)
                         })
                     })
                     && prepared.provider_id == provider_id
@@ -1421,7 +1453,12 @@ impl WorkspaceApp {
             request_configuration_fingerprint,
         };
         {
-            let cache = self.ai_entity.read(cx).chat_ui().context_token_cache.borrow();
+            let cache = self
+                .ai_entity
+                .read(cx)
+                .chat_ui()
+                .context_token_cache
+                .borrow();
             if cache.key.as_ref() == Some(&cache_key)
                 && let Some(cached) = cache.breakdown_without_draft.as_ref()
             {
@@ -1505,7 +1542,12 @@ impl WorkspaceApp {
                 max_tokens,
             }
         };
-        let mut cache = self.ai_entity.read(cx).chat_ui().context_token_cache.borrow_mut();
+        let mut cache = self
+            .ai_entity
+            .read(cx)
+            .chat_ui()
+            .context_token_cache
+            .borrow_mut();
         cache.key = Some(cache_key);
         cache.breakdown_without_draft = Some(breakdown_without_draft.clone());
         breakdown_without_draft
@@ -1536,7 +1578,12 @@ impl WorkspaceApp {
         if settings.ai.skills.enabled {
             // Skill content hashes make catalog edits invalidate the prompt
             // without rebuilding the full catalog string on every repaint.
-            for skill in self.skill_registry.read().records().filter(|skill| skill.enabled) {
+            for skill in self
+                .skill_registry
+                .read()
+                .records()
+                .filter(|skill| skill.enabled)
+            {
                 ai_hash_text_shape(&skill.id, &mut hasher);
                 ai_hash_text_shape(&skill.content_hash, &mut hasher);
                 std::hash::Hash::hash(&skill.priority, &mut hasher);
@@ -1631,7 +1678,9 @@ impl WorkspaceApp {
                 oxideterm_gpui_ui::motion::MotionDuration::Micro,
             ));
         }
-        if self.ai_active_tab_has_split_panes(cx) && self.ai_entity.read(cx).chat_ui().include_context {
+        if self.ai_active_tab_has_split_panes(cx)
+            && self.ai_entity.read(cx).chat_ui().include_context
+        {
             chips = chips.child(oxideterm_gpui_ui::motion::fade_in(
                 &self.tokens,
                 "ai-split-context-enter",
@@ -1672,7 +1721,11 @@ impl WorkspaceApp {
                     self.i18n.t("ai.input.sftp_context"),
                     AiTone::Orange,
                     true,
-                    Self::render_lucide_icon(LucideIcon::FolderOpen, 12.0, rgb(self.tokens.ui.warning)),
+                    Self::render_lucide_icon(
+                        LucideIcon::FolderOpen,
+                        12.0,
+                        rgb(self.tokens.ui.warning),
+                    ),
                 ),
                 oxideterm_gpui_ui::motion::MotionDuration::Micro,
             ));
@@ -1752,7 +1805,11 @@ impl WorkspaceApp {
         items: &[AiAutocompleteCandidate],
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let active_index = self.ai_entity.read(cx).chat_ui().autocomplete_index
+        let active_index = self
+            .ai_entity
+            .read(cx)
+            .chat_ui()
+            .autocomplete_index
             .min(items.len().saturating_sub(1));
         let mut popup = ai_autocomplete_popup(&self.tokens, "ai-chat-autocomplete");
         for (index, item) in items.iter().enumerate() {
@@ -1822,11 +1879,7 @@ pub(in crate::workspace) fn ai_input_line_segments(
             Some(tokens.ui.text),
         )
     };
-    segments
-    .min_w_0()
-    .max_w_full()
-    .flex()
-    .items_center()
+    segments.min_w_0().max_w_full().flex().items_center()
 }
 
 pub(in crate::workspace) fn ai_input_local_marked_range(
@@ -2070,8 +2123,8 @@ pub(in crate::workspace) fn ai_conversation_token_fingerprint(
     for message in &conversation.messages {
         // Streaming already invalidates the changed row in this shared cache,
         // so long conversations are not rehashed during unrelated repaints.
-        let signature = signature_cache
-            .signature_for(&message.id, || ai_chat_message_base_signature(message));
+        let signature =
+            signature_cache.signature_for(&message.id, || ai_chat_message_base_signature(message));
         std::hash::Hash::hash(&signature, &mut hasher);
     }
     std::hash::Hasher::finish(&hasher)

@@ -319,8 +319,6 @@ pub struct TerminalSettings {
     pub theme: String,
     pub font_family: FontFamily,
     pub custom_font_family: String,
-    #[serde(default)]
-    pub cjk_font_family: String,
     pub font_size: i64,
     /// CSS-compatible weight requested for regular terminal text.
     #[serde(default = "default_terminal_font_weight")]
@@ -475,7 +473,6 @@ impl Default for TerminalSettings {
             theme: "default".to_string(),
             font_family: FontFamily::Jetbrains,
             custom_font_family: String::new(),
-            cjk_font_family: String::new(),
             font_size: 14,
             font_weight: DEFAULT_TERMINAL_FONT_WEIGHT,
             font_ligatures: false,
@@ -544,14 +541,15 @@ mod tests {
             value.as_object_mut().unwrap().remove(field);
         }
 
-        value["autosuggest"].as_object_mut().unwrap().remove("enabled");
+        value["autosuggest"]
+            .as_object_mut()
+            .unwrap()
+            .remove("enabled");
         let settings: TerminalSettings = serde_json::from_value(value).expect("terminal settings");
 
         assert!(settings.autosuggest.enabled);
-        let disabled: TerminalAutosuggestSettings = serde_json::from_str(
-            r#"{"enabled":false,"localShellHistory":true}"#,
-        )
-        .unwrap();
+        let disabled: TerminalAutosuggestSettings =
+            serde_json::from_str(r#"{"enabled":false,"localShellHistory":true}"#).unwrap();
         assert!(!disabled.enabled);
         assert_eq!(
             settings.backspace_sequence,
@@ -632,10 +630,7 @@ mod tests {
     #[test]
     fn terminal_semantic_scheme_defaults_and_serializes_stably() {
         let mut value = serde_json::to_value(TerminalSettings::default()).unwrap();
-        value
-            .as_object_mut()
-            .unwrap()
-            .remove("semanticScheme");
+        value.as_object_mut().unwrap().remove("semanticScheme");
 
         let legacy: TerminalSettings = serde_json::from_value(value).unwrap();
         assert_eq!(legacy.semantic_scheme, TerminalSemanticScheme::Balanced);
@@ -714,11 +709,9 @@ mod tests {
     #[test]
     fn command_bar_settings_restore_legacy_defaults() {
         let defaults: [(&str, bool, fn(&TerminalCommandBarSettings) -> bool); 2] = [
-            (
-                "currentDirectoryAwareness",
-                true,
-                |settings| settings.current_directory_awareness,
-            ),
+            ("currentDirectoryAwareness", true, |settings| {
+                settings.current_directory_awareness
+            }),
             ("projectTasks", true, |settings| settings.project_tasks),
         ];
 

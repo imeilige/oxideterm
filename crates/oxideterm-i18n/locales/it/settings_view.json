@@ -101,9 +101,6 @@
       "keep_running_on_close_hint": "Dopo la chiusura della finestra, OxideTerm continuerà a essere eseguito in background."
     },
     "terminal": {
-      "cjk_font_custom": "Personalizzato…",
-      "custom_cjk_font": "Carattere CJK personalizzato",
-      "custom_cjk_font_hint": "Inserisci il nome completo di un carattere installato. Lascia vuoto per usare la sostituzione automatica.",
       "input_keyboard": "Tastiera e suggerimenti di input",
       "input_mouse_links": "Mouse e collegamenti",
       "input_clipboard": "Copia e incolla",
@@ -117,8 +114,6 @@
       "custom_font_stack": "Elenco font personalizzato",
       "custom_font_stack_hint": "Inserisci i nomi dei font in ordine di priorità, separati da virgole",
       "cjk_font_family": "Font cinese / CJK",
-      "cjk_font_family_hint": "Font di fallback per glifi cinesi, giapponesi e coreani. Auto mantiene la catena di fallback inclusa e di sistema.",
-      "cjk_font_auto": "Auto · fallback intelligente",
       "font_preview": "Anteprima font",
       "font_size": "Dimensione Font",
       "font_size_hint": "Dimensione dei caratteri del terminale",

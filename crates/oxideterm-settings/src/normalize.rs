@@ -985,7 +985,6 @@ mod tests {
     fn supported_font_families_are_left_untouched() {
         for (raw, expected) in [
             ("jetbrains", FontFamily::Jetbrains),
-            ("maple", FontFamily::Maple),
             ("cascadia", FontFamily::Cascadia),
             ("consolas", FontFamily::Consolas),
             ("menlo", FontFamily::Menlo),

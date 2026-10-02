@@ -12,8 +12,8 @@ use oxideterm_gpui_ui::button::{
 use oxideterm_gpui_ui::modal::rounded_shell_child_radius;
 use oxideterm_gpui_ui::scroll::ScrollableElement;
 use oxideterm_gpui_ui::{
-    SegmentedControlOptions, StatusPillOptions, StatusTone, SurfaceKind, SurfaceOptions,
-    SurfacePadding, segmented_control, segmented_control_item, semantic_surface, status_pill,
+    SegmentedControlOptions, StatusPillOptions, StatusTone, segmented_control,
+    segmented_control_item, status_pill,
 };
 use oxideterm_settings::AnimationSpeed;
 

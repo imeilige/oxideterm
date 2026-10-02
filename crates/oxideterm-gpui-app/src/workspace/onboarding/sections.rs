@@ -6,7 +6,7 @@ use crate::workspace::settings::{
 use oxideterm_gpui_settings_view::{
     animation_label, animation_options, settings_appearance_radius_control,
 };
-use oxideterm_gpui_ui::{button::ButtonVariant, checkbox};
+use oxideterm_gpui_ui::checkbox;
 
 impl WorkspaceApp {
     pub(in crate::workspace) fn render_onboarding_welcome(

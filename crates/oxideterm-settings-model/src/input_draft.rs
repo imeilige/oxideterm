@@ -36,7 +36,6 @@ pub fn persisted_settings_input_value(
 ) -> Option<String> {
     let value = match input {
         SettingsInput::TerminalCustomFontFamily => settings.terminal.custom_font_family.clone(),
-        SettingsInput::TerminalCjkFontFamily => settings.terminal.cjk_font_family.clone(),
         SettingsInput::TerminalFontSize => settings.terminal.font_size.to_string(),
         SettingsInput::TerminalFontWeight => settings.terminal.font_weight.to_string(),
         SettingsInput::TerminalScrollback => settings.terminal.scrollback.to_string(),
@@ -277,10 +276,6 @@ pub fn apply_persisted_settings_input_draft(
     match input {
         SettingsInput::TerminalCustomFontFamily => {
             settings.terminal.custom_font_family = draft.trim().to_string();
-            SettingsInputDraftApply::Applied
-        }
-        SettingsInput::TerminalCjkFontFamily => {
-            settings.terminal.cjk_font_family = draft.trim().to_string();
             SettingsInputDraftApply::Applied
         }
         SettingsInput::TerminalFontSize => parse_i64(draft)
@@ -764,7 +759,7 @@ mod tests {
             (None, None, None)
         );
         let settings = oxideterm_settings::IdeSettings {
-            font_family: Some(oxideterm_settings::FontFamily::Maple),
+            font_family: Some(oxideterm_settings::FontFamily::Jetbrains),
             cjk_font_family: Some("PingFang SC".into()),
             font_weight: Some(600),
             ..Default::default()
@@ -779,15 +774,9 @@ mod tests {
         let mut settings = PersistedSettings::default();
         apply_persisted_settings_input_draft(
             &mut settings,
-            SettingsInput::TerminalCjkFontFamily,
-            "  Custom Terminal CJK  ",
-        );
-        apply_persisted_settings_input_draft(
-            &mut settings,
             SettingsInput::IdeCjkFontFamily,
             "  自定义编辑器字体  ",
         );
-        assert_eq!(settings.terminal.cjk_font_family, "Custom Terminal CJK");
         assert_eq!(
             settings.ide.cjk_font_family.as_deref(),
             Some("自定义编辑器字体")
@@ -798,7 +787,6 @@ mod tests {
         );
         apply_persisted_settings_input_draft(&mut settings, SettingsInput::IdeCjkFontFamily, " ");
         assert_eq!(settings.ide.cjk_font_family, Some(String::new()));
-        assert_eq!(settings.terminal.cjk_font_family, "Custom Terminal CJK");
     }
 
     #[test]
