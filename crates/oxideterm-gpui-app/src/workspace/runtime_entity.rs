@@ -978,7 +978,6 @@ impl WorkspaceRuntimeEntity {
         detail: String,
         cx: &mut Context<Self>,
     ) {
-        let detail = oxideterm_ai::sanitize_for_ai(&detail);
         if let Ok(event) = self.node_router.sync_node_readiness_event(
             node_id,
             NodeReadiness::Error,
@@ -1978,7 +1977,6 @@ impl WorkspaceRuntimeEntity {
             return;
         };
         // Trace details cross the runtime-to-UI boundary and must never preserve credentials.
-        event.detail = event.detail.as_deref().map(oxideterm_ai::sanitize_for_ai);
         self.push_runtime_effect(WorkspaceRuntimeEffect::ConnectionTrace(event), cx);
     }
 
@@ -2594,8 +2592,6 @@ impl WorkspaceRuntimeEntity {
                     return None;
                 }
                 self.complete_node_transport_attempt(&node_id, attempt_id);
-                // Worker errors cross a UI and notification boundary, so redact before queuing.
-                let error = oxideterm_ai::sanitize_for_ai(&error);
                 self.record_node_transport_start_failure(&node_id, error.clone(), cx);
                 let action = if self.reconnect_orchestrator.is_active(&node_id.0) {
                     let _ = self.reconnect_orchestrator.complete_phase(
@@ -2625,7 +2621,10 @@ impl WorkspaceRuntimeEntity {
                 };
                 Some(ReconnectRuntimeEffect::NodeConnectFailed {
                     node_id,
-                    error,
+                    // The effect drives a toast and the event log, so a worker
+                    // error carrying credentials must be redacted before it
+                    // becomes a typed effect.
+                    error: String::from(&*oxideterm_audit::redact(&error)),
                     action,
                 })
             }
@@ -2659,7 +2658,6 @@ impl WorkspaceRuntimeEntity {
             } => {
                 self.complete_reconnect_grace_probe(&node_id, &job_id);
                 self.reconnect_job_is_current(&node_id, &job_id).then(|| {
-                    let detail = oxideterm_ai::sanitize_for_ai(&detail);
                     let _ = self.reconnect_orchestrator.complete_phase(
                         &node_id.0,
                         PhaseResult::Failed,
@@ -2693,7 +2691,7 @@ impl WorkspaceRuntimeEntity {
                     let _ = self.reconnect_orchestrator.complete_phase(
                         &node_id.0,
                         PhaseResult::Ok,
-                        Some(oxideterm_ai::sanitize_for_ai(&detail)),
+                        Some(detail),
                     );
                     let _ = self
                         .reconnect_orchestrator
@@ -2830,7 +2828,6 @@ impl WorkspaceRuntimeEntity {
                 reason,
                 ..
             } => {
-                let reason = oxideterm_ai::sanitize_for_ai(&reason);
                 let node_id = NodeId::new(node_id);
                 let _ = self.node_router.sync_node_readiness_event(
                     &node_id,

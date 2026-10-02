@@ -527,8 +527,7 @@
         "sftp": "SFTP Transfer",
         "appearance": "Appearance",
         "connections": "Connections",
-        "ssh": "SSH Keys",
-        "ai": "OxideSens"
+        "ssh": "SSH Keys"
       },
       "terminal": {
         "title": "Terminal Settings",
@@ -590,65 +589,6 @@
         "encrypted": "Encrypted",
         "no_keys": "No keys found in default location."
       },
-      "ai": {
-        "title": "OxideSens",
-        "description": "Configure inline OxideSens with your own API.",
-        "enable": {
-          "title": "Enable AI Capabilities",
-          "shortcut_windows": "Press Ctrl+Shift+I in terminal to open AI panel",
-          "shortcut_mac": "Press Ctrl+I / Cmd+I in terminal to open AI panel"
-        },
-        "privacy": {
-          "title": "🔒 Privacy Notice",
-          "local_requests": "All AI requests are initiated from your local machine",
-          "no_server": "No intermediate server is used",
-          "context_only": "Only the selected context is sent to the API",
-          "keychain": "API key is stored securely in system keychain"
-        },
-        "config": {
-          "title": "API Configuration",
-          "description": "OpenAI-compatible endpoint settings.",
-          "base_url": "Base URL",
-          "base_url_placeholder": "https://api.openai.com/v1",
-          "base_url_hint": "Works with OpenAI, Ollama, OneAPI, or any compatible endpoint.",
-          "model": "Model",
-          "model_placeholder": "gpt-4o-mini",
-          "model_hint": "Model identifier (e.g., gpt-4o-mini, deepseek-chat, llama3.2).",
-          "api_key": "API Key",
-          "api_key_configured": "API key configured in keychain",
-          "api_key_remove_confirm": "Remove API key from keychain?",
-          "api_key_placeholder": "sk-...",
-          "api_key_hint": "Stored in system keychain, never saved to disk.",
-          "save": "Save",
-          "saving": "Saving..."
-        },
-        "context": {
-          "title": "Context Limits",
-          "description": "Control how much context is sent to the AI.",
-          "max_chars": "Max Characters",
-          "visible_lines": "Visible Lines",
-          "token_hint": "Token estimates are approximate (1 token ≈ 4 characters for English).",
-          "chars_2000": "2,000 chars (~500 tokens)",
-          "chars_4000": "4,000 chars (~1,000 tokens)",
-          "chars_8000": "8,000 chars (~2,000 tokens)",
-          "chars_16000": "16,000 chars (~4,000 tokens)",
-          "chars_32000": "32,000 chars (~8,000 tokens)",
-          "lines_50": "50 lines",
-          "lines_100": "100 lines",
-          "lines_120": "120 lines",
-          "lines_200": "200 lines"
-        },
-        "confirm": {
-          "title": "Enable AI Capabilities",
-          "intro": "Before enabling AI features, please confirm you understand:",
-          "point_local": "All AI requests are initiated <strong>from your local machine</strong>",
-          "point_no_server": "<strong>No intermediate server</strong> is used by OxideTerm",
-          "point_context": "Only <strong>selected context</strong> is sent to your configured API",
-          "point_responsibility": "You are responsible for your API provider's data policies",
-          "cancel": "Cancel",
-          "confirm": "I Understand, Enable AI"
-        }
-      },
       "sftp": {
         "title": "SFTP Transfer Settings",
         "description": "Configure file transfer behavior and performance.",
@@ -676,9 +616,7 @@
         "create_group_failed": "Failed to create group: {{error}}",
         "delete_group_failed": "Failed to delete group: {{error}}",
         "import_host_success": "Successfully imported \"{{name}}\" as a saved connection!",
-        "import_host_failed": "Failed to import host: {{error}}",
-        "save_api_key_failed": "Failed to save API key: {{error}}",
-        "remove_api_key_failed": "Failed to remove API key: {{error}}"
+        "import_host_failed": "Failed to import host: {{error}}"
       }
     },
     "upstream_proxy": {

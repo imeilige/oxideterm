@@ -9,7 +9,7 @@ use gpui::{Context, EventEmitter, KeyDownEvent, Task, Timer};
 use oxideterm_gpui_settings_view::{SettingsInput, SettingsKeybindingScopeFilter};
 use oxideterm_gpui_ui::confirm::ConfirmDialogAction;
 use oxideterm_settings_model::{
-    AiSettingsPage, SettingsNavigationLayout, SettingsTab, TerminalSettingsPage,
+    SettingsNavigationLayout, SettingsTab, TerminalSettingsPage,
     ThemeEditorSection, ThemeEditorState, app_ui_colors_to_colors, editor_terminal_theme,
     terminal_theme_to_colors,
 };
@@ -201,8 +201,6 @@ pub(in crate::workspace) struct SettingsRouteSnapshot {
     pub(in crate::workspace) active_tab: SettingsTab,
     pub(in crate::workspace) terminal_page: TerminalSettingsPage,
     pub(in crate::workspace) previous_terminal_page: TerminalSettingsPage,
-    pub(in crate::workspace) ai_page: AiSettingsPage,
-    pub(in crate::workspace) previous_ai_page: AiSettingsPage,
 }
 
 /// Keeps settings route history and its navigation editor draft under one writer.
@@ -210,8 +208,6 @@ struct SettingsRouteState {
     active_tab: SettingsTab,
     terminal_page: TerminalSettingsPage,
     previous_terminal_page: TerminalSettingsPage,
-    ai_page: AiSettingsPage,
-    previous_ai_page: AiSettingsPage,
     navigation_draft: Option<Arc<SettingsNavigationLayout>>,
 }
 
@@ -221,8 +217,6 @@ impl Default for SettingsRouteState {
             active_tab: SettingsTab::General,
             terminal_page: TerminalSettingsPage::Display,
             previous_terminal_page: TerminalSettingsPage::Display,
-            ai_page: AiSettingsPage::General,
-            previous_ai_page: AiSettingsPage::General,
             navigation_draft: None,
         }
     }
@@ -412,8 +406,6 @@ impl SettingsWorkspaceEntity {
             active_tab: self.route.active_tab,
             terminal_page: self.route.terminal_page,
             previous_terminal_page: self.route.previous_terminal_page,
-            ai_page: self.route.ai_page,
-            previous_ai_page: self.route.previous_ai_page,
         }
     }
 
@@ -444,19 +436,6 @@ impl SettingsWorkspaceEntity {
         true
     }
 
-    pub(in crate::workspace) fn set_ai_page(
-        &mut self,
-        page: AiSettingsPage,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        if self.route.ai_page == page {
-            return false;
-        }
-        self.route.previous_ai_page = self.route.ai_page;
-        self.route.ai_page = page;
-        cx.notify();
-        true
-    }
 
     pub(in crate::workspace) fn open_navigation_editor(
         &mut self,

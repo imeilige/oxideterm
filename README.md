@@ -5,7 +5,7 @@
 <h1 align="center">⚡ OxideTerm</h1>
 
 <p align="center">
-  <strong>AI-Powered SSH Client and Remote Operations Workspace</strong>
+  <strong>SSH Client and Remote Operations Workspace</strong>
   <br>
   SSH, Mosh, Telnet, Serial, RDP/VNC, SFTP, port forwarding, and lightweight editing in one native workspace.
   <br>
@@ -40,10 +40,9 @@ OxideTerm is an open-source, local-first workspace for connecting to servers and
 
 - Manage SSH, Mosh, Telnet, Serial, RDP/VNC, SFTP, port forwards, local shells, and lightweight editing in one native workspace
 - Keep remote work alive through network hiccups with Grace Period reconnect
-- Ask OxideSens AI to inspect live sessions and perform approved workspace actions through your own AI provider
-- Load bounded Agent Skills and use the advanced terminal command sender for scheduled, repeatable, multi-target input
+- Use the advanced terminal command sender for scheduled, repeatable, multi-target input
 
-Your connections and operational data stay under your control. OxideTerm requires no account, uses your own AI provider when OxideSens is enabled, and keeps the desktop experience free of Electron and bundled browser runtimes.
+Your connections and operational data stay under your control. OxideTerm requires no account and keeps the desktop experience free of Electron and bundled browser runtimes.
 
 ---
 
@@ -51,10 +50,9 @@ Your connections and operational data stay under your control. OxideTerm require
 
 | If you care about... | OxideTerm gives you... |
 |---|---|
-| One remote node, many tools | Terminal, SFTP, port forwarding, RDP/VNC, trzsz, native IDE, monitoring, and OxideSens AI stay attached to the same workspace |
+| One remote node, many tools | Terminal, SFTP, port forwarding, RDP/VNC, trzsz, native IDE, and monitoring stay attached to the same workspace |
 | A desktop app without Electron or a bundled WebView | GPUI draws the interface directly on a GPU surface, without shipping a browser runtime |
 | Local-first operations workflows | SSH, Telnet, SFTP, forwarding, RDP/VNC, local shell, serial terminals, and config work without signup |
-| BYOK OxideSens AI instead of platform credits | OxideSens uses your OpenAI/Anthropic/Gemini/Ollama/OpenAI-compatible endpoint with MCP, RAG, provider-aware reasoning controls, and approved workspace actions |
 | Reconnect stability | Grace Period probes the old connection for 30s before replacing it, so TUI apps can survive short network drops |
 | Pure-Rust SSH and credential safety | The SSH stack uses `russh` + `ring` without OpenSSL/libssh2; stored credentials use the OS keychain, and `.oxide` bundles use ChaCha20-Poly1305 + Argon2id |
 
@@ -81,7 +79,7 @@ The screenshots below show the OxideTerm workspace across terminal, file, editin
 
 <table>
 <tr>
-<td align="center"><strong>SSH Terminal + OxideSens AI</strong><br/><br/><img src="docs/screenshots/terminal/SSHTERMINAL.png" alt="SSH Terminal with OxideSens AI" /></td>
+<td align="center"><strong>SSH Terminal</strong><br/><br/><img src="docs/screenshots/terminal/SSHTERMINAL.png" alt="SSH Terminal" /></td>
 <td align="center"><strong>SFTP File Manager</strong><br/><br/><img src="docs/screenshots/sftp/sftp.png" alt="SFTP dual-pane file manager with transfer queue" /></td>
 </tr>
 <tr>
@@ -94,14 +92,13 @@ The screenshots below show the OxideTerm workspace across terminal, file, editin
 
 ## Built for Remote Operations
 
-OxideTerm keeps terminal rendering, connection state, reconnect orchestration, files, forwarding, automation, and AI context inside one Rust application. The result is a workspace in which tools share the same server identity and session lifecycle instead of behaving like disconnected utilities.
+OxideTerm keeps terminal rendering, connection state, reconnect orchestration, files, forwarding, and automation inside one Rust application. The result is a workspace in which tools share the same server identity and session lifecycle instead of behaving like disconnected utilities.
 
 | Aspect | Bundled browser approach | OxideTerm |
 |---|---|---|
 | **Rendering** | Browser engine and web layout | GPUI on a GPU surface |
 | **Terminal data flow** | WebSocket → JS event loop → xterm.js | Rust input → `TerminalState` mutation → GPUI render |
 | **Connection lifecycle** | Split across frontend and backend layers | One in-process connection and reconnect pipeline |
-| **AI context** | Copied through an application bridge | Built from the active workspace with user approval |
 | **Plugin runtime** | Browser scripting environment | Manifest-only, capability-scoped WASM, and trusted process runtimes |
 | **CLI** | Requires the desktop app running | Standalone binary, direct crate linkage |
 | **Runtime boundary** | Desktop wrapper plus browser runtime | Native process with no bundled browser runtime |
@@ -116,20 +113,8 @@ OxideTerm keeps terminal rendering, connection state, reconnect orchestration, f
 | **Files & Remote Editing** | SFTP browsing, transfer queues, speed limits, progress and ETA, bookmarks, safe writes, local file management, remote project trees, multi-tab editing, conflict handling, and workspace restore |
 | **Forwarding & Networking** | Local, remote, and dynamic SOCKS5 forwarding, saved rules, reconnect-aware restore, remote port detection, connection topology, and ad-hoc socket debugging |
 | **Host Operations & Remote Desktop** | Host monitoring, processes, services, logs, ports, tasks, disks, packages, containers, tmux, built-in RDP and VNC, clipboard, input, reconnect, and viewport-aware sizing |
-| **OxideSens & Automation** | BYOK providers, MCP, local RAG, Agent Skills, approved workspace actions, command policy, chat history, portable `.oxide` bundles, and a standalone CLI for automation and diagnostics |
+| **Automation** | Command policy, Quick Commands, portable `.oxide` bundles, and a standalone CLI for automation and diagnostics |
 | **Extensions & Personalization** | Manifest-only, capability-scoped WASM, and process plugins, custom tabs and settings, Quick Commands, themes, background images, configurable shortcuts, and 2 interface languages (Chinese and English) |
-
----
-
-<div align="center">
-
-<a href="docs/media/ai-terminal-demo.mp4">
-  <img src="docs/media/ai-terminal-demo.gif" alt="OxideSens opening a terminal inside OxideTerm" width="920">
-</a>
-
-*Watch OxideSens follow a user request and open a terminal inside OxideTerm.*
-
-</div>
 
 ---
 
@@ -148,10 +133,10 @@ Need to build from source? Continue to [Run From Source](#run-from-source).
 
 ## Under the Hood
 
-OxideTerm keeps terminal, SSH, Telnet, RDP, VNC, SFTP, forwarding, editing, AI, plugins, and CLI in one Rust architecture. The implementation notes below are for readers who want the engineering details.
+OxideTerm keeps terminal, SSH, Telnet, RDP, VNC, SFTP, forwarding, editing, plugins, and CLI in one Rust architecture. The implementation notes below are for readers who want the engineering details.
 
 <details>
-<summary><strong>Architecture, SSH internals, GPUI shell, reconnect, AI, plugins, and more</strong></summary>
+<summary><strong>Architecture, SSH internals, GPUI shell, reconnect, plugins, and more</strong></summary>
 <br>
 
 ### Architecture — In-Process Core, No WebView Bridge
@@ -169,7 +154,7 @@ GPUI and the terminal/SSH backend share one Rust process; optional remote agents
 │  NodeRouter → SshConnectionRegistry             │
 │  TerminalState ← SSH PTY channel (russh)        │
 │  SftpSession · ForwardingRuntime · IdeWorkspace │
-│  Ai/ACP Entities · Plugin Runtimes · Portable   │
+│  Plugin Runtimes · Portable Runtime             │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -208,17 +193,7 @@ Pipeline: `queued → snapshot → grace-period → ssh-connect → await-termin
 - **NodeRuntimeStore**: in-process node runtime and serializable topology snapshot; `WorkspaceApp` helpers persist the snapshot to `session_tree.json`, while live handles are rebuilt on startup
 - **Cascade propagation**: jump host failure → downstream nodes automatically marked `link_down`
 
-`ConnectionRegistry` owns physical connections, health state, consumers, and idle cleanup. `WorkspaceRuntimeEntity` schedules probes and reconnect jobs. AI and plugins use capability handles, host snapshots, or terminal hooks rather than registering as physical connection consumers.
-
-### 🤖 OxideSens AI
-
-OxideSens is BYOK-first, with context building performed in-process:
-
-- **Providers**: OpenAI, Anthropic (Claude), Google Gemini, Ollama/any OpenAI-compatible endpoint
-- **MCP**: stdio + SSE transports, full tool discovery and invocation
-- **RAG**: BM25 full-text + HNSW vector index, Reciprocal Rank Fusion, CJK bigram tokenizer
-- **Context boundary**: provider-bound messages pass through credential-pattern redaction, while the user controls which workspace context and actions are approved
-- **API keys**: stored in the OS keychain and deliberately excluded from structured logs and desktop-core message payloads
+`ConnectionRegistry` owns physical connections, health state, consumers, and idle cleanup. `WorkspaceRuntimeEntity` schedules probes and reconnect jobs. Plugins use capability handles, host snapshots, or terminal hooks rather than registering as physical connection consumers.
 
 ### 🎨 GPUI Desktop Shell
 
@@ -339,8 +314,6 @@ cargo run -p oxideterm-cli -- --config-dir ./fixture-config doctor --strict
 | **Editor** | tree-sitter (syntax), custom buffer | Multi-language, SFTP-backed |
 | **Encryption** | ChaCha20-Poly1305 + Argon2id | AEAD + memory-hard KDF (256 MB) |
 | **Plugin runtime** | Wasmtime/WASI, sidecar WASM, and process paths | Controlled WASM host calls; process plugins are local and not OS-sandboxed |
-| **AI streaming** | SSE (OpenAI/Anthropic/Gemini) | In-process, no IPC boundary |
-| **RAG** | BM25 + HNSW vector index | CJK bigram tokenizer, RRF fusion |
 | **i18n** | oxideterm-i18n (custom) | Built-in loader, 2 shipped locales (Chinese and English) |
 
 ---
@@ -352,7 +325,6 @@ cargo run -p oxideterm-cli -- --config-dir ./fixture-config doctor --strict
 | **Stored credentials** | OS keychain (macOS Keychain / Windows Credential Manager / libsecret) |
 | **Secret memory** | Secret-bearing Rust types and temporary buffers use `zeroize` / `Zeroizing` at supported ownership boundaries |
 | **Diagnostics** | Support output favors structured metadata and redacted hints over secret-bearing payloads |
-| **AI context** | Provider-bound messages pass through credential-pattern redaction; workspace context and actions remain user-controlled |
 | **`.oxide` export** | ChaCha20-Poly1305 + Argon2id (256 MB memory, 4 iterations) |
 | **CLI writes** | Dry-run plans, `--yes` guards, rollback backups for state-changing commands |
 | **Host keys** | TOFU with `~/.ssh/known_hosts`, rejects unexpected changes |

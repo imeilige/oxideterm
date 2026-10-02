@@ -31,7 +31,6 @@ pub const ALL_OXIDE_SETTINGS_SECTIONS: &[&str] = &[
     "connections",
     "network",
     "fileAndEditor",
-    "ai",
     "localTerminal",
     "nativePreferences",
 ];
@@ -92,32 +91,6 @@ const NETWORK_KEYS: &[&str] = &[
     "upstreamProxy",
     "upstreamProxyDisclaimerAccepted",
     "applicationProxyMode",
-];
-const AI_KEYS: &[&str] = &[
-    "enabled",
-    "enabledConfirmed",
-    "baseUrl",
-    "model",
-    "providers",
-    "activeProviderId",
-    "activeModel",
-    "activeBackend",
-    "activeAcpAgentId",
-    "thinkingStyle",
-    "reasoningEffort",
-    "reasoningProviderOverrides",
-    "reasoningModelOverrides",
-    "thinkingDefaultExpanded",
-    "modelContextWindows",
-    "userContextWindows",
-    "customSystemPrompt",
-    "memory",
-    "toolUse",
-    "contextSources",
-    "mcpServers",
-    "acpAgents",
-    "embeddingConfig",
-    "agentRoles",
 ];
 const SFTP_KEYS: &[&str] = &[
     "presentation",
@@ -293,7 +266,6 @@ fn copy_section(
             copy_object_keys(source, target, &["connectionPool"], CONNECTION_POOL_KEYS);
         }
         "network" => copy_object_keys(source, target, &["network"], NETWORK_KEYS),
-        "ai" => copy_object_keys(source, target, &["ai"], AI_KEYS),
         "fileAndEditor" => {
             copy_sftp_keys(source, target);
             copy_object_keys(source, target, &["ide"], IDE_KEYS);
@@ -433,17 +405,17 @@ mod tests {
         let snapshot = json!({
             "format": OXIDE_SETTINGS_FORMAT,
             "version": OXIDE_SETTINGS_VERSION,
-            "sectionIds": ["general", "terminalAppearance", "terminalBehavior", "ai"],
+            "sectionIds": ["general", "terminalAppearance", "terminalBehavior", "localTerminal"],
             "settings": {
                 "general": { "language": "en" },
                 "terminal": {
                     "fontSize": 18,
                     "highlightTabOnNewOutput": false
                 },
-                "ai": { "enabled": true, "enabledConfirmed": true }
+                "localTerminal": { "defaultCwd": "/tmp" }
             }
         });
-        let selected = ["general", "terminalBehavior", "ai"]
+        let selected = ["general", "terminalBehavior", "localTerminal"]
             .into_iter()
             .map(str::to_string)
             .collect::<HashSet<_>>();
@@ -455,56 +427,19 @@ mod tests {
         assert_eq!(merged.general.language, Language::En);
         assert_eq!(merged.terminal.font_size, current.terminal.font_size);
         assert!(!merged.terminal.highlight_tab_on_new_output);
-        assert!(merged.ai.enabled);
-    }
-
-    #[test]
-    fn retired_ai_size_controls_are_ignored_without_losing_sources_or_model_windows() {
-        let mut source = PersistedSettings::default().to_value();
-        source["ai"]["contextMaxChars"] = json!(8000);
-        source["ai"]["contextVisibleLines"] = json!(50);
-        source["ai"]["modelMaxResponseTokens"] = json!({"provider":{"model":256}});
-        source["ai"]["contextSources"] = json!({"ide":false,"sftp":true});
-        source["ai"]["userContextWindows"] = json!({"provider":{"model":128000}});
-        let loaded: PersistedSettings = serde_json::from_value(source).unwrap();
-        let exported = export_oxide_settings_snapshot_json(
-            &loaded,
-            Some(&HashSet::from(["ai".into()])),
-            false,
-        )
-        .unwrap();
-        let restored =
-            merge_oxide_settings_snapshot(&PersistedSettings::default(), &exported, None).unwrap();
-        let ai = &restored.to_value()["ai"];
-        for retired in [
-            "contextMaxChars",
-            "contextVisibleLines",
-            "modelMaxResponseTokens",
-        ] {
-            assert_eq!(ai.get(retired), None);
-        }
-        assert_eq!(ai["contextSources"], json!({"ide":false,"sftp":true}));
-        assert_eq!(
-            ai["userContextWindows"],
-            json!({"provider":{"model":128000}})
-        );
+        assert_eq!(merged.local_terminal.default_cwd.as_deref(), Some("/tmp"));
     }
 
     #[test]
     fn export_selected_extended_sections() {
         let mut settings = PersistedSettings::default();
-        settings.ai.enabled = true;
-        settings.ai.providers = vec![
-            json!({"id":"responses-provider","type":"openai_compatible","apiProtocol":"responses","baseUrl":"https://example.test/v1","models":["model"]}),
-            json!({"id":"grok-provider","type":"xai","apiProtocol":"responses","baseUrl":"https://api.x.ai/v1","models":["grok-4.6"]}),
-        ];
         settings.settings_navigation.groups = vec![vec!["terminal".to_string()]];
         settings.local_terminal.default_cwd = Some("/tmp".to_string());
         settings
             .local_terminal
             .custom_env_vars
             .insert("FOO".to_string(), Value::String("bar".to_string()));
-        let selected = ["ai", "localTerminal", "nativePreferences"]
+        let selected = ["localTerminal", "nativePreferences"]
             .into_iter()
             .map(str::to_string)
             .collect::<HashSet<_>>();
@@ -512,19 +447,6 @@ mod tests {
         let exported =
             export_oxide_settings_snapshot_json(&settings, Some(&selected), false).expect("export");
         let parsed: Value = serde_json::from_str(&exported).expect("json");
-        let restored = merge_oxide_settings_snapshot(
-            &PersistedSettings::default(),
-            &exported,
-            Some(&selected),
-        )
-        .unwrap();
-        assert_eq!(
-            restored.ai.providers,
-            vec![
-                json!({"id":"responses-provider","type":"openai_compatible","apiProtocol":"responses","baseUrl":"https://example.test/v1","models":["model"]}),
-                json!({"id":"grok-provider","type":"xai","apiProtocol":"responses","baseUrl":"https://api.x.ai/v1","models":["grok-4.6"]})
-            ]
-        );
         let section_ids = parsed["sectionIds"]
             .as_array()
             .expect("section ids")
@@ -532,13 +454,7 @@ mod tests {
             .filter_map(Value::as_str)
             .collect::<Vec<_>>();
 
-        assert_eq!(
-            section_ids,
-            vec!["ai", "localTerminal", "nativePreferences"]
-        );
-        assert!(parsed["settings"].get("ai").is_some());
-        assert!(parsed["settings"]["ai"].get("acpAgents").is_some());
-        assert!(parsed["settings"]["ai"].get("activeBackend").is_some());
+        assert_eq!(section_ids, vec!["localTerminal", "nativePreferences"]);
         assert_eq!(
             parsed["settings"]["localTerminal"]["defaultCwd"].as_str(),
             Some("/tmp")

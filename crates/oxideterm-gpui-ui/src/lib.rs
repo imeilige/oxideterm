@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 pub mod action_row;
-pub mod ai;
 pub mod badge;
 pub mod button;
 pub mod checkbox;

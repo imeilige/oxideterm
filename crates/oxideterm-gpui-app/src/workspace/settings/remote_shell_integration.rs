@@ -902,7 +902,7 @@ impl WorkspaceApp {
             }
         };
         // Runtime errors intentionally collapse to a localized category at the UI boundary.
-        self.push_ai_settings_toast(self.i18n.t(message_key), variant, cx);
+        self.push_settings_toast(self.i18n.t(message_key), variant, cx);
     }
 }
 

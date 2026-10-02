@@ -36,21 +36,21 @@ impl WorkspaceApp {
                 for result in results {
                     match result {
                         DataDirectoryOperationResult::Changed => {
-                            self.push_ai_settings_toast(
+                            self.push_settings_toast(
                                 self.i18n.t("settings_view.general.data_directory_changed"),
                                 TerminalNoticeVariant::Success,
                                 cx,
                             );
                         }
                         DataDirectoryOperationResult::Reset => {
-                            self.push_ai_settings_toast(
+                            self.push_settings_toast(
                                 self.i18n.t("settings_view.general.data_directory_reset"),
                                 TerminalNoticeVariant::Success,
                                 cx,
                             );
                         }
                         DataDirectoryOperationResult::Failed(error) => {
-                            self.push_ai_settings_toast(error, TerminalNoticeVariant::Error, cx);
+                            self.push_settings_toast(error, TerminalNoticeVariant::Error, cx);
                         }
                     }
                 }
@@ -146,14 +146,14 @@ impl WorkspaceApp {
                 for result in results {
                     match result {
                         KeybindingFileOperationResult::Exported => {
-                            self.push_ai_settings_toast(
+                            self.push_settings_toast(
                                 self.i18n.t("settings_view.keybindings.export_success"),
                                 TerminalNoticeVariant::Success,
                                 cx,
                             );
                         }
                         KeybindingFileOperationResult::ExportFailed => {
-                            self.push_ai_settings_toast(
+                            self.push_settings_toast(
                                 self.i18n.t("settings_view.keybindings.export_error"),
                                 TerminalNoticeVariant::Error,
                                 cx,
@@ -194,14 +194,14 @@ impl WorkspaceApp {
                                 cx,
                             );
                             Self::apply_runtime_key_bindings(runtime_bindings, cx);
-                            self.push_ai_settings_toast(
+                            self.push_settings_toast(
                                 self.i18n.t("settings_view.keybindings.import_success"),
                                 TerminalNoticeVariant::Success,
                                 cx,
                             );
                         }
                         KeybindingFileOperationResult::ImportFailed => {
-                            self.push_ai_settings_toast(
+                            self.push_settings_toast(
                                 self.i18n.t("settings_view.keybindings.import_invalid"),
                                 TerminalNoticeVariant::Error,
                                 cx,

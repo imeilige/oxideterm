@@ -40,9 +40,8 @@ OxideTerm est un espace de travail open source pour SSH et les opérations dista
 
 - Gérer SSH, Mosh, Telnet, série, RDP/VNC, SFTP, redirections de ports, shells locaux et édition légère dans un seul espace de travail
 - Maintenir le travail distant pendant de brèves coupures réseau grâce à la reconnexion Grace Period
-- Demander à OxideSens d’examiner les sessions actives et d’exécuter des actions approuvées avec votre propre fournisseur d’IA
 
-Vos connexions et données opérationnelles restent sous votre contrôle. OxideSens utilise votre propre fournisseur d’IA et aucun compte n’est requis.
+Vos connexions et données opérationnelles restent sous votre contrôle et aucun compte n’est requis.
 
 ---
 
@@ -50,10 +49,9 @@ Vos connexions et données opérationnelles restent sous votre contrôle. OxideS
 
 | Si vous recherchez… | OxideTerm vous apporte… |
 |---|---|
-| Un nœud distant, de nombreux outils | Terminal, SFTP, redirection de ports, RDP/VNC, trzsz, IDE natif, supervision et OxideSens AI restent attachés au même espace de travail |
+| Un nœud distant, de nombreux outils | Terminal, SFTP, redirection de ports, RDP/VNC, trzsz, IDE natif, supervision restent attachés au même espace de travail |
 | Une application de bureau sans Electron ni WebView embarquée | GPUI dessine l’interface directement sur une surface GPU, sans livrer de runtime de navigateur |
 | Des flux d’exploitation local-first | SSH, Telnet, SFTP, redirection, RDP/VNC, shell local, terminaux série et configuration fonctionnent sans inscription |
-| OxideSens AI avec vos propres clés plutôt que des crédits de plateforme | OxideSens utilise votre point de terminaison OpenAI, Anthropic, Gemini, Ollama ou compatible OpenAI, avec MCP, RAG, contrôles de raisonnement adaptés au fournisseur et actions approuvées |
 | La stabilité de reconnexion | Grace Period sonde l’ancienne connexion pendant 30 s avant son remplacement, afin que les applications TUI survivent aux brèves coupures réseau |
 | SSH Rust pur et sécurité des identifiants | La pile SSH utilise `russh` + `ring` sans OpenSSL/libssh2 ; les identifiants enregistrés utilisent le trousseau système et les paquets `.oxide` utilisent ChaCha20-Poly1305 + Argon2id |
 
@@ -80,7 +78,7 @@ Les captures ci-dessous présentent les parcours terminal, fichiers, édition et
 
 <table>
 <tr>
-<td align="center"><strong>Terminal SSH + OxideSens AI</strong><br/><br/><img src="../../docs/screenshots/terminal/SSHTERMINAL.png" alt="Terminal SSH avec OxideSens AI" /></td>
+<td align="center"><strong>Terminal SSH</strong><br/><br/><img src="../../docs/screenshots/terminal/SSHTERMINAL.png" alt="Terminal SSH" /></td>
 <td align="center"><strong>Gestionnaire de fichiers SFTP</strong><br/><br/><img src="../../docs/screenshots/sftp/sftp.png" alt="Gestionnaire de fichiers SFTP double volet avec file de transfert" /></td>
 </tr>
 <tr>
@@ -115,22 +113,11 @@ OxideTerm réunit connexions, fichiers, redirections, outils hôte, automatisati
 | **Fichiers et édition distante** | SFTP, files de transfert, favoris, écritures sûres, arbres de projet et édition par onglets |
 | **Redirection et réseau** | Redirections locale, distante et SOCKS5 dynamique, règles enregistrées et débogage de sockets |
 | **Opérations hôte et bureau distant** | Supervision, processus, services, journaux, ports, tâches, disques, paquets, conteneurs, tmux, RDP et VNC |
-| **OxideSens et automatisation** | Fournisseurs IA personnels, MCP, RAG local, Agent Skills, actions approuvées, et CLI |
+| **Automatisation** | Politique de commandes, paquets `.oxide` portables et une CLI autonome |
 | **Extensions et personnalisation** | Plugins manifest-only, WASM et processus, onglets personnalisés, commandes rapides, thèmes, arrière-plans, raccourcis et 11 langues |
 
 ---
 
-<div align="center">
-
-<a href="../../docs/media/ai-terminal-demo.mp4">
-  <img src="../../docs/media/ai-terminal-demo.gif" alt="OxideSens ouvre un terminal dans OxideTerm" width="920">
-</a>
-
-*OxideSens suit une demande utilisateur et ouvre un terminal dans OxideTerm.*
-
-</div>
-
----
 
 ## Installation
 
@@ -192,16 +179,6 @@ Pipeline: `queued → snapshot → grace-period → ssh-connect → await-termin
 - L’UI adresse `nodeId`; `NodeRouter` résout atomiquement le `connectionId` actif
 - `NodeRuntimeStore` conserve l’état d’exécution des nœuds et exporte les snapshots de topologie ; les helpers du workspace écrivent ces snapshots dans `session_tree.json` et reconstruisent les handles actifs au démarrage
 - La panne d’un jump host propage `link_down` aux nœuds descendants
-
-### OxideSens AI
-
-OxideSens reste BYOK d’abord, avec construction du contexte dans le processus :
-
-- Fournisseurs : OpenAI, Anthropic, Gemini, Ollama ou tout point d’accès OpenAI-compatible
-- MCP : transports stdio et SSE, découverte et invocation d’outils
-- RAG : BM25 full-text, index vectoriel HNSW, Reciprocal Rank Fusion, tokenizer CJK bigram
-- Les messages envoyés aux fournisseurs passent par un filtre de motifs d’identifiants ; le contexte et les actions du workspace restent sous le contrôle de l’utilisateur
-- Les clés API sont conservées dans le trousseau système et délibérément exclues des journaux structurés et des messages du cœur de l’application
 
 ### Shell desktop GPUI
 

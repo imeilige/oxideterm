@@ -10,7 +10,7 @@ pub(super) fn oxide_settings_section_label(section: &str, i18n: &oxideterm_i18n:
         "appearance" => i18n.t("settings_view.appearance.title"),
         "connections" => i18n.t("settings_view.connections.title"),
         "fileAndEditor" => i18n.t("export.app_settings_section_file_editor"),
-        "ai" => i18n.t("settings_view.tabs.ai"),
+        "ai" => String::from("ai"),
         "localTerminal" => i18n.t("settings_view.local_terminal.title"),
         "legacy" => i18n.t("modals.import.app_settings_legacy_title"),
         _ => section.to_string(),

@@ -5,7 +5,7 @@
 <h1 align="center">⚡ OxideTerm</h1>
 
 <p align="center">
-  <strong>원격 서버를 위한 AI 기반 네이티브 운영 워크스페이스 — 순수 Rust 네이티브 앱</strong>
+  <strong>원격 서버를 위한 네이티브 운영 워크스페이스 — 순수 Rust 네이티브 앱</strong>
   <br>
   SSH, Mosh, Telnet, 시리얼, RDP/VNC, SFTP, 포트 포워딩, 경량 편집을 하나의 네이티브 워크스페이스에.
   <br>
@@ -40,9 +40,8 @@ OxideTerm는 SSH와 원격 운영을 위한 오픈 소스 작업 공간입니다
 
 - SSH, Mosh, Telnet, 시리얼, RDP/VNC, SFTP, 포트 포워딩, 로컬 셸, 가벼운 편집을 하나의 작업 공간에서 관리
 - Grace Period 재연결로 짧은 네트워크 중단 중에도 원격 작업 유지
-- 자체 AI 공급자를 통해 OxideSens에 활성 세션 점검과 승인된 작업 공간 작업 실행 요청
 
-연결 정보와 운영 데이터는 사용자가 관리합니다. OxideSens는 사용자의 AI 공급자를 사용하며 계정이 필요하지 않습니다.
+연결 정보와 운영 데이터는 사용자가 관리합니다. 계정이 필요하지 않습니다.
 
 ---
 
@@ -50,7 +49,6 @@ OxideTerm는 SSH와 원격 운영을 위한 오픈 소스 작업 공간입니다
 
 - SSH, Telnet, 시리얼, RDP/VNC, SFTP, 포트 포워딩, 로컬 셸을 하나의 데스크톱 앱에 통합
 - 짧은 네트워크 중단을 견디는 Grace Period 재연결
-- 자체 AI 자격 증명과 승인된 작업을 사용하는 OxideSens
 - Electron과 번들 브라우저 런타임이 없는 GPUI 인터페이스
 
 ---
@@ -76,7 +74,7 @@ OxideTerm는 SSH와 원격 운영을 위한 오픈 소스 작업 공간입니다
 
 <table>
 <tr>
-<td align="center"><strong>SSH 터미널 + OxideSens AI</strong><br/><br/><img src="../../docs/screenshots/terminal/SSHTERMINAL.png" alt="OxideSens AI가 포함된 SSH 터미널" /></td>
+<td align="center"><strong>SSH 터미널</strong><br/><br/><img src="../../docs/screenshots/terminal/SSHTERMINAL.png" alt="SSH 터미널" /></td>
 <td align="center"><strong>SFTP 파일 관리자</strong><br/><br/><img src="../../docs/screenshots/sftp/sftp.png" alt="전송 큐가 포함된 SFTP 이중 패널 파일 관리자" /></td>
 </tr>
 <tr>
@@ -89,14 +87,13 @@ OxideTerm는 SSH와 원격 운영을 위한 오픈 소스 작업 공간입니다
 
 ## 원격 운영을 위한 설계
 
-OxideTerm는 연결, 파일, 포워딩, 호스트 도구, 자동화, AI 컨텍스트를 하나의 Rust 작업 공간에 둡니다. 도구는 같은 서버 ID와 세션 수명 주기를 공유합니다.
+OxideTerm는 연결, 파일, 포워딩, 호스트 도구, 자동화를 하나의 Rust 작업 공간에 둡니다. 도구는 같은 서버 ID와 세션 수명 주기를 공유합니다.
 
 | 항목 | 번들 브라우저 방식 | OxideTerm |
 |---|---|---|
 | **렌더링** | 브라우저 엔진과 웹 레이아웃 | GPU 표면의 GPUI |
 | **터미널 데이터 흐름** | WebSocket → JS 이벤트 루프 → xterm.js | Rust 입력 → `TerminalState` 변경 → GPUI 렌더링 |
 | **연결 수명 주기** | 프런트엔드와 백엔드 계층에 분산 | 프로세스 내부의 단일 연결 및 재연결 파이프라인 |
-| **AI 컨텍스트** | 애플리케이션 브리지를 통해 복사 | 사용자 승인 아래 활성 작업 공간에서 구성 |
 | **플러그인 런타임** | 브라우저 스크립트 환경 | manifest-only, 기능 제한 WASM, 명시적 신뢰가 필요한 프로세스 경로 |
 | **CLI** | 데스크톱 앱 실행이 필요 | Crate에 직접 연결한 독립 바이너리 |
 | **런타임 경계** | 데스크톱 래퍼와 브라우저 런타임 | 번들 브라우저 런타임 없는 네이티브 프로세스 |
@@ -111,22 +108,11 @@ OxideTerm는 연결, 파일, 포워딩, 호스트 도구, 자동화, AI 컨텍�
 | **파일 및 원격 편집** | SFTP, 전송 대기열, 즐겨찾기, 안전한 쓰기, 프로젝트 트리, 탭 편집 |
 | **포워딩 및 네트워크** | 로컬·원격·동적 SOCKS5 포워딩, 저장된 규칙, 소켓 디버깅 |
 | **호스트 운영 및 원격 데스크톱** | 모니터링, 프로세스, 서비스, 로그, 포트, 작업, 디스크, 패키지, 컨테이너, tmux, RDP, VNC |
-| **OxideSens 및 자동화** | 자체 AI 공급자, MCP, 로컬 RAG, Agent Skills, 공급자별 추론 제어, 승인된 작업, 암호화 동기화, CLI |
+| **자동화** | 명령 정책, 이식 가능한 `.oxide` 번들, 자동화·진단을 위한 단독 CLI |
 | **확장 및 개인화** | manifest-only, WASM, 프로세스 플러그인, 사용자 탭, 빠른 명령, 테마, 배경, 단축키, 11개 언어 |
 
 ---
 
-<div align="center">
-
-<a href="../../docs/media/ai-terminal-demo.mp4">
-  <img src="../../docs/media/ai-terminal-demo.gif" alt="OxideSens가 OxideTerm 안에서 터미널을 여는 데모" width="920">
-</a>
-
-*OxideSens가 사용자 요청을 따라 OxideTerm 안에서 터미널을 여는 모습입니다.*
-
-</div>
-
----
 
 ## 설치
 
@@ -143,10 +129,10 @@ OxideTerm는 연결, 파일, 포워딩, 호스트 도구, 자동화, AI 컨텍�
 
 ## 아키텍처
 
-OxideTerm는 터미널, SSH, Telnet, RDP, VNC, SFTP, 포워딩, IDE, AI, 플러그인, CLI를 하나의 Rust 아키텍처에 통합합니다. 기술 세부 사항은 아래에 설명합니다.
+OxideTerm는 터미널, SSH, Telnet, RDP, VNC, SFTP, 포워딩, IDE, 플러그인, CLI를 하나의 Rust 아키텍처에 통합합니다. 기술 세부 사항은 아래에 설명합니다.
 
 <details>
-<summary><strong>아키텍처, SSH 내부, GPUI 셸, 재연결, AI, 플러그인 등</strong></summary>
+<summary><strong>아키텍처, SSH 내부, GPUI 셸, 재연결, 플러그인 등</strong></summary>
 <br>
 
 ### 아키텍처 — 프로세스 내부 코어, WebView 브리지 없음
@@ -188,16 +174,6 @@ Pipeline: `queued → snapshot → grace-period → ssh-connect → await-termin
 - UI는 `nodeId`로 command를 보내고 `NodeRouter`가 active `connectionId`를 atomic하게 resolve
 - `NodeRuntimeStore`는 노드 런타임 상태와 topology 스냅샷을 보유하며, workspace helper가 이를 `session_tree.json`에 기록하고 시작 시 실제 handle을 다시 구성
 - 점프 호스트 장애는 하위 노드에 `link_down` 상태를 연쇄 전파
-
-### OxideSens AI
-
-OxideSens는 BYOK 우선을 유지하며 컨텍스트 구성은 프로세스 안에서 수행됩니다.
-
-- 제공자: OpenAI, Anthropic, Gemini, Ollama 또는 OpenAI 호환 엔드포인트
-- MCP: stdio/SSE 전송, 도구 검색과 호출
-- RAG: BM25 전문 검색, HNSW 벡터 인덱스, Reciprocal Rank Fusion, CJK 바이그램 토크나이저
-- 제공자에게 보낼 메시지는 자격 증명 패턴을 마스킹하며, 작업 공간 컨텍스트와 작업은 사용자가 제어합니다
-- API 키는 OS 키체인에 저장하며 구조화된 로그와 데스크톱 코어 메시지 대상에서 명시적으로 제외합니다
 
 ### GPUI 데스크톱 셸
 
@@ -293,7 +269,6 @@ cargo run -p oxideterm-cli -- completion install zsh --force
 | SSH | russh (`ring`) | SSH 스택에 OpenSSL/libssh2 없음, SSH Agent 지원 |
 | 터미널 | portable-pty + alacritty_terminal | 로컬 PTY, 터미널 에뮬레이션, Sixel/Kitty 그래픽 |
 | 플러그인 | Wasmtime/WASI 및 프로세스 | manifest-only, 제어된 WASM 호스트 호출, 명시적 신뢰가 필요한 로컬 프로세스 |
-| AI 및 검색 | SSE + BM25 + HNSW | 제공자 스트리밍, CJK 바이그램, RRF 결합 |
 | 편집기 | tree-sitter(구문), 사용자 버퍼 | 다국어, SFTP 기반 |
 | 암호화 | ChaCha20-Poly1305 + Argon2id | AEAD + 메모리 하드 KDF(256 MB) |
 | i18n | oxideterm-i18n | 내장 로더, 11개 제공 언어 |
@@ -305,7 +280,6 @@ cargo run -p oxideterm-cli -- completion install zsh --force
 | 저장된 자격 증명 | macOS Keychain / Windows Credential Manager / libsecret |
 | 메모리의 비밀 정보 | 비밀 정보를 소유한 타입과 임시 버퍼는 지원되는 소유권 경계에서 `zeroize` / `Zeroizing` 사용 |
 | 진단 | 지원 출력은 비밀 정보를 담은 원문보다 구조화된 메타데이터와 마스킹된 힌트를 우선 |
-| AI 컨텍스트 | 제공자에게 보낼 메시지는 자격 증명 패턴을 마스킹하며, 워크스페이스 컨텍스트와 작업은 사용자가 제어 |
 | `.oxide` | ChaCha20-Poly1305 + Argon2id |
 | CLI writes | dry-run 계획, `--yes` 보호, 롤백 백업 |
 | 호스트 키 | `~/.ssh/known_hosts`를 사용하는 TOFU, 예기치 않은 변경 거부 |

@@ -11,5 +11,4 @@ include!("model/base.rs");
 include!("model/highlight.rs");
 include!("model/terminal.rs");
 include!("model/ui_connection.rs");
-include!("model/ai.rs");
 include!("model/misc.rs");

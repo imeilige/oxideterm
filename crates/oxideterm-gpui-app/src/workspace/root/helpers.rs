@@ -25,33 +25,6 @@ pub(in crate::workspace) fn default_session_tree_path() -> PathBuf {
         .join("session_tree.json")
 }
 
-pub(in crate::workspace) fn default_ai_conversations_path() -> PathBuf {
-    default_settings_path()
-        .parent()
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("chat_history.redb")
-}
-
-/// Stable identifier for a tab surface, used as the AI app-surface resource
-/// kind. It must stay stable across releases because it is persisted by the
-/// assistant runtime.
-pub(in crate::workspace) fn tab_surface_kind(kind: &TabKind) -> &'static str {
-    match kind {
-        TabKind::Workspace => "terminal",
-        TabKind::LocalTerminal => "local_terminal",
-        TabKind::SshTerminal => "terminal",
-        TabKind::MoshTerminal => "terminal",
-        TabKind::FileManager => "file_manager",
-        TabKind::Graphics => "graphics",
-        TabKind::Sftp => "sftp",
-        TabKind::Forwards => "forwards",
-        TabKind::SessionManager => "session_manager",
-        TabKind::RemoteDesktop => "remote_desktop",
-        TabKind::Settings => "settings",
-    }
-}
-
 pub(in crate::workspace) fn current_window_size(window: &Window) -> (f32, f32) {
     // Pointer and overlay coordinates use the drawable viewport. On Windows,
     // inner bounds may describe the restored window while it is maximized.
@@ -369,7 +342,7 @@ impl WorkspaceApp {
     where
         T: std::marker::Copy + Eq,
     {
-        // DialogFooter buttons across settings, AI, FileManager, and import/export
+        // DialogFooter buttons across settings, FileManager, and import/export
         // use the same shadcn Button contract: disabled buttons are inert, and the
         // focus ring only follows explicit keyboard-owned footer focus.
         self.workspace_toolbar_action_button(
@@ -675,20 +648,6 @@ impl WorkspaceApp {
         }
         if self.detached_local_terminals_popover_open {
             self.detached_local_terminals_popover_open = false;
-            changed = true;
-        }
-        if self.has_ai_sidebar_floating_overlay(cx) {
-            self.close_ai_sidebar_popovers(cx);
-            changed = true;
-        } else if self
-            .ai_entity
-            .read(cx)
-            .model_selector_is_open(AiModelSelectorScope::TerminalInline)
-        {
-            // The terminal inline model selector is painted inside the pane
-            // instead of the sidebar popover portal, so include it in the same
-            // transient-dismiss path used by wheel/outside-pointer behavior.
-            self.close_ai_model_selector(cx);
             changed = true;
         }
         if self.clear_all_workspace_tooltips(cx) {

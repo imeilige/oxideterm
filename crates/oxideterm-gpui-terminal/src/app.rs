@@ -569,7 +569,6 @@ pub(crate) enum FreeTypeDragAction {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TerminalContextAction {
-    SendSelectionToAi,
     FillCommandBarFromSelection,
     OpenSearch,
     OpenSessionTriggers,

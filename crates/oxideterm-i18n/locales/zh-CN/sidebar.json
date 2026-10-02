@@ -28,8 +28,6 @@
       "forwards": "端口转发",
       "forwards_title": "端口转发",
       "connection_pool": "连接池",
-      "ai": "OxideSens",
-      "ai_assistant": "OxideSens (敬请期待)",
       "settings": "设置",
       "no_saved_connections": "无保存的连接",
       "no_active_sessions": "无活动会话",
@@ -59,7 +57,6 @@
     },
     "tooltips": {
       "settings": "设置",
-      "ai_hint": "OxideSens",
       "switch_tree": "切换到树形视图",
       "switch_focus": "切换到聚焦视图",
       "new_connection": "新建连接",

@@ -132,16 +132,11 @@ impl WorkspaceApp {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let theme = self.tokens.ui;
-        let (title_key, title_role, icon) = match self.active_context_sidebar_panel {
-            ContextSidebarPanel::Assistant => {
-                ("sidebar.panels.ai", "assistant", LucideIcon::Sparkles)
-            }
-            ContextSidebarPanel::HostTools => (
-                "sidebar.panels.host_tools",
-                "host-tools",
-                LucideIcon::Wrench,
-            ),
-        };
+        let (title_key, title_role, icon) = (
+            "sidebar.panels.host_tools",
+            "host-tools",
+            LucideIcon::Wrench,
+        );
         context_sidebar_region_chrome()
             .child(
                 div()
@@ -238,22 +233,10 @@ impl WorkspaceApp {
                             // translucent chrome is composited exactly once.
                             .bg(self.workspace_sidebar_background(theme.bg))
                             .child({
-                                let content = match self.active_context_sidebar_panel {
-                                    ContextSidebarPanel::Assistant => {
-                                        self.render_ai_sidebar_content(cx)
-                                    }
-                                    ContextSidebarPanel::HostTools => {
-                                        self.render_host_tools_context_panel(cx)
-                                    }
-                                };
+                                let content = self.render_host_tools_context_panel(cx);
                                 oxideterm_gpui_ui::motion::fade_in(
                                     &self.tokens,
-                                    match self.active_context_sidebar_panel {
-                                        ContextSidebarPanel::Assistant => "context-panel-assistant",
-                                        ContextSidebarPanel::HostTools => {
-                                            "context-panel-host-tools"
-                                        }
-                                    },
+                                    "context-panel-host-tools",
                                     div().size_full().child(content),
                                     oxideterm_gpui_ui::motion::MotionDuration::Micro,
                                 )

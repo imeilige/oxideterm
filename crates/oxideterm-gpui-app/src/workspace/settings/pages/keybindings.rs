@@ -25,7 +25,6 @@ pub(in crate::workspace) fn settings_keybinding_scope_matches(
         SettingsKeybindingScopeFilter::RemoteDesktop => {
             scope == crate::keybindings::ActionScope::RemoteDesktop
         }
-        SettingsKeybindingScopeFilter::AiPanel => scope == crate::keybindings::ActionScope::AiPanel,
         SettingsKeybindingScopeFilter::All => true,
         SettingsKeybindingScopeFilter::Editor => scope == crate::keybindings::ActionScope::Editor,
         SettingsKeybindingScopeFilter::Sftp => scope == crate::keybindings::ActionScope::Sftp,
@@ -155,7 +154,6 @@ impl WorkspaceApp {
             crate::keybindings::ActionScope::FileManager,
             crate::keybindings::ActionScope::Preview,
             crate::keybindings::ActionScope::RemoteDesktop,
-            crate::keybindings::ActionScope::AiPanel,
         ] {
             let definitions = catalog
                 .iter()

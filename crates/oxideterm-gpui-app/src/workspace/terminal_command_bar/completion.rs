@@ -3,7 +3,6 @@
 
 use super::actions::classify_command_risk;
 use super::*;
-use oxideterm_ai::infer_ai_cwd;
 use oxideterm_sftp::{FileType as RemotePathFileType, ListFilter, SortOrder};
 
 mod common;

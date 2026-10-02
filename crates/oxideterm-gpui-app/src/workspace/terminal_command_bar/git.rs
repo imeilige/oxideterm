@@ -525,13 +525,7 @@ impl WorkspaceApp {
             .flex()
             .items_center()
             .gap(px(6.0))
-            .child(self.render_terminal_git_commit_message_input(cx))
-            .child(self.render_terminal_git_ai_commit_action_row(cx));
-        let ai_error = self
-            .terminal
-            .read(cx)
-            .git_ai_commit_error()
-            .map(|error| self.terminal_git_ai_commit_error_message(error));
+            .child(self.render_terminal_git_commit_message_input(cx));
 
         div()
             .px(px(4.0))
@@ -543,16 +537,6 @@ impl WorkspaceApp {
             .gap(px(6.0))
             .child(message_row)
             .child(commit_button)
-            .when_some(ai_error, |controls, error| {
-                controls.child(
-                    div()
-                        .px(px(4.0))
-                        .truncate()
-                        .text_size(px(10.0))
-                        .text_color(rgba(0xfca5a5ff))
-                        .child(error),
-                )
-            })
             .into_any_element()
     }
 
@@ -1397,50 +1381,6 @@ impl WorkspaceApp {
             .into_any_element()
     }
 
-    pub(super) fn render_terminal_git_ai_commit_action_row(
-        &self,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let loading = self.terminal.read(cx).git_ai_commit_loading();
-        let label = if loading {
-            self.i18n.t("terminal.git.ai_commit_generating")
-        } else {
-            self.i18n.t("terminal.git.action_ai_commit_message")
-        };
-        let has_error = self.terminal.read(cx).git_ai_commit_error().is_some();
-        let options = ActionChipOptions::new()
-            .disabled(loading)
-            .height(32.0)
-            .radius(ButtonRadius::Sm)
-            .idle_text_tone(ActionChipTextTone::Primary)
-            .hover_border_accent(true);
-        let foreground = if has_error {
-            rgba(0xfca5a5ff)
-        } else {
-            action_chip_foreground(&self.tokens, options)
-        };
-        action_chip(
-            &self.tokens,
-            label,
-            Some(Self::render_lucide_icon(
-                LucideIcon::Sparkles,
-                12.0,
-                foreground,
-            )),
-            options,
-        )
-        .when(!loading, |button| {
-            button.on_mouse_down(
-                MouseButton::Left,
-                cx.listener(move |this, _event, _window, cx| {
-                    this.generate_terminal_git_ai_commit_message(cx);
-                    cx.stop_propagation();
-                }),
-            )
-        })
-        .into_any_element()
-    }
-
     pub(super) fn render_terminal_git_branch_search(&self, cx: &mut Context<Self>) -> AnyElement {
         let target = WorkspaceImeTarget::TerminalGitBranchSearch;
         let selected_range = self.ime_selected_range_for_target(target, cx);
@@ -1613,32 +1553,6 @@ impl WorkspaceApp {
                 self.i18n.t("terminal.git.branch_node_unavailable")
             }
             TerminalGitBranchError::Message(message) => message.clone(),
-        }
-    }
-
-    fn terminal_git_ai_commit_error_message(&self, error: &TerminalGitAiCommitError) -> String {
-        match error {
-            TerminalGitAiCommitError::NoStagedChanges => {
-                self.i18n.t("terminal.git.ai_commit_no_staged_changes")
-            }
-            TerminalGitAiCommitError::NotRepository => {
-                self.i18n.t("terminal.git.ai_commit_not_repository")
-            }
-            TerminalGitAiCommitError::GitUnavailable => {
-                self.i18n.t("terminal.git.ai_commit_git_unavailable")
-            }
-            TerminalGitAiCommitError::CwdUnavailable => {
-                self.i18n.t("terminal.git.ai_commit_cwd_unavailable")
-            }
-            TerminalGitAiCommitError::NodeUnavailable => {
-                self.i18n.t("terminal.git.ai_commit_node_unavailable")
-            }
-            TerminalGitAiCommitError::InvalidMessage => {
-                self.i18n.t("terminal.git.ai_commit_failed")
-            }
-            TerminalGitAiCommitError::Message(message) => oxideterm_ai::stream_error_label(message)
-                .map(|key| self.i18n.t(key))
-                .unwrap_or_else(|| message.clone()),
         }
     }
 

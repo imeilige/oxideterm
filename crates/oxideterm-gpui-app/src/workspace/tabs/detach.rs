@@ -224,7 +224,7 @@ impl WorkspaceApp {
             return false;
         }
         let previous = self.active_tab_id(cx);
-        let Some((tab, removed)) = self.tab_host.update(cx, |host, _| {
+        let Some((tab, _removed)) = self.tab_host.update(cx, |host, _| {
             if target_pane.is_none() && !before {
                 host.combine_pages(source_tab_id, target_tab_id, direction)
             } else {
@@ -233,11 +233,6 @@ impl WorkspaceApp {
         }) else {
             return false;
         };
-        for id in removed {
-            self.ai_runtime_context
-                .update(cx, |runtime, _| runtime.revoke_app_surface(id));
-        }
-        self.register_tab_surface(&tab, cx);
         self.close_tab_context_menu();
         self.apply_main_window_active_tab_change(previous, Some(tab.id), cx);
         self.sync_active_tab_surface(cx);
@@ -284,7 +279,6 @@ impl WorkspaceApp {
         }) {
             return;
         }
-        self.register_tab_surface(&tab, cx);
         self.set_main_window_active_tab(Some(tab_id), cx);
         self.sync_active_tab_surface(cx);
         if new_window {

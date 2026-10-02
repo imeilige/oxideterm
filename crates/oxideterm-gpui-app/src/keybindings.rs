@@ -6,9 +6,9 @@ use std::{borrow::Cow, sync::LazyLock};
 use crate::{
     CloseOtherTabs, CloseTab, CommandPalette, Copy, Cut, Find, FontDecrease, FontIncrease,
     FontReset, GoToTab1, GoToTab2, GoToTab3, GoToTab4, GoToTab5, GoToTab6, GoToTab7, GoToTab8,
-    GoToTab9, NewConnection, NewTerminal, NextTab, OpenSettings, PaletteAiSidebar,
+    GoToTab9, NewConnection, NewTerminal, NextTab, OpenSettings,
     PaletteEventLog, Paste, PrevTab, Quit, ShellLauncher, ShowShortcuts,
-    SplitHorizontal, SplitNavLeft, SplitNavRight, SplitVertical, TerminalAiPanel,
+    SplitHorizontal, SplitNavLeft, SplitNavRight, SplitVertical,
     TerminalClearScreen, TerminalFreeTypeMode, ToggleFullscreen, ToggleSidebar,
     ZenMode,
 };
@@ -26,7 +26,6 @@ pub(crate) enum ActionScope {
     FileManager,
     Preview,
     RemoteDesktop,
-    AiPanel,
 }
 
 impl ActionScope {
@@ -38,7 +37,6 @@ impl ActionScope {
                 | Self::FileManager
                 | Self::Preview
                 | Self::RemoteDesktop
-                | Self::AiPanel
         )
     }
 
@@ -52,8 +50,6 @@ impl ActionScope {
                     | (Self::Split, Self::Terminal)
                     | (Self::FileManager, Self::Preview)
                     | (Self::Preview, Self::FileManager)
-                    | (Self::AiPanel, Self::Terminal | Self::Split | Self::Editor)
-                    | (Self::Terminal | Self::Split | Self::Editor, Self::AiPanel)
             )
     }
 
@@ -68,7 +64,6 @@ impl ActionScope {
             Self::FileManager => "settings_view.keybindings.scope_files",
             Self::Preview => "settings_view.keybindings.scope_preview",
             Self::RemoteDesktop => "settings_view.keybindings.scope_remote_desktop",
-            Self::AiPanel => "settings_view.keybindings.scope_ai_panel",
         }
     }
 }
@@ -396,12 +391,6 @@ pub(crate) static ACTION_DEFINITIONS: LazyLock<Vec<ActionDefinition>> = LazyLock
             KeyCombo::ctrl_shift("l"),
         ),
         def(
-            "terminal.aiPanel",
-            ActionScope::Terminal,
-            KeyCombo::cmd("i"),
-            KeyCombo::ctrl_shift("i"),
-        ),
-        def(
             "terminal.toggleFreeTypeMode",
             ActionScope::Terminal,
             KeyCombo::cmd_shift("f"),
@@ -449,12 +438,6 @@ pub(crate) static ACTION_DEFINITIONS: LazyLock<Vec<ActionDefinition>> = LazyLock
             ActionScope::Palette,
             KeyCombo::cmd("j"),
             KeyCombo::ctrl("j"),
-        ),
-        def(
-            "palette.aiSidebar",
-            ActionScope::Palette,
-            KeyCombo::cmd_shift("a"),
-            KeyCombo::ctrl_shift("a"),
         ),
     ]);
 
@@ -811,20 +794,6 @@ pub(crate) static ACTION_DEFINITIONS: LazyLock<Vec<ActionDefinition>> = LazyLock
                 alt: true,
                 ..KeyCombo::cmd_shift("k")
             },
-        ),
-    ]);
-    actions.extend([
-        def(
-            "terminal.aiSubmit",
-            ActionScope::AiPanel,
-            KeyCombo::plain("enter"),
-            KeyCombo::plain("enter"),
-        ),
-        def(
-            "terminal.aiInsert",
-            ActionScope::AiPanel,
-            KeyCombo::plain("tab"),
-            KeyCombo::plain("tab"),
         ),
     ]);
     actions
@@ -1424,7 +1393,6 @@ fn push_action_binding(bindings: &mut Vec<KeyBinding>, action_id: &str, combo: &
         "terminal.cut" => push_binding!(Cut),
         "terminal.paste" => push_binding!(Paste),
         "terminal.clearScreen" => push_binding!(TerminalClearScreen),
-        "terminal.aiPanel" => push_binding!(TerminalAiPanel),
         "terminal.toggleFreeTypeMode" => push_binding!(TerminalFreeTypeMode),
         "terminal.closePanel" => {}
         "split.horizontal" => push_binding!(SplitHorizontal),
@@ -1433,7 +1401,6 @@ fn push_action_binding(bindings: &mut Vec<KeyBinding>, action_id: &str, combo: &
         "split.navLeft" => push_binding!(SplitNavLeft),
         "split.navRight" => push_binding!(SplitNavRight),
         "palette.eventLog" => push_binding!(PaletteEventLog),
-        "palette.aiSidebar" => push_binding!(PaletteAiSidebar),
         "app.navBack" | "app.navForward" => {}
         _ => {}
     }

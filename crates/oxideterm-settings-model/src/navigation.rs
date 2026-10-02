@@ -8,7 +8,7 @@
 
 use std::collections::HashSet;
 
-use crate::{AiSettingsPage, SettingsTab, TerminalSettingsPage};
+use crate::{SettingsTab, TerminalSettingsPage};
 
 pub const SETTINGS_SECTION_HEADER_ITEM_COUNT: usize = 1;
 
@@ -234,22 +234,6 @@ pub fn terminal_settings_section_count(page: TerminalSettingsPage) -> usize {
     1 + page_cards
 }
 
-pub fn ai_settings_section_count(page: AiSettingsPage) -> usize {
-    let page_cards = match page {
-        // Feature activation and privacy guidance are independent cards.
-        AiSettingsPage::General => 2,
-        AiSettingsPage::Providers => 1,
-        AiSettingsPage::Agents => 1,
-        // Context controls, prompt, memory, and model windows are
-        // separate cards so each virtual row owns one stable responsibility.
-        AiSettingsPage::Context => 4,
-        // Tool policy, conversation agents, skills, and MCP servers have separate scopes.
-        AiSettingsPage::Tools => 4,
-    };
-    // The first section is the subpage picker, matching terminal settings.
-    1 + page_cards
-}
-
 pub fn keybinding_settings_section_count(visible_scope_count: usize) -> usize {
     1 + visible_scope_count.max(1)
 }
@@ -257,17 +241,15 @@ pub fn keybinding_settings_section_count(visible_scope_count: usize) -> usize {
 pub fn settings_section_list_identity(
     tab: SettingsTab,
     terminal_page: TerminalSettingsPage,
-    ai_page: AiSettingsPage,
 ) -> String {
     // Keybinding filters update row signatures rather than replacing the list;
     // this keeps the toolbar-mounted selection animation alive.
-    format!("{tab:?}:{terminal_page:?}:{ai_page:?}")
+    format!("{tab:?}:{terminal_page:?}")
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct SettingsDynamicSectionCounts {
     pub terminal_page: TerminalSettingsPage,
-    pub ai_page: AiSettingsPage,
     pub visible_keybinding_scope_count: usize,
 }
 
@@ -285,7 +267,6 @@ mod tests {
             SettingsTab::General,
             SettingsDynamicSectionCounts {
                 terminal_page: TerminalSettingsPage::Display,
-                ai_page: AiSettingsPage::General,
                 visible_keybinding_scope_count: 0,
             },
         );

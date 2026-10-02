@@ -18,29 +18,6 @@ pub enum ActiveSurface {
     Settings,
 }
 
-pub fn settings_tab_from_ai_section(section: &str) -> Option<SettingsTab> {
-    match section {
-        "general" => Some(SettingsTab::General),
-        "terminal" => Some(SettingsTab::Terminal),
-        "appearance" => Some(SettingsTab::Appearance),
-        "local" | "local_terminal" => Some(SettingsTab::Terminal),
-        "connections" | "connection_manager" => Some(SettingsTab::Connections),
-        "ssh" | "ssh_keys" => Some(SettingsTab::Connections),
-        "reconnect" => Some(SettingsTab::Connections),
-        "sftp" => Some(SettingsTab::Sftp),
-        "keybindings" | "keyboard" => Some(SettingsTab::Keybindings),
-        "help" => Some(SettingsTab::Help),
-        _ => None,
-    }
-}
-
-pub fn terminal_settings_page_from_ai_section(section: &str) -> Option<TerminalSettingsPage> {
-    match section {
-        "local" | "local_terminal" => Some(TerminalSettingsPage::Local),
-        _ => None,
-    }
-}
-
 pub trait SettingsSelectAnchorExt {
     fn anchor_id(self) -> SelectAnchorId;
 }
@@ -80,12 +57,6 @@ impl SettingsSelectAnchorExt for SettingsSelect {
             Self::ReconnectMaxAttempts => SelectAnchorId::SettingsReconnectMaxAttempts,
             Self::ReconnectBaseDelay => SelectAnchorId::SettingsReconnectBaseDelay,
             Self::ReconnectMaxDelay => SelectAnchorId::SettingsReconnectMaxDelay,
-            Self::AiProviderTemplate => SelectAnchorId::SettingsAiProviderTemplate,
-            Self::AiEmbeddingProvider => SelectAnchorId::SettingsAiEmbeddingProvider,
-            Self::KnowledgeCollectionScope => SelectAnchorId::SettingsKnowledgeCollectionScope,
-            Self::KnowledgeDocumentFormat => SelectAnchorId::SettingsKnowledgeDocumentFormat,
-            Self::AiMcpTransport => SelectAnchorId::SettingsAiMcpTransport,
-            Self::AiMcpAuthMode => SelectAnchorId::SettingsAiMcpAuthMode,
             Self::SftpPresentation => SelectAnchorId::SettingsSftpPresentation,
             Self::SftpProtocol => SelectAnchorId::SettingsSftpProtocol,
             Self::SftpConcurrent => SelectAnchorId::SettingsSftpConcurrent,
@@ -103,36 +74,5 @@ impl SettingsSelectAnchorExt for SettingsSelect {
             Self::HighlightRenderMode(index) => SelectAnchorId::SettingsHighlightRenderMode(index),
             Self::HighlightMatchScope(index) => SelectAnchorId::SettingsHighlightMatchScope(index),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn ai_section_aliases_map_to_settings_tabs() {
-        assert_eq!(
-            settings_tab_from_ai_section("local_terminal"),
-            Some(SettingsTab::Terminal)
-        );
-        assert_eq!(
-            terminal_settings_page_from_ai_section("local_terminal"),
-            Some(TerminalSettingsPage::Local)
-        );
-        assert_eq!(settings_tab_from_ai_section("assistant"), None);
-        assert_eq!(
-            settings_tab_from_ai_section("keyboard"),
-            Some(SettingsTab::Keybindings)
-        );
-        assert_eq!(
-            settings_tab_from_ai_section("ssh_keys"),
-            Some(SettingsTab::Connections)
-        );
-        assert_eq!(
-            settings_tab_from_ai_section("reconnect"),
-            Some(SettingsTab::Connections)
-        );
-        assert_eq!(settings_tab_from_ai_section("missing"), None);
     }
 }

@@ -25,7 +25,6 @@ use super::new_connection::{
 };
 use super::session_manager::{SessionManagerInput, SessionManagerState};
 use super::sftp::SftpInput;
-use super::sidebar::{ai_input_line_index_for_offset, ai_input_visual_lines};
 use super::terminal_git::TerminalGitPanelSection;
 use super::{PaneId, WorkspaceApp};
 use oxideterm_gpui_settings_view::SettingsInput;
@@ -138,11 +137,6 @@ pub(super) enum WorkspaceImeTarget {
     FileManager(FileManagerInput),
     Graphics(GraphicsInput),
     TabRename,
-    AiModelSelectorSearch,
-    AiInlinePrompt,
-    AiChatInput,
-    AiConversationRename,
-    AiMessageEdit,
     Sftp(crate::workspace::sftp::SftpSurfaceId, SftpInput),
     NewConnection(NewConnectionField),
     KeyboardInteractive(usize),
@@ -507,11 +501,6 @@ impl WorkspaceImeTarget {
             Self::FileManager(input) => 1_800 + input.anchor_key(),
             Self::Graphics(input) => 1_875 + input.anchor_key(),
             Self::TabRename => 1_890,
-            Self::AiModelSelectorSearch => 1_895,
-            Self::AiInlinePrompt => 1_896,
-            Self::AiChatInput => 1_897,
-            Self::AiMessageEdit => 1_898,
-            Self::AiConversationRename => 1_899,
             Self::Sftp(surface, input) => {
                 (1_u64 << 62)
                     | (match surface {
@@ -805,7 +794,7 @@ impl InputHandler for WorkspaceInputHandler {
     fn bounds_for_range(
         &mut self,
         range_utf16: Range<usize>,
-        window: &mut Window,
+        _window: &mut Window,
         cx: &mut App,
     ) -> Option<Bounds<Pixels>> {
         let target = self.active_ime_target(cx)?;
@@ -814,30 +803,6 @@ impl InputHandler for WorkspaceInputHandler {
                 .text_input_anchors
                 .bounds(target.anchor_id())
                 .unwrap_or(self.fallback_bounds);
-            if target == WorkspaceImeTarget::AiMessageEdit {
-                let text = view.ime_text_with_marked_text_for_target(target, cx)?;
-                let lines = view.ai_editor_visual_lines(target, &text, cx);
-                let index = ai_input_line_index_for_offset(&lines, range_utf16.end);
-                let range = lines[index].utf16_range();
-                let line = utf16_slice(&text, range.clone());
-                let byte = byte_index_for_utf16(&line, range_utf16.end.saturating_sub(range.start));
-                let x = view.shape_ime_text(target, &line, window).x_for_index(byte);
-                let scroll = view
-                    .ai_entity
-                    .read(cx)
-                    .chat_ui()
-                    .editing_message_scroll
-                    .offset()
-                    .y;
-                return Some(Bounds {
-                    origin: point(
-                        bounds.left() + x,
-                        (bounds.top() + scroll + px((index + 1) as f32 * 20.0))
-                            .clamp(bounds.top(), bounds.bottom()),
-                    ),
-                    size: gpui::size(px(view.tokens.metrics.form_caret_width), px(20.0)),
-                });
-            }
             let viewport = match target {
                 WorkspaceImeTarget::TerminalCommandSenderCompact => view
                     .terminal_command_sender
@@ -932,21 +897,14 @@ impl WorkspaceApp {
         true
     }
 
+    /// `_cx` is retained because every call site passes the render context and
+    /// the anchor registry is shared by all workspace text inputs.
     pub(super) fn update_text_input_anchor(
         &mut self,
         anchor: TextInputAnchor,
-        cx: &mut Context<Self>,
+        _cx: &mut Context<Self>,
     ) {
-        let edit_width_changed = anchor.id == WorkspaceImeTarget::AiMessageEdit.anchor_id()
-            && self
-                .text_input_anchors
-                .bounds(anchor.id)
-                .map(|bounds| bounds.size.width)
-                != Some(anchor.bounds.size.width);
         self.text_input_anchors.update(anchor);
-        if edit_width_changed {
-            cx.notify();
-        }
     }
 
     /// Applies the shared pointer, focus, selection, and anchor behavior for a
@@ -1041,10 +999,6 @@ impl WorkspaceApp {
         let settings_tab_visible = self
             .active_tab(cx)
             .is_some_and(|tab| tab.kind == oxideterm_workspace::TabKind::Settings);
-        // Knowledge dialogs may be owned by a detached Knowledge or Settings window. The focused
-        // window's WorkspaceImeElement decides which native window receives the shared draft.
-        let knowledge_dialog_visible = self.ai_entity.read(cx).knowledge_create_dialog_open()
-            || self.ai_entity.read(cx).knowledge_document_dialog_open();
         if settings_tab_visible
             && let Some(input) = self
                 .settings_workspace
@@ -1052,11 +1006,6 @@ impl WorkspaceApp {
                 .settings_entity_focused_input()
         {
             return Some(WorkspaceImeTarget::Settings(input));
-        }
-        if settings_tab_visible || knowledge_dialog_visible {
-            if let Some(input) = self.ai_entity.read(cx).focused_settings_input() {
-                return Some(WorkspaceImeTarget::Settings(input));
-            }
         }
 
         if self.session_search_open
@@ -1071,8 +1020,7 @@ impl WorkspaceApp {
             return Some(WorkspaceImeTarget::ActiveSessionSearch);
         }
 
-        let legacy_settings_input_visible = settings_tab_visible || knowledge_dialog_visible;
-        if legacy_settings_input_visible && let Some(input) = self.focused_settings_input {
+        if settings_tab_visible && let Some(input) = self.focused_settings_input {
             return Some(WorkspaceImeTarget::Settings(input));
         }
 
@@ -1165,50 +1113,6 @@ impl WorkspaceApp {
             return Some(WorkspaceImeTarget::Sftp(self.sftp_surface_id(), input));
         }
 
-        let terminal_inline_panel = self.ai_entity.read(cx).terminal_inline_panel();
-        if (self.ai_sidebar_visible() || terminal_inline_panel.open)
-            && self.ai_entity.read(cx).model_selector_open()
-            && self.ai_entity.read(cx).model_selector_search_focused()
-        {
-            return Some(WorkspaceImeTarget::AiModelSelectorSearch);
-        }
-
-        if terminal_inline_panel.open && terminal_inline_panel.prompt_focused {
-            return Some(WorkspaceImeTarget::AiInlinePrompt);
-        }
-
-        if self.ai_sidebar_visible()
-            && self
-                .ai_entity
-                .read(cx)
-                .chat_ui()
-                .renaming_conversation_id
-                .is_some()
-            && self
-                .ai_entity
-                .read(cx)
-                .chat_ui()
-                .renaming_conversation_focused
-        {
-            return Some(WorkspaceImeTarget::AiConversationRename);
-        }
-
-        if self.ai_sidebar_visible() && self.ai_entity.read(cx).chat_ui().input_focused {
-            return Some(WorkspaceImeTarget::AiChatInput);
-        }
-
-        if self.ai_sidebar_visible()
-            && self
-                .ai_entity
-                .read(cx)
-                .chat_ui()
-                .editing_message_id
-                .is_some()
-            && self.ai_entity.read(cx).chat_ui().editing_message_focused
-        {
-            return Some(WorkspaceImeTarget::AiMessageEdit);
-        }
-
         if let Some(selection) = self.selected_ime_range.as_ref()
             && matches!(selection.target, WorkspaceImeTarget::ReadOnlyText(_))
         {
@@ -1267,11 +1171,6 @@ impl WorkspaceApp {
                 .map(|handle| handle.window_id()),
             _ => None,
         };
-        if target == WorkspaceImeTarget::AiInlinePrompt
-            && self.terminal_ai_inline_window(cx) != Some(window_id)
-        {
-            return None;
-        }
         if matches!(target, WorkspaceImeTarget::Search(_)) && owner != Some(window_id) {
             return None;
         }
@@ -1639,7 +1538,6 @@ impl WorkspaceApp {
                     position,
                     px(0.0),
                     window,
-                    cx,
                 ));
             }
             return Some(0);
@@ -1647,7 +1545,7 @@ impl WorkspaceApp {
         if position.x >= right {
             if ime_target_accepts_newline(target) {
                 return Some(self.multiline_ime_index_for_position(
-                    target, &text, bounds, position, width, window, cx,
+                    target, &text, bounds, position, width, window,
                 ));
             }
             return Some(text_len);
@@ -1663,7 +1561,7 @@ impl WorkspaceApp {
         .clamp(px(0.0), width);
         if ime_target_accepts_newline(target) {
             return Some(self.multiline_ime_index_for_position(
-                target, &text, bounds, position, relative_x, window, cx,
+                target, &text, bounds, position, relative_x, window,
             ));
         }
         Some(self.ime_index_for_relative_x(target, &text, relative_x, window))
@@ -1703,36 +1601,14 @@ impl WorkspaceApp {
         position: Point<Pixels>,
         relative_x: Pixels,
         window: &mut Window,
-        cx: &App,
     ) -> usize {
-        let lines = if matches!(
-            target,
-            WorkspaceImeTarget::AiChatInput | WorkspaceImeTarget::AiMessageEdit
-        ) {
-            self.ai_editor_visual_lines(target, text, cx)
-                .iter()
-                .map(|line| line.utf16_range())
-                .collect()
-        } else {
-            multiline_ime_line_ranges(target, text, bounds, None)
-        };
+        let lines = multiline_ime_line_ranges(target, text, bounds);
         if lines.is_empty() {
             return 0;
         }
         let line_height = self.ime_target_line_height(target, bounds, lines.len());
-        let scroll_y = if target == WorkspaceImeTarget::AiMessageEdit {
-            self.ai_entity
-                .read(cx)
-                .chat_ui()
-                .editing_message_scroll
-                .offset()
-                .y
-        } else {
-            px(0.0)
-        };
         let relative_y =
-            (position.y - bounds.top() - scroll_y - Self::ime_target_vertical_padding(target))
-                .max(px(0.0));
+            (position.y - bounds.top() - Self::ime_target_vertical_padding(target)).max(px(0.0));
         let line_index =
             ((relative_y / line_height).floor() as usize).min(lines.len().saturating_sub(1));
         let line_range = lines[line_index].clone();
@@ -1747,7 +1623,6 @@ impl WorkspaceApp {
         line_count: usize,
     ) -> Pixels {
         match target {
-            WorkspaceImeTarget::AiChatInput | WorkspaceImeTarget::AiMessageEdit => px(20.0),
             WorkspaceImeTarget::Settings(input) if input.accepts_newline() => {
                 // Tauri textareas hit-test by their visual line box. Settings
                 // multiline fields are hand-rendered in GPUI, so keep the IME
@@ -1767,11 +1642,7 @@ impl WorkspaceApp {
 
     fn ime_target_horizontal_padding(target: WorkspaceImeTarget, control_padding_x: f32) -> Pixels {
         match target {
-            WorkspaceImeTarget::AiChatInput
-            | WorkspaceImeTarget::AiConversationRename
-            | WorkspaceImeTarget::AiMessageEdit
-            | WorkspaceImeTarget::Sftp(_, _)
-            | WorkspaceImeTarget::ReadOnlyText(_) => {
+            WorkspaceImeTarget::Sftp(_, _) | WorkspaceImeTarget::ReadOnlyText(_) => {
                 // These targets report an anchor around the painted text itself.
                 // Applying the shared form-control padding again makes hit testing
                 // drift right of the visible caret.
@@ -1945,12 +1816,7 @@ impl WorkspaceApp {
             strikethrough: None,
             letter_spacing: None,
         };
-        let text_size = if matches!(
-            target,
-            WorkspaceImeTarget::AiChatInput | WorkspaceImeTarget::AiMessageEdit
-        ) {
-            13.0
-        } else if target == WorkspaceImeTarget::ActiveSessionSearch {
+        let text_size = if target == WorkspaceImeTarget::ActiveSessionSearch {
             self.tokens.metrics.sidebar_title_font_size
         } else {
             self.tokens.metrics.ui_text_sm
@@ -1965,7 +1831,6 @@ impl WorkspaceApp {
             WorkspaceImeTarget::Settings(
                 SettingsInput::TerminalCommandBarFocusHandoff
                 | SettingsInput::TerminalCommandSpecsJson
-                | SettingsInput::AiMcpArgs
                 | SettingsInput::ManagedKeyPastePrivateKey,
             ) => {
                 // These controls are painted with the terminal/settings mono
@@ -2103,13 +1968,6 @@ impl WorkspaceApp {
                         .read(cx)
                         .settings_entity_input_value(input)
                         .map(|value| ime_text_snapshot(target, value))
-                } else if self.ai_entity.read(cx).focused_settings_input() == Some(input) {
-                    // Platform IME receives only a length-preserving projection
-                    // for secrets; the Entity remains the sole plaintext owner.
-                    self.ai_entity
-                        .read(cx)
-                        .settings_input_value(input)
-                        .map(|value| ime_text_snapshot(target, value))
                 } else if self.focused_settings_input == Some(input) {
                     Some(ime_text_snapshot(target, &self.settings_input_draft))
                 } else {
@@ -2150,50 +2008,6 @@ impl WorkspaceApp {
                 .tab_rename_dialog
                 .as_ref()
                 .map(|dialog| dialog.draft.clone()),
-            WorkspaceImeTarget::AiModelSelectorSearch => self
-                .ai_entity
-                .read(cx)
-                .model_selector_search_focused()
-                .then(|| {
-                    self.ai_entity
-                        .read(cx)
-                        .model_selector_search_query()
-                        .to_owned()
-                }),
-            WorkspaceImeTarget::AiInlinePrompt => {
-                let panel = self.ai_entity.read(cx).terminal_inline_panel();
-                panel.prompt_focused.then(|| panel.prompt.clone())
-            }
-            WorkspaceImeTarget::AiChatInput => self
-                .ai_entity
-                .read(cx)
-                .chat_ui()
-                .input_focused
-                .then(|| self.ai_entity.read(cx).chat_ui().draft.clone()),
-            WorkspaceImeTarget::AiConversationRename => self
-                .ai_entity
-                .read(cx)
-                .chat_ui()
-                .renaming_conversation_focused
-                .then(|| {
-                    self.ai_entity
-                        .read(cx)
-                        .chat_ui()
-                        .renaming_conversation_draft
-                        .clone()
-                }),
-            WorkspaceImeTarget::AiMessageEdit => self
-                .ai_entity
-                .read(cx)
-                .chat_ui()
-                .editing_message_focused
-                .then(|| {
-                    self.ai_entity
-                        .read(cx)
-                        .chat_ui()
-                        .editing_message_draft
-                        .clone()
-                }),
             WorkspaceImeTarget::Sftp(surface, input) => {
                 if !self.has_sftp_surface(surface) {
                     return None;
@@ -2366,19 +2180,6 @@ impl WorkspaceApp {
         {
             return false;
         }
-        if target == WorkspaceImeTarget::AiChatInput
-            && !keystroke.modifiers.shift
-            && !keystroke.modifiers.platform
-            && !keystroke.modifiers.alt
-            && !keystroke.modifiers.control
-            && matches!(
-                keystroke.key.as_str(),
-                "up" | "arrowup" | "down" | "arrowdown"
-            )
-            && !self.ai_chat_autocomplete_items(cx).is_empty()
-        {
-            return false;
-        }
         let Some(text) = self.text_for_ime_target(target, cx) else {
             return false;
         };
@@ -2387,7 +2188,7 @@ impl WorkspaceApp {
             return false;
         };
         let Some(next) =
-            self.text_input_navigation_destination(target, &text, &selection, keystroke, cx)
+            self.text_input_navigation_destination(target, &text, &selection, keystroke)
         else {
             return false;
         };
@@ -2434,20 +2235,6 @@ impl WorkspaceApp {
             return false;
         }
         if !ime_target_accepts_newline(target) {
-            return false;
-        }
-        if target == WorkspaceImeTarget::AiChatInput {
-            use super::sidebar::{AiChatPromptKeyAction, ai_chat_prompt_key_action};
-            if ai_chat_prompt_key_action(
-                keystroke,
-                &self.settings_store.settings().keybindings.overrides,
-                self.marked_text_for_target(target, cx).is_some(),
-                !self.ai_chat_autocomplete_items(cx).is_empty(),
-            ) != Some(AiChatPromptKeyAction::Newline)
-            {
-                return false;
-            }
-        } else if target == WorkspaceImeTarget::AiMessageEdit && !keystroke.modifiers.shift {
             return false;
         }
         let Some(replacement_range) = self.ime_selection_range_for_target(target, cx) else {
@@ -2618,27 +2405,12 @@ impl WorkspaceApp {
         text: &str,
         selection: &WorkspaceImeSelection,
         keystroke: &Keystroke,
-        cx: &App,
     ) -> Option<usize> {
         let text_len = text.encode_utf16().count();
         let key = keystroke.key.as_str();
         let focus = selection_focus(selection);
         let has_selection = selection.range.start < selection.range.end;
         let is_multiline = ime_target_accepts_newline(target);
-        if target == WorkspaceImeTarget::AiMessageEdit
-            && !keystroke.modifiers.control
-            && !keystroke.modifiers.alt
-            && !keystroke.modifiers.platform
-            && matches!(key, "up" | "arrowup" | "down" | "arrowdown")
-        {
-            let lines = self.ai_editor_visual_lines(target, text, cx);
-            return Some(ai_edit_vertical_destination(
-                text,
-                &lines,
-                focus,
-                matches!(key, "down" | "arrowdown"),
-            ));
-        }
         let destination = match key {
             "a" if keystroke.modifiers.control => {
                 if is_multiline {
@@ -2966,10 +2738,6 @@ impl WorkspaceApp {
                     self.settings_workspace.update(cx, |settings, cx| {
                         settings.replace_settings_entity_input(input, replacement_range, text, cx);
                     });
-                } else if self.ai_entity.read(cx).focused_settings_input() == Some(input) {
-                    self.ai_entity.update(cx, |ai, cx| {
-                        ai.replace_settings_input(input, replacement_range, text, cx);
-                    });
                 } else if self.focused_settings_input == Some(input) {
                     replace_utf16(&mut self.settings_input_draft, replacement_range, text);
                     self.apply_settings_input_draft(input, cx);
@@ -3026,60 +2794,6 @@ impl WorkspaceApp {
             WorkspaceImeTarget::TabRename => {
                 if let Some(dialog) = self.tab_rename_dialog.as_mut() {
                     replace_utf16(&mut dialog.draft, replacement_range, text);
-                    self.show_active_input_caret(cx);
-                    cx.notify();
-                }
-            }
-            WorkspaceImeTarget::AiModelSelectorSearch => {
-                if self.ai_entity.read(cx).model_selector_search_focused() {
-                    self.ai_entity.update(cx, |ai, _cx| {
-                        ai.replace_model_selector_search(replacement_range, text);
-                    });
-                    // Search changes rebuild the visible model rows; clear the
-                    // Radix-style active item so keyboard focus cannot point at
-                    // a filtered-out model.
-                    self.show_active_input_caret(cx);
-                    cx.notify();
-                }
-            }
-            WorkspaceImeTarget::AiInlinePrompt => {
-                let changed = self.ai_entity.update(cx, |ai, _cx| {
-                    let panel = ai.terminal_inline_panel_mut();
-                    if !panel.prompt_focused {
-                        return false;
-                    }
-                    replace_utf16(&mut panel.prompt, replacement_range, text);
-                    panel.error = None;
-                    true
-                });
-                if changed {
-                    self.show_active_input_caret(cx);
-                    cx.notify();
-                }
-            }
-            WorkspaceImeTarget::AiChatInput => {
-                let changed = self
-                    .ai_entity
-                    .update(cx, |ai, _cx| ai.replace_chat_input(replacement_range, text));
-                if changed {
-                    self.show_active_input_caret(cx);
-                    cx.notify();
-                }
-            }
-            WorkspaceImeTarget::AiConversationRename => {
-                let changed = self.ai_entity.update(cx, |ai, _cx| {
-                    ai.replace_conversation_rename(replacement_range, text)
-                });
-                if changed {
-                    self.show_active_input_caret(cx);
-                    cx.notify();
-                }
-            }
-            WorkspaceImeTarget::AiMessageEdit => {
-                let changed = self.ai_entity.update(cx, |ai, _cx| {
-                    ai.replace_message_edit(replacement_range, text)
-                });
-                if changed {
                     self.show_active_input_caret(cx);
                     cx.notify();
                 }
@@ -3455,7 +3169,6 @@ fn ime_target_accepts_newline(target: WorkspaceImeTarget) -> bool {
     match target {
         WorkspaceImeTarget::ReadOnlyText(_) => true,
         WorkspaceImeTarget::Settings(input) => input.accepts_newline(),
-        WorkspaceImeTarget::AiChatInput | WorkspaceImeTarget::AiMessageEdit => true,
         WorkspaceImeTarget::NewConnection(NewConnectionField::Notes) => true,
         WorkspaceImeTarget::SessionManager(SessionManagerInput::OxideExportDescription) => true,
         _ => false,
@@ -3555,45 +3268,11 @@ fn selection_anchor(selection: &WorkspaceImeSelection) -> usize {
     }
 }
 
-fn ai_edit_vertical_destination(
-    text: &str,
-    lines: &[super::sidebar::AiInputVisualLine<'_>],
-    focus: usize,
-    down: bool,
-) -> usize {
-    let index = ai_input_line_index_for_offset(lines, focus);
-    let current = lines[index].utf16_range();
-    let next_index = if down {
-        index + 1
-    } else {
-        let Some(previous) = index.checked_sub(1) else {
-            return 0;
-        };
-        previous
-    };
-    let Some(next) = lines.get(next_index).map(|line| line.utf16_range()) else {
-        return text.encode_utf16().count();
-    };
-    let offset = next.start
-        + focus
-            .saturating_sub(current.start)
-            .min(next.end - next.start);
-    utf16_offset_for_byte_index(text, byte_index_for_utf16(text, offset))
-}
-
 fn multiline_ime_line_ranges(
     target: WorkspaceImeTarget,
     text: &str,
     bounds: Bounds<Pixels>,
-    ai_wrap_columns: Option<usize>,
 ) -> Vec<Range<usize>> {
-    if target == WorkspaceImeTarget::AiChatInput {
-        // Mouse hit testing must use the same soft wraps as the painted chat draft.
-        return ai_input_visual_lines(text, ai_wrap_columns.expect("AI input wrap width"))
-            .into_iter()
-            .map(|line| line.utf16_range())
-            .collect();
-    }
     if ime_target_is_read_only(target) {
         soft_wrapped_line_ranges_utf16(
             text,
@@ -3775,42 +3454,11 @@ mod tests {
         WorkspaceImeMarkedText, WorkspaceImeTarget, active_ime_should_defer_input_key,
         collapsed_copy_shortcut_is_owned_by_target, copy_shortcut_owner_for_target,
         effective_platform_text_replacement_range, ime_target_is_secret, ime_text_snapshot,
-        keystroke_platform_text, keystroke_uses_text_edit_modifier, multiline_ime_line_ranges,
+        keystroke_platform_text, keystroke_uses_text_edit_modifier,
         normalize_clipboard_text_for_ime_target, path_completion_owns_vertical_navigation,
         platform_text_commit_is_duplicate, secret_ime_proxy, soft_wrapped_line_ranges_utf16,
         utf16_offset_for_char_index, workspace_ime_target_for_plain_host_tools_input,
     };
-
-    #[test]
-    fn ai_chat_hit_testing_uses_soft_wrapped_visual_lines() {
-        let bounds = gpui::Bounds {
-            origin: gpui::point(gpui::px(0.0), gpui::px(0.0)),
-            size: gpui::size(gpui::px(120.0), gpui::px(60.0)),
-        };
-        let text = "abcdefghij😀klmn\nZ";
-        assert_eq!(
-            multiline_ime_line_ranges(WorkspaceImeTarget::AiChatInput, text, bounds, Some(12)),
-            vec![0..12, 12..16, 17..18],
-        );
-    }
-
-    #[test]
-    fn history_editor_vertical_navigation_follows_soft_rows() {
-        let text = "abcdefghij😀klmn\nZ";
-        let lines = super::ai_input_visual_lines(text, 12);
-        for (focus, down, expected) in [
-            (2, true, 14),
-            (10, true, 16),
-            (14, false, 2),
-            (12, false, 0),
-            (17, true, 18),
-        ] {
-            assert_eq!(
-                super::ai_edit_vertical_destination(text, &lines, focus, down),
-                expected
-            );
-        }
-    }
 
     fn key(key: &str, key_char: Option<&str>, modifiers: Modifiers) -> Keystroke {
         Keystroke {
@@ -4110,7 +3758,7 @@ mod tests {
     fn classified_secret_ime_targets_project_only_masked_utf16_geometry() {
         let secret = "token密😄";
         let targets = [
-            WorkspaceImeTarget::Settings(SettingsInput::AiProviderApiKey(0)),
+            WorkspaceImeTarget::Settings(SettingsInput::ManagedKeyPastePrivateKey),
             WorkspaceImeTarget::NewConnection(NewConnectionField::Password),
             WorkspaceImeTarget::NewConnection(NewConnectionField::UpstreamProxyPassword),
             WorkspaceImeTarget::KeyboardInteractive(0),
@@ -4159,7 +3807,7 @@ mod tests {
     fn platform_commit_and_marked_text_debug_are_redacted() {
         let secret = "debug-secret";
         let mut pending = PendingPlatformTextCommit {
-            target: WorkspaceImeTarget::Settings(SettingsInput::AiProviderApiKey(0)),
+            target: WorkspaceImeTarget::Settings(SettingsInput::ManagedKeyPastePrivateKey),
             text: Zeroizing::new(secret.to_string()),
             generation: 9,
             consumed: false,

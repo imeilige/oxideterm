@@ -52,9 +52,11 @@ pub(super) enum SidebarSection {
     Settings,
 }
 
+pub(in crate::workspace) const CONTEXT_SIDEBAR_ABSOLUTE_MIN_WIDTH: f32 = 280.0;
+pub(in crate::workspace) const CONTEXT_SIDEBAR_ABSOLUTE_MAX_WIDTH: f32 = 500.0;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum ContextSidebarPanel {
-    Assistant,
     HostTools,
 }
 
@@ -157,7 +159,6 @@ impl WorkspaceApp {
 }
 
 mod activity;
-mod ai;
 mod helpers;
 mod region;
 mod sessions;
@@ -167,13 +168,6 @@ pub(in crate::workspace) use titlebar::{
     client_titlebar_button_layout, handle_window_drag_mouse_down,
 };
 
-pub(in crate::workspace) use ai::{
-    AcpApplicationToolTurn, AiChatPromptKeyAction, AiCompactionDelivery,
-    AiCompactionDeliverySender, AiInlinePanelState, AiInputVisualLine, AiStreamDelivery,
-    AiStreamDeliveryEvent, AiStreamDeliverySender, ai_chat_prompt_key_action,
-    ai_input_line_index_for_offset, ai_input_visual_lines, ai_now_ms,
-    handle_acp_application_tool_call,
-};
 use helpers::*;
 pub(in crate::workspace) use state::{
     clamp_responsive_sidebar_width, context_sidebar_panel_visible,

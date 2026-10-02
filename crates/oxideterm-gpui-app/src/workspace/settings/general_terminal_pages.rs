@@ -1520,7 +1520,7 @@ impl WorkspaceApp {
                         self.focus_settings_input(input, pretty, cx);
                         window.focus(&self.focus_handle, cx);
                     }
-                    Err(error) => self.push_ai_settings_toast(
+                    Err(error) => self.push_settings_toast(
                         format!(
                             "{} {}",
                             self.i18n.t("settings_view.terminal.command_specs_invalid"),
@@ -1551,21 +1551,21 @@ impl WorkspaceApp {
                                 if self.focused_settings_input == Some(input) {
                                     self.settings_input_draft = pretty;
                                 }
-                                self.push_ai_settings_toast(
+                                self.push_settings_toast(
                                     self.i18n.t("settings_view.terminal.command_specs_saved"),
                                     TerminalNoticeVariant::Success,
                                     cx,
                                 );
                                 cx.notify();
                             }
-                            Err(error) => self.push_ai_settings_toast(
+                            Err(error) => self.push_settings_toast(
                                 error.to_string(),
                                 TerminalNoticeVariant::Error,
                                 cx,
                             ),
                         }
                     }
-                    Err(error) => self.push_ai_settings_toast(
+                    Err(error) => self.push_settings_toast(
                         format!(
                             "{} {}",
                             self.i18n.t("settings_view.terminal.command_specs_invalid"),

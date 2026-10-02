@@ -268,7 +268,7 @@ impl WorkspaceApp {
         // Nested settings pages own distinct row sets. Keybinding filtering is
         // handled by per-row signatures so its toolbar can retain animation state.
         let route = self.settings_workspace.read(cx).route_snapshot();
-        settings_model_section_list_identity(route.active_tab, route.terminal_page, route.ai_page)
+        settings_model_section_list_identity(route.active_tab, route.terminal_page)
     }
 
     pub(in crate::workspace) fn settings_section_list_signatures(&self, cx: &App) -> Vec<u64> {
@@ -364,7 +364,6 @@ impl WorkspaceApp {
         let route = self.settings_workspace.read(cx).route_snapshot();
         SettingsDynamicSectionCounts {
             terminal_page: route.terminal_page,
-            ai_page: route.ai_page,
             visible_keybinding_scope_count: self.visible_keybinding_scope_count(cx),
         }
     }
@@ -387,7 +386,6 @@ impl WorkspaceApp {
             crate::keybindings::ActionScope::FileManager,
             crate::keybindings::ActionScope::Preview,
             crate::keybindings::ActionScope::RemoteDesktop,
-            crate::keybindings::ActionScope::AiPanel,
         ]
         .into_iter()
         .filter(|scope| {
@@ -839,7 +837,6 @@ impl WorkspaceApp {
         // Re-apply the same runtime side effects used by edit_settings instead
         // of relying on stale in-memory settings or browser-style stores.
         self.apply_loaded_settings_to_runtime(&previous_settings, &settings, cx);
-        self.refresh_ai_skill_registry();
         self.sync_tab_titles(cx);
         if previous_settings.appearance.window_opacity != settings.appearance.window_opacity {
             // Detached native windows are separate render roots and need an
@@ -933,35 +930,26 @@ impl WorkspaceApp {
             self.context_sidebar_motion_generation.wrapping_add(1);
         self.sidebar_rendered = !settings.sidebar_ui.collapsed;
         self.context_sidebar_rendered = crate::workspace::sidebar::context_sidebar_panel_visible(
-            settings.sidebar_ui.ai_sidebar_collapsed,
+            settings.sidebar_ui.context_sidebar_collapsed,
             settings.sidebar_ui.zen_mode,
-            settings.ai.enabled,
             self.active_context_sidebar_panel,
         );
-        let viewport_width = self
-            .ai_entity
-            .read(cx)
-            .chat_ui()
-            .overlay_window_size
-            .map(|size| size.0)
-            .unwrap_or(self.tokens.metrics.window_min_width);
-        // External settings reloads use the same responsive limits as pointer
-        // resizing, so persisted pixel widths cannot bypass the live viewport.
+        // Settings reloads run without a window handle, so persisted pixel widths
+        // are limited to their absolute bounds here. The responsive limits stay
+        // owned by the pointer and window-bounds paths that do have a viewport.
         self.sidebar_width = crate::workspace::sidebar::clamp_responsive_sidebar_width(
             settings.sidebar_ui.width as f32,
-            viewport_width,
+            0.0,
             self.tokens.metrics.sidebar_min_width,
             self.tokens.metrics.sidebar_max_width,
         );
-        let ai_sidebar_width = crate::workspace::sidebar::clamp_responsive_sidebar_width(
-            settings.sidebar_ui.ai_sidebar_width as f32,
-            viewport_width,
-            AI_SIDEBAR_ABSOLUTE_MIN_WIDTH,
-            AI_SIDEBAR_ABSOLUTE_MAX_WIDTH,
+        let context_sidebar_width = crate::workspace::sidebar::clamp_responsive_sidebar_width(
+            settings.sidebar_ui.context_sidebar_width as f32,
+            0.0,
+            CONTEXT_SIDEBAR_ABSOLUTE_MIN_WIDTH,
+            CONTEXT_SIDEBAR_ABSOLUTE_MAX_WIDTH,
         );
-        self.ai_entity.update(cx, |ai, _cx| {
-            ai.set_chat_sidebar_width(ai_sidebar_width);
-        });
+        self.context_sidebar_width = context_sidebar_width;
         self.sidebar_motion.settle(if self.sidebar_rendered {
             self.sidebar_panel_width()
         } else {
@@ -969,7 +957,7 @@ impl WorkspaceApp {
         });
         self.context_sidebar_motion
             .settle(if self.context_sidebar_rendered {
-                ai_sidebar_width
+                context_sidebar_width
             } else {
                 0.0
             });

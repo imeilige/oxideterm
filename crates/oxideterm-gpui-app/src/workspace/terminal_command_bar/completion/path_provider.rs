@@ -10,11 +10,7 @@ impl WorkspaceApp {
         let registry_cwd = pane_id
             .and_then(|pane_id| self.tab_host.read(cx).panes().get(&pane_id))
             .and_then(|pane| pane.read(cx).current_working_directory());
-        let inferred = pane_id
-            .and_then(|pane_id| self.tab_host.read(cx).panes().get(&pane_id))
-            .map(|pane| pane.read(cx).visible_text_snapshot())
-            .and_then(|text| infer_ai_cwd(&text));
-        registry_cwd.or(inferred).or_else(|| {
+        registry_cwd.or_else(|| {
             tab_kind
                 .is_some_and(|kind| *kind == TabKind::LocalTerminal)
                 .then(|| {

@@ -33,10 +33,6 @@ HEARTBEAT_ANCHOR = "Timer::after(Duration::from_millis(530)).await;"
 HIGH_LOAD_AREAS = {
     "host_tools": (WORKSPACE_DIRECTORY / "connection_monitor",),
     "remote_desktop": (WORKSPACE_DIRECTORY / "remote_desktop",),
-    "ai": (
-        WORKSPACE_DIRECTORY / "sidebar/ai",
-        WORKSPACE_DIRECTORY / "settings/ai",
-    ),
     "forwarding": (WORKSPACE_DIRECTORY / "forwards",),
 }
 

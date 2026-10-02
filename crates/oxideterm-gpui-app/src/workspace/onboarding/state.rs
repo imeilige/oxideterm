@@ -1,6 +1,6 @@
 use super::*;
 
-pub(in crate::workspace) const ONBOARDING_TOTAL_STEPS: usize = 9;
+pub(in crate::workspace) const ONBOARDING_TOTAL_STEPS: usize = 7;
 pub(in crate::workspace) const ONBOARDING_WIDTH: f32 = 800.0; // Tauri DialogContent sm:max-w-[800px].
 pub(in crate::workspace) const ONBOARDING_MAX_HEIGHT: f32 = 720.0;
 pub(in crate::workspace) const ONBOARDING_PROGRESS_ICON_SIZE: f32 = 28.0; // Tauri progress buttons w-7 h-7.
@@ -40,8 +40,6 @@ pub(in crate::workspace) enum OnboardingStep {
     Appearance,
     Workflow,
     Features,
-    AiIntro,
-    AiSetup,
     QuickStart,
 }
 
@@ -53,8 +51,9 @@ impl OnboardingStep {
             2 => Self::Appearance,
             3 => Self::Workflow,
             4 => Self::Features,
-            5 => Self::AiIntro,
-            6 => Self::AiSetup,
+            // Indices 5 and 6 both render the quick-start step: the last slot
+            // reuses it so the footer can offer "start exploring" instead of
+            // "next". Do not add an explicit arm here without a real step.
             _ => Self::QuickStart,
         }
     }
@@ -66,8 +65,6 @@ impl OnboardingStep {
             Self::Appearance => LucideIcon::Monitor,
             Self::Workflow => LucideIcon::Network,
             Self::Features => LucideIcon::Shield,
-            Self::AiIntro => LucideIcon::Sparkles,
-            Self::AiSetup => LucideIcon::Settings,
             Self::QuickStart => LucideIcon::Rocket,
         }
     }
@@ -78,8 +75,6 @@ pub(in crate::workspace) struct OnboardingState {
     pub(in crate::workspace) open: bool,
     pub(in crate::workspace) step: usize,
     pub(in crate::workspace) disclaimer_accepted: bool,
-    pub(in crate::workspace) ai_opt_in: bool,
-    pub(in crate::workspace) tool_use_opt_in: bool,
     pub(in crate::workspace) import_state: OnboardingImportState,
     pub(in crate::workspace) imported_count: usize,
     pub(in crate::workspace) host_count: Option<usize>,
@@ -92,8 +87,6 @@ impl OnboardingState {
             open: !settings.onboarding_completed,
             step: 0,
             disclaimer_accepted: disclaimer_accepted_from_settings(settings),
-            ai_opt_in: settings.ai.enabled,
-            tool_use_opt_in: settings.ai.enabled && settings.ai.tool_use.enabled,
             import_state: OnboardingImportState::Idle,
             imported_count: 0,
             host_count: None,
@@ -105,8 +98,6 @@ impl OnboardingState {
         self.open = true;
         self.step = 0;
         self.disclaimer_accepted = disclaimer_accepted_from_settings(settings);
-        self.ai_opt_in = settings.ai.enabled;
-        self.tool_use_opt_in = settings.ai.enabled && settings.ai.tool_use.enabled;
         self.import_state = OnboardingImportState::Idle;
         self.imported_count = 0;
         self.host_count = None;

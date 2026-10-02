@@ -49,15 +49,6 @@ pub enum TerminalSettingsPage {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum AiSettingsPage {
-    General,
-    Providers,
-    Agents,
-    Context,
-    Tools,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SettingsKeybindingScopeFilter {
     All,
     Global,
@@ -69,7 +60,6 @@ pub enum SettingsKeybindingScopeFilter {
     Files,
     Preview,
     RemoteDesktop,
-    AiPanel,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -102,12 +92,6 @@ pub enum SettingsSelect {
     ReconnectMaxAttempts,
     ReconnectBaseDelay,
     ReconnectMaxDelay,
-    AiProviderTemplate,
-    AiEmbeddingProvider,
-    KnowledgeCollectionScope,
-    KnowledgeDocumentFormat,
-    AiMcpTransport,
-    AiMcpAuthMode,
     SftpPresentation,
     SftpProtocol,
     SftpConcurrent,
@@ -173,33 +157,6 @@ pub enum SettingsInput {
     HighlightPattern(usize),
     HighlightForeground(usize),
     HighlightBackground(usize),
-    AiProviderName(usize),
-    AiProviderBaseUrl(usize),
-    AiProviderNewModel(usize),
-    AiProviderApiKey(usize),
-    AiAcpAgentDisplayName(usize),
-    AiAcpAgentCommand(usize),
-    AiAcpAgentCwd(usize),
-    AiAcpAgentArgs(usize),
-    AiAcpAgentEnv(usize),
-    AiSystemPrompt,
-    AiMemoryContent,
-    AiToolUseMaxRounds,
-    AiToolUseMaxCallsPerRound,
-    AiModelContextWindow(usize, usize),
-    AiEmbeddingModel,
-    AiMcpName,
-    AiMcpCommand,
-    AiMcpArgs,
-    AiMcpUrl,
-    AiMcpAuthHeaderName,
-    AiMcpAuthToken,
-    AiMcpEnvKey(usize),
-    AiMcpEnvValue(usize),
-    AiMcpHeaderKey(usize),
-    AiMcpHeaderValue(usize),
-    KnowledgeCollectionName,
-    KnowledgeDocumentTitle,
     NativePluginInstallUrl,
     NativePluginInstallChecksum,
     NativePluginRegistryUrl,
@@ -250,28 +207,6 @@ impl TerminalSettingsPage {
     }
 }
 
-impl AiSettingsPage {
-    pub fn all() -> &'static [Self] {
-        &[
-            Self::General,
-            Self::Providers,
-            Self::Agents,
-            Self::Context,
-            Self::Tools,
-        ]
-    }
-
-    pub fn label_key(self) -> &'static str {
-        match self {
-            Self::General => "settings_view.ai.page_general",
-            Self::Providers => "settings_view.ai.page_providers",
-            Self::Agents => "settings_view.ai.page_agents",
-            Self::Context => "settings_view.ai.page_context",
-            Self::Tools => "settings_view.ai.page_tools",
-        }
-    }
-}
-
 impl SettingsKeybindingScopeFilter {
     pub fn all() -> &'static [Self] {
         &[
@@ -285,7 +220,6 @@ impl SettingsKeybindingScopeFilter {
             Self::Files,
             Self::Preview,
             Self::RemoteDesktop,
-            Self::AiPanel,
         ]
     }
 
@@ -301,7 +235,6 @@ impl SettingsKeybindingScopeFilter {
             Self::Files => "settings_view.keybindings.scope_files",
             Self::Preview => "settings_view.keybindings.scope_preview",
             Self::RemoteDesktop => "settings_view.keybindings.scope_remote_desktop",
-            Self::AiPanel => "settings_view.keybindings.scope_ai_panel",
         }
     }
 }
@@ -403,11 +336,6 @@ impl SettingsInput {
             Self::TerminalCommandBarFocusHandoff
                 | Self::TerminalCommandSpecsJson
                 | Self::TerminalTriggerArguments
-                | Self::AiSystemPrompt
-                | Self::AiMemoryContent
-                | Self::AiAcpAgentArgs(_)
-                | Self::AiAcpAgentEnv(_)
-                | Self::AiMcpArgs
                 | Self::ManagedKeyPastePrivateKey
         )
     }
@@ -418,11 +346,7 @@ impl SettingsInput {
         match self {
             Self::TerminalCommandBarFocusHandoff | Self::TerminalCommandSpecsJson => 20.0,
             Self::TerminalTriggerArguments => 20.0,
-            Self::AiSystemPrompt | Self::AiMemoryContent => 22.0,
-            Self::AiAcpAgentArgs(_)
-            | Self::AiAcpAgentEnv(_)
-            | Self::AiMcpArgs
-            | Self::ManagedKeyPastePrivateKey => 20.0,
+            Self::ManagedKeyPastePrivateKey => 20.0,
             _ => DEFAULT_SETTINGS_TEXTAREA_LINE_HEIGHT,
         }
     }
@@ -477,35 +401,6 @@ impl SettingsInput {
             Self::HighlightPattern(index) => 101 + index as u64 * 4,
             Self::HighlightForeground(index) => 102 + index as u64 * 4,
             Self::HighlightBackground(index) => 103 + index as u64 * 4,
-            Self::AiProviderName(index) => 20_000 + index as u64 * 4,
-            Self::AiProviderBaseUrl(index) => 20_001 + index as u64 * 4,
-            Self::AiProviderNewModel(index) => 20_002 + index as u64 * 4,
-            Self::AiProviderApiKey(index) => 20_003 + index as u64 * 4,
-            Self::AiAcpAgentDisplayName(index) => 21_500 + index as u64 * 6,
-            Self::AiAcpAgentCommand(index) => 21_501 + index as u64 * 6,
-            Self::AiAcpAgentCwd(index) => 21_502 + index as u64 * 6,
-            Self::AiAcpAgentArgs(index) => 21_503 + index as u64 * 6,
-            Self::AiAcpAgentEnv(index) => 21_504 + index as u64 * 6,
-            Self::AiSystemPrompt => 22_000,
-            Self::AiMemoryContent => 22_001,
-            Self::AiToolUseMaxRounds => 22_002,
-            Self::AiToolUseMaxCallsPerRound => 22_003,
-            Self::AiModelContextWindow(provider_index, model_index) => {
-                23_000 + provider_index as u64 * 1_000 + model_index as u64
-            }
-            Self::AiEmbeddingModel => 24_001,
-            Self::AiMcpName => 25_000,
-            Self::AiMcpCommand => 25_001,
-            Self::AiMcpArgs => 25_002,
-            Self::AiMcpUrl => 25_003,
-            Self::AiMcpAuthHeaderName => 25_004,
-            Self::AiMcpAuthToken => 25_005,
-            Self::AiMcpEnvKey(index) => 25_100 + index as u64 * 2,
-            Self::AiMcpEnvValue(index) => 25_101 + index as u64 * 2,
-            Self::AiMcpHeaderKey(index) => 25_300 + index as u64 * 2,
-            Self::AiMcpHeaderValue(index) => 25_301 + index as u64 * 2,
-            Self::KnowledgeCollectionName => 26_000,
-            Self::KnowledgeDocumentTitle => 26_001,
             Self::NativePluginInstallUrl => PLUGIN_MANAGER_INPUT_ANCHOR_BASE,
             Self::NativePluginInstallChecksum => PLUGIN_MANAGER_INPUT_ANCHOR_BASE + 1,
             Self::NativePluginRegistryUrl => PLUGIN_MANAGER_INPUT_ANCHOR_BASE + 2,
@@ -525,27 +420,9 @@ impl SettingsInput {
     pub fn is_secret(self) -> bool {
         matches!(
             self,
-            Self::AiProviderApiKey(_)
-                | Self::AiMcpAuthToken
-                | Self::ManagedKeyFilePassphrase
+            Self::ManagedKeyFilePassphrase
                 | Self::ManagedKeyPastePrivateKey
                 | Self::ManagedKeyPastePassphrase
-        )
-    }
-
-    pub fn is_ai_mcp(self) -> bool {
-        matches!(
-            self,
-            Self::AiMcpName
-                | Self::AiMcpCommand
-                | Self::AiMcpArgs
-                | Self::AiMcpUrl
-                | Self::AiMcpAuthHeaderName
-                | Self::AiMcpAuthToken
-                | Self::AiMcpEnvKey(_)
-                | Self::AiMcpEnvValue(_)
-                | Self::AiMcpHeaderKey(_)
-                | Self::AiMcpHeaderValue(_)
         )
     }
 }
@@ -569,7 +446,7 @@ mod tests {
 
     #[test]
     fn secret_inputs_are_categorized_in_the_model_layer() {
-        assert!(SettingsInput::AiProviderApiKey(0).is_secret());
+        assert!(SettingsInput::ManagedKeyFilePassphrase.is_secret());
         assert!(!SettingsInput::TerminalFontSize.is_secret());
     }
 }

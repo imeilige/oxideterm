@@ -22,10 +22,6 @@ fs2.workspace = true
 gpui.workspace = true
 image.workspace = true
 oxideterm-backend-classification = { path = "../oxideterm-backend-classification" }
-oxideterm-ai = { path = "../oxideterm-ai" }
-oxideterm-ai-tasks = { path = "../oxideterm-ai-tasks" }
-oxideterm-acp-adapter = { path = "../oxideterm-acp-adapter" }
-oxideterm-acp-host-tools = { path = "../oxideterm-acp-host-tools" }
 oxideterm-atomic-file = { path = "../oxideterm-atomic-file" }
 oxideterm-connection-monitor = { path = "../oxideterm-connection-monitor" }
 oxideterm-connections = { path = "../oxideterm-connections" }
@@ -54,7 +50,6 @@ oxideterm-remote-desktop = { path = "../oxideterm-remote-desktop" }
 oxideterm-render-policy = { path = "../oxideterm-render-policy" }
 oxideterm-settings = { path = "../oxideterm-settings" }
 oxideterm-settings-model = { path = "../oxideterm-settings-model" }
-oxideterm-skills = { path = "../oxideterm-skills" }
 oxideterm-session-adapter = { path = "../oxideterm-session-adapter" }
 oxideterm-sftp = { path = "../oxideterm-sftp" }
 oxideterm-ssh-launch = { path = "../oxideterm-ssh-launch" }

@@ -7,7 +7,7 @@
 
 OxideTerm 是一个 Rust 原生的桌面 SSH / 终端客户端。它不是"WebView 套壳"——渲染层是自带的 GPUI（vendored 在 `crates/gpui-ce`），终端模拟器是 vendored 的 `alacritty-terminal` + `vte`，没有浏览器运行时。
 
-一次会话里可能同时存在：多个终端面板、本地 shell、远程 shell、SFTP 双栏文件浏览、端口转发、远程桌面（RDP/VNC 子进程）、会话树、连接监控、以及一个可开关的 AI 助手面板。
+一次会话里可能同时存在：多个终端面板、本地 shell、远程 shell、SFTP 双栏文件浏览、端口转发、远程桌面（RDP/VNC 子进程）、会话树和连接监控。
 
 ## 2. crate 分层
 
@@ -30,7 +30,6 @@ OxideTerm 是一个 Rust 原生的桌面 SSH / 终端客户端。它不是"WebVi
 
 ```
 270,936  oxideterm-gpui-app      主程序，占全仓 31%
- 48,961  oxideterm-ai            AI 核心逻辑
  33,924  oxideterm-gpui-terminal 终端面板 UI
  28,784  oxideterm-terminal      终端模拟器封装
  24,996  oxideterm-connections   连接存储
@@ -46,7 +45,7 @@ OxideTerm 是一个 Rust 原生的桌面 SSH / 终端客户端。它不是"WebVi
 
 | 子目录 | 行数 | 内容 |
 |---|---|---|
-| `sidebar/` | 42,282 | 左侧主边栏 + AI 上下文侧栏（`sidebar/ai/` 36,141 行） |
+| `sidebar/` | 42,282 | 左侧主边栏 |
 | `settings/` | 23,778 | 设置界面 |
 | `new_connection/` | 23,775 | 新建连接向导（SSH 主机密钥、密码、交互式认证） |
 | `connection_monitor/` | 22,451 | 连接健康、主机工具采样（进程/端口/文件系统/tmux） |
@@ -58,8 +57,6 @@ OxideTerm 是一个 Rust 原生的桌面 SSH / 终端客户端。它不是"WebVi
 | `remote_desktop/` | 6,346 | RDP/VNC 会话 |
 | `forwards/` | 6,233 | 端口转发 UI |
 | `root/` | 5,936 | 窗口壳层、渲染入口、模态所有权、IME 路由 |
-| `ai_state/` | 3,924 | AI 状态实体（+ `ai_state.rs` 6,882 行） |
-| `ai_runtime_context/` | 1,109 | AI 工具句柄签发与能力注册 |
 
 根目录文件：`keybindings.rs`（2,027 行，快捷键定义）、`workspace.rs`（1,138 行）、`portable_bootstrap.rs`（835 行，便携模式启动）、`single_instance.rs`（665 行）、`main.rs`（456 行）。
 
@@ -122,7 +119,7 @@ new_connection, ssh_config, ...
 `WindowRegistry<Handle, Effect, CoalescingKey>`（`crates/oxideterm-gpui-app/src/workspace/window_registry.rs:55`）是一个泛型注册表，管理原生窗口与"窗口级效果"的对应关系。
 
 - `WindowRole` 区分主窗口和分离标签窗口
-- 效果类型是 `WorkspaceWindowEffect`（窗口意图、运行时事件、AI、公共 MCP、标签宿主、图形）
+- 效果类型是 `WorkspaceWindowEffect`（窗口意图、运行时事件、公共 MCP、标签宿主、图形）
 - `coalescing_key()` 让同类效果在重绘前合并，避免事件风暴
 - 注册/释放走 `reserve_workspace_window` → `commit_workspace_window` 两阶段
 

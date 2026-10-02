@@ -232,7 +232,7 @@ impl WorkspaceApp {
                             .justify_between()
                             .gap(px(8.0))
                             .child(self.workspace_toolbar_action_button(
-                                self.i18n.t("settings_view.ai.profile_set_default"),
+                                self.i18n.t("settings_view.local_terminal.set_default_shell"),
                                 None,
                                 ToolbarButtonOptions {
                                     button: ButtonOptions {

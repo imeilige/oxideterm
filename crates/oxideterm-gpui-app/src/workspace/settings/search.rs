@@ -6,7 +6,6 @@ const SETTINGS_SEARCH_RESULT_LIMIT: usize = 40;
 struct SettingsSearchResult {
     tab: SettingsTab,
     terminal_page: Option<TerminalSettingsPage>,
-    ai_page: Option<AiSettingsPage>,
     section_index: usize,
     label: String,
     breadcrumb: String,
@@ -17,7 +16,6 @@ struct SettingsSearchResult {
 struct SettingsSearchEntrySpec {
     tab: SettingsTab,
     terminal_page: Option<TerminalSettingsPage>,
-    ai_page: Option<AiSettingsPage>,
     section_index: usize,
     title_key: &'static str,
     search_keys: &'static [&'static str],
@@ -33,7 +31,6 @@ const fn settings_search_entry(
     SettingsSearchEntrySpec {
         tab,
         terminal_page: None,
-        ai_page: None,
         section_index,
         title_key,
         search_keys,
@@ -49,7 +46,6 @@ const fn terminal_search_entry(
     SettingsSearchEntrySpec {
         tab: SettingsTab::Terminal,
         terminal_page: Some(page),
-        ai_page: None,
         section_index,
         title_key,
         search_keys,
@@ -517,14 +513,9 @@ fn settings_search_results(i18n: &I18n, query: &str) -> Vec<SettingsSearchResult
                 breadcrumb.push_str(" · ");
                 breadcrumb.push_str(&i18n.t(page.label_key()));
             }
-            if let Some(page) = spec.ai_page {
-                breadcrumb.push_str(" · ");
-                breadcrumb.push_str(&i18n.t(page.label_key()));
-            }
             Some(SettingsSearchResult {
                 tab: spec.tab,
                 terminal_page: spec.terminal_page,
-                ai_page: spec.ai_page,
                 section_index: spec.section_index,
                 label,
                 breadcrumb,
@@ -545,7 +536,6 @@ fn settings_search_results(i18n: &I18n, query: &str) -> Vec<SettingsSearchResult
         seen.insert((
             result.tab,
             result.terminal_page.map(TerminalSettingsPage::label_key),
-            result.ai_page.map(AiSettingsPage::label_key),
             result.section_index,
         ))
     });
@@ -606,35 +596,6 @@ impl WorkspaceApp {
         result: SettingsSearchResult,
         cx: &mut Context<Self>,
     ) {
-        self.ai_entity.update(cx, |ai, cx| {
-            let section = match (result.ai_page, result.section_index) {
-                (Some(AiSettingsPage::Providers), 1) => {
-                    Some(AiSettingsViewSection::ProviderSettings)
-                }
-                (Some(AiSettingsPage::Tools), 1) => Some(AiSettingsViewSection::ToolUse),
-                (Some(AiSettingsPage::Context), 4) => Some(AiSettingsViewSection::ContextWindows),
-                _ => None,
-            };
-            if let Some(section) = section {
-                if !ai.settings_section_expanded(section) {
-                    ai.toggle_settings_section(section, cx);
-                }
-                for provider in ai_provider_views(self.settings_store.settings()) {
-                    if section == AiSettingsViewSection::ProviderSettings {
-                        if !ai.settings_provider_expanded(&provider.id, false) {
-                            ai.toggle_settings_provider_expanded(&provider.id, false, cx);
-                        }
-                        if !ai.settings_provider_models_expanded(&provider.id) {
-                            ai.toggle_settings_provider_models(&provider.id, cx);
-                        }
-                    } else if section == AiSettingsViewSection::ContextWindows
-                        && !ai.settings_context_provider_expanded(&provider.id)
-                    {
-                        ai.toggle_settings_context_provider(&provider.id, cx);
-                    }
-                }
-            }
-        });
         let tab = result.tab;
         let target_section_index = result.section_index;
         if result.terminal_page == Some(TerminalSettingsPage::Awareness)
@@ -646,9 +607,6 @@ impl WorkspaceApp {
             settings.set_active_tab(tab, cx);
             if let Some(page) = result.terminal_page {
                 settings.set_terminal_page(page, cx);
-            }
-            if let Some(page) = result.ai_page {
-                settings.set_ai_page(page, cx);
             }
             settings.close_settings_search(true, cx);
         });

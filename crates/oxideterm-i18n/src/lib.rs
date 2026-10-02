@@ -23,7 +23,6 @@ const EN_PARTS: &[&str] = &[
     include_str!("../locales/en/mosh.json"),
     include_str!("../locales/en/fileManager.json"),
     include_str!("../locales/en/graphics.json"),
-    include_str!("../locales/en/ai.json"),
 ];
 const ZH_CN_PARTS: &[&str] = &[
     include_str!("../locales/zh-CN/common.json"),
@@ -43,7 +42,6 @@ const ZH_CN_PARTS: &[&str] = &[
     include_str!("../locales/zh-CN/mosh.json"),
     include_str!("../locales/zh-CN/fileManager.json"),
     include_str!("../locales/zh-CN/graphics.json"),
-    include_str!("../locales/zh-CN/ai.json"),
 ];
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

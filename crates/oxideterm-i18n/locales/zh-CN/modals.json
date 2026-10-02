@@ -527,8 +527,7 @@
         "sftp": "SFTP 传输",
         "appearance": "外观",
         "connections": "连接",
-        "ssh": "SSH 密钥",
-        "ai": "OxideSens"
+        "ssh": "SSH 密钥"
       },
       "terminal": {
         "title": "终端设置",
@@ -590,65 +589,6 @@
         "encrypted": "已加密",
         "no_keys": "在默认位置未找到密钥。"
       },
-      "ai": {
-        "title": "OxideSens",
-        "description": "使用您自己的 API 配置内联 OxideSens。",
-        "enable": {
-          "title": "启用 AI 功能",
-          "shortcut_windows": "在终端按 Ctrl+Shift+I 打开 AI 面板",
-          "shortcut_mac": "在终端按 Ctrl+I / Cmd+I 打开 AI 面板"
-        },
-        "privacy": {
-          "title": "🔒 隐私提示",
-          "local_requests": "所有 AI 请求均从您的本地计算机发起",
-          "no_server": "不使用中间服务器",
-          "context_only": "仅将选定的上下文发送到 API",
-          "keychain": "API 密钥安全存储在系统钥匙串中"
-        },
-        "config": {
-          "title": "API 配置",
-          "description": "OpenAI 兼容端点设置。",
-          "base_url": "Base URL",
-          "base_url_placeholder": "https://api.openai.com/v1",
-          "base_url_hint": "支持 OpenAI、Ollama、OneAPI 或任何兼容端点。",
-          "model": "模型",
-          "model_placeholder": "gpt-4o-mini",
-          "model_hint": "模型标识符 (如 gpt-4o-mini, deepseek-chat, llama3.2)。",
-          "api_key": "API 密钥",
-          "api_key_configured": "API 密钥已配置到钥匙串",
-          "api_key_remove_confirm": "从钥匙串中移除 API 密钥？",
-          "api_key_placeholder": "sk-...",
-          "api_key_hint": "存储在系统钥匙串中，不会保存到磁盘。",
-          "save": "保存",
-          "saving": "保存中..."
-        },
-        "context": {
-          "title": "上下文限制",
-          "description": "控制发送给 AI 的上下文数量。",
-          "max_chars": "最大字符数",
-          "visible_lines": "可见行数",
-          "token_hint": "Token 估算为近似值 (1 token ≈ 4 英文字符)。",
-          "chars_2000": "2,000 字符 (约 500 tokens)",
-          "chars_4000": "4,000 字符 (约 1,000 tokens)",
-          "chars_8000": "8,000 字符 (约 2,000 tokens)",
-          "chars_16000": "16,000 字符 (约 4,000 tokens)",
-          "chars_32000": "32,000 字符 (约 8,000 tokens)",
-          "lines_50": "50 行",
-          "lines_100": "100 行",
-          "lines_120": "120 行",
-          "lines_200": "200 行"
-        },
-        "confirm": {
-          "title": "启用 AI 功能",
-          "intro": "在启用 AI 功能之前，请确认您了解：",
-          "point_local": "所有 AI 请求均从<strong>您的本地计算机</strong>发起",
-          "point_no_server": "OxideTerm <strong>不使用中间服务器</strong>",
-          "point_context": "仅将<strong>选定的上下文</strong>发送到您配置的 API",
-          "point_responsibility": "您需要对 API 提供商的数据政策负责",
-          "cancel": "取消",
-          "confirm": "我理解，启用 AI"
-        }
-      },
       "sftp": {
         "title": "SFTP 传输设置",
         "description": "配置文件传输行为和性能。",
@@ -676,9 +616,7 @@
         "create_group_failed": "创建分组失败: {{error}}",
         "delete_group_failed": "删除分组失败: {{error}}",
         "import_host_success": "成功将 \"{{name}}\" 导入为保存的连接！",
-        "import_host_failed": "导入主机失败: {{error}}",
-        "save_api_key_failed": "保存 API 密钥失败: {{error}}",
-        "remove_api_key_failed": "移除 API 密钥失败: {{error}}"
+        "import_host_failed": "导入主机失败: {{error}}"
       }
     },
     "upstream_proxy": {

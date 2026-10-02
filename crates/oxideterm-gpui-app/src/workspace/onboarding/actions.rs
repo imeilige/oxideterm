@@ -25,19 +25,10 @@ impl WorkspaceApp {
     }
 
     pub(in crate::workspace) fn complete_onboarding(&mut self, cx: &mut Context<Self>) {
-        let ai_opt_in = self.onboarding.ai_opt_in;
-        let tool_use_opt_in = self.onboarding.tool_use_opt_in;
         self.edit_settings(
             move |settings| {
                 settings.onboarding_completed = true;
                 settings.onboarding_disclaimer_accepted = true;
-                if ai_opt_in {
-                    settings.ai.enabled = true;
-                    settings.ai.enabled_confirmed = true;
-                }
-                if ai_opt_in && tool_use_opt_in {
-                    settings.ai.tool_use.enabled = true;
-                }
             },
             cx,
         );

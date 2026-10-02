@@ -5,7 +5,7 @@
 <h1 align="center">⚡ OxideTerm</h1>
 
 <p align="center">
-  <strong>Không gian làm việc vận hành máy chủ từ xa có AI — ứng dụng gốc viết hoàn toàn bằng Rust</strong>
+  <strong>Không gian làm việc vận hành máy chủ từ xa — ứng dụng gốc viết hoàn toàn bằng Rust</strong>
   <br>
   Terminal SSH, Mosh, Telnet, nối tiếp, RDP/VNC, SFTP, chuyển tiếp cổng và chỉnh sửa nhẹ trong một không gian làm việc gốc.
   <br>
@@ -40,9 +40,8 @@ OxideTerm là không gian làm việc mã nguồn mở cho SSH và vận hành t
 
 - Quản lý SSH, Mosh, Telnet, serial, RDP/VNC, SFTP, chuyển tiếp cổng, shell cục bộ và chỉnh sửa nhẹ trong một không gian làm việc
 - Duy trì công việc từ xa qua gián đoạn mạng ngắn bằng cơ chế kết nối lại Grace Period
-- Yêu cầu OxideSens kiểm tra phiên đang hoạt động và thực hiện các hành động đã được phê duyệt qua nhà cung cấp AI của bạn
 
-Kết nối và dữ liệu vận hành vẫn do bạn kiểm soát. OxideSens dùng nhà cung cấp AI của bạn và không yêu cầu tài khoản.
+Kết nối và dữ liệu vận hành vẫn do bạn kiểm soát. Không yêu cầu tài khoản.
 
 ---
 
@@ -50,10 +49,9 @@ Kết nối và dữ liệu vận hành vẫn do bạn kiểm soát. OxideSens d
 
 | Nếu bạn quan tâm đến… | OxideTerm cung cấp… |
 |---|---|
-| Một nút từ xa, nhiều công cụ | Terminal, SFTP, chuyển tiếp cổng, RDP/VNC, trzsz, IDE native, giám sát và OxideSens AI cùng thuộc một workspace |
+| Một nút từ xa, nhiều công cụ | Terminal, SFTP, chuyển tiếp cổng, RDP/VNC, trzsz, IDE native, giám sát cùng thuộc một workspace |
 | Ứng dụng desktop không có Electron hoặc WebView đi kèm | GPUI vẽ giao diện trực tiếp trên bề mặt GPU mà không phân phối runtime trình duyệt |
 | Quy trình vận hành local-first | SSH, Telnet, SFTP, chuyển tiếp, RDP/VNC, shell cục bộ, terminal nối tiếp và cấu hình hoạt động không cần đăng ký |
-| OxideSens AI BYOK thay vì tín dụng nền tảng | OxideSens dùng endpoint OpenAI, Anthropic, Gemini, Ollama hoặc tương thích OpenAI của bạn, với MCP, RAG, điều khiển suy luận theo nhà cung cấp và các thao tác workspace đã được phê duyệt |
 | Độ ổn định khi kết nối lại | Grace Period thăm dò kết nối cũ trong 30 giây trước khi thay thế, để ứng dụng TUI vượt qua các gián đoạn mạng ngắn |
 | SSH Rust thuần và an toàn thông tin xác thực | Ngăn xếp SSH dùng `russh` + `ring` không cần OpenSSL/libssh2; thông tin xác thực đã lưu dùng móc khóa hệ thống và gói `.oxide` dùng ChaCha20-Poly1305 + Argon2id |
 
@@ -80,7 +78,7 @@ Các ảnh dưới đây thể hiện quy trình terminal, tệp, chỉnh sửa 
 
 <table>
 <tr>
-<td align="center"><strong>Terminal SSH + OxideSens AI</strong><br/><br/><img src="../../docs/screenshots/terminal/SSHTERMINAL.png" alt="Terminal SSH với OxideSens AI" /></td>
+<td align="center"><strong>Terminal SSH</strong><br/><br/><img src="../../docs/screenshots/terminal/SSHTERMINAL.png" alt="Terminal SSH" /></td>
 <td align="center"><strong>Trình quản lý tệp SFTP</strong><br/><br/><img src="../../docs/screenshots/sftp/sftp.png" alt="Trình quản lý tệp SFTP hai bảng với hàng đợi truyền tải" /></td>
 </tr>
 <tr>
@@ -93,14 +91,13 @@ Các ảnh dưới đây thể hiện quy trình terminal, tệp, chỉnh sửa 
 
 ## Thiết kế cho vận hành từ xa
 
-OxideTerm giữ kết nối, tệp, chuyển tiếp, công cụ máy chủ, tự động hóa và ngữ cảnh AI trong một không gian Rust. Các công cụ dùng chung danh tính máy chủ và vòng đời phiên.
+OxideTerm giữ kết nối, tệp, chuyển tiếp, công cụ máy chủ, tự động hóa trong một không gian Rust. Các công cụ dùng chung danh tính máy chủ và vòng đời phiên.
 
 | Khía cạnh | Cách tiếp cận có trình duyệt đi kèm | OxideTerm |
 |---|---|---|
 | **Kết xuất** | Công cụ trình duyệt và bố cục web | GPUI trên bề mặt GPU |
 | **Luồng dữ liệu terminal** | WebSocket → vòng lặp sự kiện JS → xterm.js | Đầu vào Rust → thay đổi `TerminalState` → kết xuất GPUI |
 | **Vòng đời kết nối** | Tách giữa lớp frontend và backend | Một quy trình kết nối và kết nối lại trong cùng tiến trình |
-| **Ngữ cảnh AI** | Sao chép qua cầu nối ứng dụng | Tạo từ workspace đang hoạt động với phê duyệt của người dùng |
 | **Runtime plugin** | Môi trường script của trình duyệt | Đường chạy manifest-only, WASM giới hạn theo khả năng và process cần được tin cậy rõ ràng |
 | **CLI** | Cần ứng dụng desktop đang chạy | Binary độc lập, liên kết trực tiếp các crate |
 | **Ranh giới runtime** | Trình bao desktop cùng runtime trình duyệt | Tiến trình native không có runtime trình duyệt đi kèm |
@@ -115,22 +112,11 @@ OxideTerm giữ kết nối, tệp, chuyển tiếp, công cụ máy chủ, tự
 | **Tệp và chỉnh sửa từ xa** | SFTP, hàng đợi truyền, dấu trang, ghi an toàn, cây dự án và chỉnh sửa theo tab |
 | **Chuyển tiếp và mạng** | Chuyển tiếp cục bộ, từ xa và SOCKS5 động, quy tắc đã lưu và gỡ lỗi socket |
 | **Vận hành máy chủ và màn hình từ xa** | Giám sát, tiến trình, dịch vụ, log, cổng, tác vụ, đĩa, gói, container, tmux, RDP và VNC |
-| **OxideSens và tự động hóa** | Nhà cung cấp AI riêng, MCP, RAG cục bộ, Agent Skills, hành động được duyệt, đồng bộ mã hóa và CLI |
+| **Tự động hóa** | Chính sách lệnh, gói `.oxide` di động và CLI độc lập |
 | **Mở rộng và cá nhân hóa** | Plugin manifest-only, WASM và process, tab tùy chỉnh, lệnh nhanh, chủ đề, hình nền, phím tắt và 11 ngôn ngữ |
 
 ---
 
-<div align="center">
-
-<a href="../../docs/media/ai-terminal-demo.mp4">
-  <img src="../../docs/media/ai-terminal-demo.gif" alt="OxideSens mở terminal bên trong OxideTerm" width="920">
-</a>
-
-*OxideSens làm theo yêu cầu của người dùng và mở một terminal bên trong OxideTerm.*
-
-</div>
-
----
 
 ## Cài đặt
 
@@ -147,10 +133,10 @@ OxideTerm giữ kết nối, tệp, chuyển tiếp, công cụ máy chủ, tự
 
 ## Kiến trúc
 
-OxideTerm hợp nhất terminal, SSH, Telnet, RDP, VNC, SFTP, chuyển tiếp, IDE, AI, plugin và CLI trong một kiến trúc Rust. Chi tiết kỹ thuật được trình bày bên dưới.
+OxideTerm hợp nhất terminal, SSH, Telnet, RDP, VNC, SFTP, chuyển tiếp, IDE, plugin và CLI trong một kiến trúc Rust. Chi tiết kỹ thuật được trình bày bên dưới.
 
 <details>
-<summary><strong>Kiến trúc, nội bộ SSH, shell GPUI, kết nối lại, AI, plugins và hơn nữa</strong></summary>
+<summary><strong>Kiến trúc, nội bộ SSH, shell GPUI, kết nối lại, plugins và hơn nữa</strong></summary>
 <br>
 
 ### Kiến trúc — lõi cùng tiến trình, không cầu nối WebView
@@ -192,16 +178,6 @@ Pipeline: `queued → snapshot → grace-period → ssh-connect → await-termin
 - UI gọi theo `nodeId`; `NodeRouter` resolve `connectionId` đang active một cách atomic
 - `NodeRuntimeStore` giữ trạng thái runtime của node và xuất topology snapshot; helper của workspace ghi snapshot vào `session_tree.json`, còn handle đang chạy được dựng lại khi khởi động
 - Lỗi máy chủ trung chuyển sẽ truyền trạng thái `link_down` tới các nút phía sau
-
-### OxideSens AI
-
-OxideSens vẫn ưu tiên BYOK, với xây dựng ngữ cảnh chạy trong tiến trình:
-
-- Nhà cung cấp: OpenAI, Anthropic, Gemini, Ollama hoặc điểm truy cập OpenAI-compatible
-- MCP: truyền qua stdio và SSE, khám phá và gọi công cụ
-- RAG: tìm kiếm toàn văn BM25, chỉ mục vector HNSW, Reciprocal Rank Fusion và bộ tách từ bigram CJK
-- Thông điệp gửi tới nhà cung cấp được lọc mẫu thông tin xác thực; ngữ cảnh không gian làm việc và hành động vẫn do người dùng kiểm soát
-- Khóa API được lưu trong kho khóa hệ điều hành và chủ động loại khỏi nhật ký có cấu trúc cùng thông điệp của lõi desktop
 
 ### Giao diện desktop GPUI
 
@@ -297,7 +273,6 @@ cargo run -p oxideterm-cli -- completion install zsh --force
 | SSH | russh (`ring`) | Không dùng OpenSSL/libssh2 trong ngăn xếp SSH; hỗ trợ SSH Agent |
 | Terminal | portable-pty + alacritty_terminal | PTY cục bộ, mô phỏng terminal và đồ họa Sixel/Kitty |
 | Plugin | Wasmtime/WASI và process | Manifest-only, lời gọi host WASM được kiểm soát và process cục bộ cần được tin cậy rõ ràng |
-| AI và tìm kiếm | SSE + BM25 + HNSW | Truyền dữ liệu nhà cung cấp, bigram CJK và hợp nhất RRF |
 | Trình soạn thảo | tree-sitter (cú pháp), bộ đệm riêng | Đa ngôn ngữ, dựa trên SFTP |
 | Mã hóa | ChaCha20-Poly1305 + Argon2id | AEAD + KDF dùng nhiều bộ nhớ (256 MB) |
 | i18n | oxideterm-i18n | Bộ tải tích hợp, 11 ngôn ngữ phát hành |
@@ -309,7 +284,6 @@ cargo run -p oxideterm-cli -- completion install zsh --force
 | Thông tin xác thực đã lưu | macOS Keychain / Windows Credential Manager / libsecret |
 | Bí mật trong bộ nhớ | Kiểu dữ liệu chứa bí mật và bộ đệm tạm dùng `zeroize` / `Zeroizing` tại các ranh giới sở hữu được hỗ trợ |
 | Chẩn đoán | Báo cáo hỗ trợ ưu tiên siêu dữ liệu có cấu trúc và gợi ý đã che thay cho dữ liệu chứa bí mật |
-| Ngữ cảnh AI | Thông điệp gửi tới nhà cung cấp được lọc mẫu thông tin xác thực; ngữ cảnh workspace và hành động vẫn do người dùng kiểm soát |
 | `.oxide` | ChaCha20-Poly1305 + Argon2id |
 | Ghi bằng CLI | Kế hoạch chạy thử, bảo vệ `--yes`, bản sao lưu khôi phục |
 | Khóa máy chủ | TOFU với `~/.ssh/known_hosts`, từ chối thay đổi không mong đợi |

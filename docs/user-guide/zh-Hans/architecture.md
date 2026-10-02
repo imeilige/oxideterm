@@ -24,7 +24,6 @@
 13. [重连与恢复](#重连与恢复)
 14. [设置与持久化](#设置与持久化)
 15. [便携包](#便携包)
-16. [OxideSens AI 架构](#oxidesens-ai-架构)
 17. [插件架构](#插件架构)
 18. [CLI 伴侣工具边界](#cli-伴侣工具边界)
 19. [安全设计](#安全设计)
@@ -47,20 +46,20 @@
 1. **桌面应用优先** - GPUI 桌面应用是主要用户界面，CLI 是自动化和诊断伴侣工具。
 2. **终端响应优先** - 终端输入、输出、尺寸变化和渲染属于延迟敏感热路径。
 3. **节点优先的远端工作区** - 远端工作流以稳定 SSH 节点为锚点，不以临时终端面板为锚点。
-4. **默认共享连接** - 终端、SFTP、转发和 IDE 可以共享节点注册表连接；AI 与插件通过经过校验的能力句柄、快照或钩子使用节点能力，不成为物理连接消费者。
+4. **默认共享连接** - 终端、SFTP、转发和 IDE 可以共享节点注册表连接；插件通过经过校验的能力句柄、快照或钩子使用节点能力，不成为物理连接消费者。
 5. **生命周期归属明确** - 保存配置、在线节点、终端会话、SFTP 会话、转发、编辑器缓冲区和标签页分别有不同所有者。
-6. **本地优先状态** - SSH、SFTP、本地终端、设置、插件和 AI 供应商配置完全在本地工作。
-7. **凭据边界清晰** - 导航元数据、设置、AI 提示词、日志和插件标签不是凭据存储。
+6. **本地优先状态** - SSH、SFTP、本地终端、设置和插件完全在本地工作。
+7. **凭据边界清晰** - 导航元数据、设置、日志和插件标签不是凭据存储。
 8. **减少用户可见耦合** - 用户界面不应要求用户理解内部传输句柄。
 
 ### 为什么选择 Rust + GPUI
 
 | 关注点 | Native Rust/GPUI 方向 |
 |---|---|
-| 用户体验 | 在一个桌面工作区中统一终端、文件、转发、IDE、AI、设置和插件 |
+| 用户体验 | 在一个桌面工作区中统一终端、文件、转发、IDE、设置和插件 |
 | 后端所有权 | 核心规则和模型位于 Rust 领域 crate；`oxideterm-gpui-app` 持有协调 Entity、订阅和最终运行时关闭逻辑，而不是把它们当作临时界面状态 |
 | 终端路径 | 终端输入输出与重型管理任务隔离 |
-| 安全性 | SSH、SFTP、转发、持久化、凭据和 AI 边界都有明确 Rust 领域 |
+| 安全性 | SSH、SFTP、转发、持久化和凭据边界都有明确 Rust 领域 |
 | 可移植性 | 桌面包可以携带应用资源、agent 二进制、图标和 CLI 伴侣工具 |
 | 可维护性 | crate 按责任拆分，而不是按屏幕或文件大小拆分 |
 
@@ -79,7 +78,6 @@ flowchart TB
         IdeUI["IDE 工作区"]
         ForwardUI["端口转发"]
         GraphicsUI["图形 / VNC 查看器"]
-        AiUI["OxideSens AI 侧边栏"]
         PluginUI["插件管理器"]
         PortableUI["便携包"]
         SettingsUI["设置"]
@@ -96,7 +94,6 @@ flowchart TB
         HostToolsRuntime["主机工具采样器"]
         GraphicsRuntime["WSL Graphics · Remote Desktop Helpers · VNC Worker"]
         ModemRuntime["Modem 传输引擎"]
-        AiRuntime["AI 上下文 · 工具 · RAG · MCP"]
         PluginRuntime["插件注册表 · 宿主 API · 设置"]
         PortableRuntime["便携运行时"]
     end
@@ -114,7 +111,6 @@ flowchart TB
     Shell --> IdeUI
     Shell --> ForwardUI
     Shell --> GraphicsUI
-    Shell --> AiUI
     Shell --> PluginUI
     Shell --> PortableUI
     Shell --> SettingsUI
@@ -131,7 +127,6 @@ flowchart TB
     IdeUI --> IdeRuntime
     ForwardUI --> ForwardRuntime
     GraphicsUI --> GraphicsRuntime
-    AiUI --> AiRuntime
     PluginUI --> PluginRuntime
     PortableUI --> PortableRuntime
     SettingsUI --> Settings
@@ -141,7 +136,6 @@ flowchart TB
     ForwardRuntime --> SshPool
     IdeRuntime --> SshPool
     HostToolsRuntime --> SshPool
-    AiRuntime --> NodeRuntime
     PluginRuntime --> NodeRuntime
 
     ConnStore --> Connections
@@ -174,8 +168,6 @@ flowchart LR
     end
 
     subgraph External["外部服务"]
-        AiProviders["AI 供应商"]
-        McpServers["MCP 服务器"]
     end
 
     App --> Config
@@ -188,20 +180,17 @@ flowchart LR
     SshHost --> SftpHost
     SshHost --> RemotePorts
     SshHost --> Agent
-    App --> AiProviders
-    App --> McpServers
 ```
 
 ### 用户侧摘要
 
-应用是围绕稳定远端节点构建的桌面工作区。标签页和面板是视图；保存连接是配置；SSH 节点是在线或正在重连的运行时对象；终端会话、SFTP 会话、IDE 工作区和转发直接消费节点能力，AI 目标和插件页面则通过经过校验的能力句柄、宿主快照或终端钩子使用节点能力。
+应用是围绕稳定远端节点构建的桌面工作区。标签页和面板是视图；保存连接是配置；SSH 节点是在线或正在重连的运行时对象；终端会话、SFTP 会话、IDE 工作区和转发直接消费节点能力，插件页面则通过经过校验的能力句柄、宿主快照或终端钩子使用节点能力。
 
 这种分离解释了常见行为：
 
 - 关闭终端标签页不会删除保存连接。
 - 面板关闭后，节点仍可能显示在连接监控中。
 - SFTP 和 IDE 可以在重连后恢复，因为它们绑定到节点，而不是只绑定到终端面板。
-- AI 工具运行命令或读取文件前必须选择明确目标。
 - CLI 伴侣工具可以检查同一套状态，但不是主要交互界面。
 
 ---
@@ -234,7 +223,7 @@ Tauri 架构把通信分为数据平面和控制平面。Native GPUI 去掉了 W
 控制平面处理结构化管理操作：
 
 ```text
-用户操作或已批准 AI 工具
+用户操作
   -> 工作区命令
   -> 领域运行时
   -> 持久化 / 连接 / 文件操作
@@ -252,7 +241,6 @@ Tauri 架构把通信分为数据平面和控制平面。Native GPUI 去掉了 W
 - 打开图形/VNC 会话。
 - 确认终端文件传输提示。
 - 修改设置。
-- 执行已批准 AI 工具。
 
 ### 持久化平面
 
@@ -262,7 +250,6 @@ Tauri 架构把通信分为数据平面和控制平面。Native GPUI 去掉了 W
 - 保存连接。
 - 转发规则。
 - 插件状态。
-- AI 对话和摘要。
 - 便携运行时元数据。
 
 包含凭据的数据必须进入凭据感知存储，而不是普通 JSON 或文本字段。对于提权辅助，持久作用域元数据可以随设置或保存连接保存，但凭据值本身属于凭据存储。
@@ -271,7 +258,7 @@ Tauri 架构把通信分为数据平面和控制平面。Native GPUI 去掉了 W
 
 ```mermaid
 flowchart TB
-    Input["键盘 / 鼠标 / AI 批准"] --> Router["工作区命令路由"]
+    Input["键盘 / 鼠标"] --> Router["工作区命令路由"]
 
     subgraph DataPlane["数据平面"]
         TermIn["终端输入"]
@@ -321,7 +308,6 @@ crates/oxideterm-gpui-app/src/workspace/tabs/
 crates/oxideterm-gpui-app/src/workspace/pane_tree.rs
 crates/oxideterm-gpui-app/src/workspace/sidebar/
 crates/oxideterm-gpui-app/src/workspace/settings/
-crates/oxideterm-gpui-app/src/workspace/knowledge.rs
 ```
 
 ### 分层依赖形状
@@ -339,7 +325,6 @@ flowchart TB
         Sftp["oxideterm-sftp"]
         MonitorDomain["oxideterm-connection-monitor"]
         ModemDomain["oxideterm-modem-transfer"]
-        Ai["oxideterm-ai"]
         SettingsDomain["oxideterm-settings"]
         PluginsDomain["oxideterm-plugin-*"]
     end
@@ -351,7 +336,6 @@ flowchart TB
         ForwardRuntime["转发监听器"]
         HostSampler["主机采样器"]
         GraphicsRuntime["VNC 查看器 Worker"]
-        ProviderRuntime["AI 供应商流"]
         PluginRuntime["插件生命周期"]
     end
 
@@ -367,14 +351,12 @@ flowchart TB
     Surfaces --> MonitorDomain
     Surfaces --> ModemDomain
     Surfaces --> GraphicsRuntime
-    Surfaces --> Ai
     Surfaces --> SettingsDomain
     Surfaces --> PluginsDomain
     Ssh --> SshRuntime
     Sftp --> SftpRuntime
     MonitorDomain --> HostSampler
     ModemDomain --> PtyRuntime
-    Ai --> ProviderRuntime
     PluginsDomain --> PluginRuntime
     SshRuntime --> Keychain
     SettingsDomain --> SettingsFiles
@@ -392,7 +374,6 @@ flowchart TB
 - `oxideterm-sftp`：SFTP 协议、会话和传输语义。
 - `oxideterm-connections`：保存连接存储和校验。
 - `oxideterm-forwarding`：转发规则模型。
-- `oxideterm-ai`：AI 供应商、上下文窗口、RAG、MCP、orchestrator 工具定义和策略。
 - `oxideterm-settings`：设置加载、保存和变更逻辑。
 - `oxideterm-plugin-*`：插件清单、协议、注册表和宿主 API 类型。
 
@@ -406,7 +387,6 @@ flowchart TB
 - 转发监听器或远端转发。
 - IDE 文件系统访问。
 - 插件宿主生命周期。
-- AI 供应商请求。
 
 关键规则是所有权：一个运行时对象应有唯一清晰所有者。应用层可以持有负责协调的
 Entity 及其生命周期，而可复用规则仍位于领域 crate；界面视图通过明确句柄、订阅或
@@ -414,7 +394,7 @@ Entity 及其生命周期，而可复用规则仍位于领域 crate；界面视�
 
 ### 第四层：持久化与凭据存储
 
-持久化状态由桌面应用和 CLI 伴侣工具共享。凭据值不能序列化进普通设置、AI 上下文或插件标签。
+持久化状态由桌面应用和 CLI 伴侣工具共享。凭据值不能序列化进普通设置或插件标签。
 
 ---
 
@@ -437,7 +417,6 @@ Native 保留同样的用户侧模型。
        -> SFTP 会话
        -> 转发规则
        -> IDE 工作区
-       -> AI 能力句柄
        -> 插件宿主快照和钩子
 ```
 
@@ -450,14 +429,12 @@ flowchart TB
     NodeRuntime --> Sftp["SFTP 会话<br/>文件浏览 · 传输 · 预览"]
     NodeRuntime --> Ide["IDE 工作区<br/>文件树 · 编辑器缓冲区 · 保存路径"]
     NodeRuntime --> Forward["转发规则<br/>本地 · 远端 · 动态"]
-    NodeRuntime --> AiTarget["AI 能力句柄<br/>命令 · 文件 · 观察结果"]
     NodeRuntime --> PluginConsumers["插件宿主快照<br/>宿主 API 调用 · 终端钩子"]
 
     Shell --> TerminalTabs["可见终端标签页"]
     Sftp --> SftpTabs["SFTP / 文件管理器标签页"]
     Ide --> IdeTabs["IDE 标签页"]
     Forward --> ForwardSurface["转发页面"]
-    AiTarget --> AiSidebar["OxideSens 侧边栏"]
     PluginConsumers --> PluginSurfaces["插件页面"]
 ```
 
@@ -471,7 +448,6 @@ flowchart TB
 | SFTP 视图 | 节点文件工作流 | 当前 SFTP 通道 |
 | IDE 工作区 | 项目和编辑上下文 | 当前文件操作通道 |
 | 转发规则 | 期望隧道 | 当前监听器或任务 |
-| AI 目标 | 工具侧快照和能力句柄 | 当前目标状态与连接代次 |
 
 ### 用户规则
 
@@ -528,7 +504,7 @@ flowchart TB
 
 知识库是一级中央标签页，并拥有自己的内部左右分栏。左侧导航负责集合与文档浏览，右侧负责 Markdown 编辑；它不是全局伴随侧边栏面板，也不是设置卡片的堆叠。
 
-源码模式和只读预览共享同一份 Markdown 草稿。`TextEditorView` 负责源码编辑与撤销历史，`oxideterm-gpui-markdown` 负责原生预览渲染，RAG 存储仍是集合、文档版本、分块和搜索索引的持久所有者。应用实体只协调选择、异步加载、自动保存、冲突检测、未保存离开保护和后台索引刷新，不把持久化职责放入 GPUI 渲染树。
+源码模式和只读预览共享同一份 Markdown 草稿。`TextEditorView` 负责源码编辑与撤销历史，`oxideterm-gpui-markdown` 负责原生预览渲染。应用实体只协调选择、异步加载、自动保存、冲突检测和未保存离开保护，不把持久化职责放入 GPUI 渲染树。
 
 知识库设置页面继续负责嵌入和检索行为配置，但不再承担主要文档浏览器或编辑器职责。
 
@@ -565,7 +541,6 @@ SSH 终端职责：
 - 维护可见屏幕和滚动上下文。
 - 发送输入。
 - 渲染输出。
-- 在批准后向 AI 工具暴露终端观察。
 - 报告就绪状态和等待输入提示。
 - 复用节点拥有的 SSH 传输，同时把 shell 通道状态保留在面板本地。
 - 通过“活跃终端 -> 节点 -> 保存 owner”解析提权凭据作用域，而不是从 host、title 或 prompt 文本启发式反推。
@@ -587,7 +562,7 @@ SSH 终端职责：
 提权提示和 modem 传输是终端相邻辅助能力，不是普通输入文本：
 
 - 提示检测只观察活跃终端输出。
-- 凭据提交走专用 secret path，不得经过插件、AI 上下文、日志、录制或 shell history。
+- 凭据提交走专用 secret path，不得经过插件、日志、录制或 shell history。
 - 本地提权凭据作用于本地终端；SSH 提权凭据通过“活跃终端 -> 节点 -> 保存 owner”确定作用域。
 - X/Y/ZMODEM 字节级状态由 `oxideterm-modem-transfer` 持有；GPUI 只负责请求文件/目录、显示进度，并把协议响应写回当前 PTY 或通道。
 - 检测必须保持保守：除非协议上下文已被证明，普通命令输出和全屏 TUI 重绘都应回放为终端文本。
@@ -627,7 +602,7 @@ SSH 连接池把远端运行时状态和界面标签页分离。
 独占终端连接
   `-- 拥有独立注册表键和物理传输的终端消费者
 
-AI 和插件通过能力句柄、宿主快照或终端钩子使用能力。它们不是
+插件通过能力句柄、宿主快照或终端钩子使用能力。它们不是
 `ConnectionConsumer` 变体，也不是物理连接所有者。
 ```
 
@@ -701,7 +676,7 @@ SCP 从现有 `NodeRouter` 连接句柄打开执行通道，绝不另建独立 S
 
 ### 安全模型
 
-远端文件写入就是目标主机上的真实写入。覆盖重要文件前，用户应确认路径、目标和备份状态。AI 和插件进行文件写入时应使用明确目标 和审批。
+远端文件写入就是目标主机上的真实写入。覆盖重要文件前，用户应确认路径、目标和备份状态。插件进行文件写入时应使用明确目标 和审批。
 
 ---
 
@@ -806,7 +781,7 @@ RDP、VNC 和 X11 的详细所有权边界记录在 [远程桌面边界](../../d
   -> 重新打开或刷新 IDE 状态
   -> 更新监控和通知
 
-AI 和插件能力句柄不是直接重连阶段。它们通过运行时边界观察节点或连接
+插件能力句柄不是直接重连阶段。它们通过运行时边界观察节点或连接
 代次变化，并在后续调用中失效、刷新或重新获取资源。
 ```
 
@@ -815,7 +790,7 @@ AI 和插件能力句柄不是直接重连阶段。它们通过运行时边界�
 1. 打开连接监控。
 2. 找到受影响节点。
 3. 重连或等待重连。
-4. 刷新 SFTP、IDE、转发或 AI 目标状态。
+4. 刷新 SFTP、IDE 或转发状态。
 5. 验证任何写入、传输或命令结果。
 
 ---
@@ -834,8 +809,6 @@ AI 和插件能力句柄不是直接重连阶段。它们通过运行时边界�
 - SSH 行为。
 - SFTP 行为。
 - IDE 行为。
-- AI 供应商和模型设置。
-- AI 记忆、工具调用，以及知识库嵌入与检索设置。
 - 插件。
 - 快捷键。
 - 帮助。
@@ -862,62 +835,6 @@ CLI 伴侣工具是共享持久化模型的脚本和维护入口，覆盖设置�
 每次导入都应可预览。
 
 ---
-
-## OxideSens AI 架构
-
-OxideSens 是理解工作区上下文的助手。它使用已配置供应商和本地应用上下文，不需要 OxideTerm 账号。
-
-Agent Skills 是用于可重复工作流的受限说明层。AI 运行时会发现 `SKILL.md` 目录，只在需要时加载完整说明和资源，并把已加载技能的内容哈希记录到对话元数据中。加载技能不会授予运行时权限；终端、文件、凭据、网络等动作仍必须经过现有能力和批准检查。
-
-聊天界面还会根据当前模型解析服务商适配的推理级别。已知模型会依据能力数据规范化；
-已知供应商的未知模型使用该供应商的请求格式，未知供应商才会被视为不支持。
-
-OxideSens 有两条执行后端。原生供应商后端直接流式调用配置的模型协议；ACP 后端通过
-独立的 agent 进程、ACP session、模型选择和 session 配置运行。两者共享应用上下文、
-策略和界面，但传输、工具注入、推理配置和生命周期不同。ACP 不使用原生供应商的
-`reasoning_effort` 字段；相关选项属于 ACP session 配置。
-
-### 上下文来源
-
-- 对话历史。
-- 当前终端上下文。
-- 保存连接。
-- 在线节点。
-- 终端会话。
-- SFTP 目标。
-- IDE 工作区。
-- 设置摘要。
-- RAG 知识集合。
-- MCP 资源和工具。
-- 前序工具结果。
-
-### Orchestrator 工具模型
-
-AI 工具层暴露高层应用工具，而不是任意内部 API。例如：
-
-- 目标发现和选择。
-- 连接目标。
-- 运行命令。
-- 观察终端。
-- 发送终端输入。
-- 读取资源。
-- 写入资源。
-- 传输资源。
-- 打开应用页面。
-- 获取状态。
-- 读取或记住偏好。
-
-### 审批模型
-
-AI 动作按风险分类：
-
-- 只读。
-- 交互式。
-- 执行。
-- 写入。
-- 破坏性。
-
-写入、终端输入、命令执行、文件修改和破坏性操作应明确且可审查。不要把凭据粘贴进提示词。
 
 ---
 
@@ -967,7 +884,6 @@ CLI 适合：
 
 - SSH 密码。
 - 私钥口令。
-- AI 供应商密钥。
 - 插件 token。
 - 便携包密码。
 - 来自环境变量的凭据。
@@ -977,13 +893,11 @@ CLI 适合：
 - 导航元数据不是凭据存储。
 - 凭据字段应使用系统钥匙串支持或凭据感知存储。
 - CLI 写入凭据时应优先使用 stdin 或环境变量。
-- AI 上下文离开应用边界前应脱敏。
 
 ### 输出边界
 
 以下位置都应视为输出边界：
 
-- AI 提示词。
 - 工具调用载荷。
 - 日志。
 - 插件消息。
@@ -999,7 +913,6 @@ CLI 适合：
 
 - 阻塞磁盘 I/O。
 - 大型插件扫描。
-- 长时间 AI 总结。
 - 重型设置序列化。
 
 ### 虚拟化视图
@@ -1014,7 +927,6 @@ CLI 适合：
 - X/Y/ZMODEM 传输。
 - 主机资源采样。
 - 图形/VNC 帧更新。
-- AI 供应商调用。
 - 插件加载。
 - 远端文件预览。
 
@@ -1026,12 +938,11 @@ CLI 适合：
 
 ```mermaid
 flowchart TB
-    Workspace["oxideterm-gpui-app<br/>工作区编排"] --> AppSurfaces["工作区页面<br/>会话 · 终端 · SFTP · IDE · AI · 设置"]
+    Workspace["oxideterm-gpui-app<br/>工作区编排"] --> AppSurfaces["工作区页面<br/>会话 · 终端 · SFTP · IDE · 设置"]
 
     AppSurfaces --> SshDomain["oxideterm-ssh<br/>节点路由 · 注册表 · 重连"]
     AppSurfaces --> SftpDomain["oxideterm-sftp<br/>会话 · 文件操作 · 传输"]
     AppSurfaces --> MonitorDomain["oxideterm-connection-monitor<br/>资源 · profiler · 主机工具"]
-    AppSurfaces --> AiDomain["oxideterm-ai<br/>供应商 · 工具 · 策略 · 上下文"]
     AppSurfaces --> SettingsDomain["oxideterm-settings<br/>设置模型 · 校验"]
     AppSurfaces --> PluginDomain["oxideterm-plugin-*<br/>manifest · 宿主 API · 生命周期"]
     AppSurfaces --> TerminalDomain["终端 crate<br/>渲染 · PTY · 命令标记"]
@@ -1044,11 +955,6 @@ flowchart TB
     MonitorDomain --> SshTransport
     IdeDomain --> SshTransport
     PluginDomain --> HostApi["宿主 API 快照"]
-    AiDomain --> ToolExecutor["工具执行器"]
-    ToolExecutor --> SshDomain
-    ToolExecutor --> SftpDomain
-    ToolExecutor --> MonitorDomain
-    ToolExecutor --> SettingsDomain
     SettingsDomain --> DurableState
     PluginDomain --> DurableState
 ```
@@ -1060,7 +966,7 @@ flowchart TB
 | `workspace.rs` 与 `workspace/root/*` | 组合顶层工作区并构造应用服务；长期节点和重连所有权位于 `workspace/runtime_entity.rs` 与领域 crate | 应用进入统一桌面工作区，同时不会让根视图成为所有传输的所有者 |
 | `workspace/tabs/*` | 创建、选择、渲染和重连绑定到标签页的视图 | 终端、SFTP、IDE 和工具页可以独立打开、关闭和恢复 |
 | `workspace/pane_tree.rs` | 持有分屏面板布局状态 | 用户可以调整工作区布局，而不改变节点或会话归属 |
-| `workspace/sidebar/*` | 渲染活动导航、保存会话、AI 侧边栏和侧边栏状态 | 活动页面变化时，导航仍保持稳定 |
+| `workspace/sidebar/*` | 渲染活动导航、保存会话和侧边栏状态 | 活动页面变化时，导航仍保持稳定 |
 | `workspace/session_manager/*` | 管理保存连接、导入导出对话框、连接树和表格视图 | 用户可以创建、编辑、导入、导出和整理连接记录 |
 | `workspace/new_connection/*` | 持有连接表单、SSH 连接流程、主机密钥对话框和键盘交互认证对话框 | 首次连接是桌面引导流程，而不是只靠 CLI |
 | `workspace/connection_monitor/*` | 跟踪连接池状态、节点健康、拓扑、资源指标、主机工具和生命周期动作 | 用户可以看到已连接节点、资源状态、主机实体、重连状态和可操作失败 |
@@ -1071,10 +977,8 @@ flowchart TB
 | `workspace/runtime_entity.rs` | 持有长期节点订阅、重连 worker、运行时关闭和终端消费者登记 | 关闭终端消费者不会意外关闭共享节点或传输 |
 | `workspace/ide.rs` 与 IDE crate | 打开文件夹、路由文件操作、管理编辑器状态 | 远端编辑体现为工作区，而不是裸 SFTP 操作 |
 | `workspace/forwards/*` | 渲染转发表单、规则、状态和动作 | 端口转发可见、可恢复、可从桌面应用管理 |
-| `workspace/settings/*` | 渲染终端、外观、AI、SFTP、IDE、连接和快捷键设置页 | 配置以应用为主入口，并通过共享设置模型持久化 |
+| `workspace/settings/*` | 渲染终端、外观、SFTP、IDE、连接和快捷键设置页 | 配置以应用为主入口，并通过共享设置模型持久化 |
 | `workspace/plugin_entity.rs`、`plugin_manager.rs`、`plugin_lifecycle/*`、`plugin_ui.rs` | 协调插件发现、生命周期、宿主 API 快照、设置、凭据和界面调用 | 插件可以扩展应用页面，但不拥有核心运行时状态 |
-| `workspace/sidebar/ai/*` | 渲染 AI 对话、模型选择、流式输出、上下文、Agent Skills、工具事件和对话记录状态 | OxideSens 是集成在工作区内的助手，并有明确工具边界 |
-| `workspace/acp_workspace.rs` 与 `oxideterm-acp-*` 集成 | 协调 ACP agent 配置、session、模型选项和 ACP 主机工具桥接，并与原生供应商路径并列 | ACP session 有独立的 agent/session 生命周期，不应被当作普通供应商流 |
 | `workspace/terminal_context_actions.rs` | 构建选择、搜索、传输和命令路由等终端右键动作 | 终端动作使用统一应用菜单风格，同时仍通过明确 session API 分发 |
 | `workspace/quick_commands*` 与 `terminal_command_bar/*` | 存储快捷命令、命令行补全来源和发送器控件 | 重复终端动作可以变成可复用的桌面控件 |
 | `workspace/terminal_command_sender.rs` 与 `terminal_command_bar/sender.rs` | `TerminalCommandSenderEntity` 管理定时、重复、多目标终端输入、目标快照、取消和进度 | 任务不依赖根视图轮询，也不会创建 SSH 连接；Entity 仍由 `WorkspaceApp` 协调，并使用已经存在的终端目标 |
@@ -1124,25 +1028,6 @@ flowchart TB
 | `path_utils.rs` | 规范化并校验远端路径 | SFTP 和 IDE 的远端路径行为保持一致 |
 | `types.rs` 与 `error.rs` | 定义通用 SFTP 数据类型和错误 | 界面可以展示准确错误，而不依赖实现细节 |
 
-### AI 领域模块
-
-| 模块 | 职责 | 架构边界 |
-|---|---|---|
-| `chat.rs` 与 `types.rs` | 定义对话和消息类型 | 界面对话记录基于结构化记录 |
-| `context_window.rs` | 决定哪些内容可以进入模型上下文 | token 预算集中处理，而不是散落在侧边栏里 |
-| `context_sanitizer.rs` | 在模型或工具边界前脱敏敏感值 | AI 上下文属于输出边界 |
-| `key_store.rs` 与 `touch_id.rs` | 存储和解锁供应商密钥 | 供应商凭据不进入普通设置文本 |
-| `providers/*` 与 `streaming/*` | 发现模型、选择供应商、构造请求、解析流式响应 | 供应商差异隐藏在统一流式语义后面 |
-| `reasoning.rs` | 根据供应商和已知模型能力规范化推理级别 | 不输出不支持的供应商格式；ACP 使用 session 选项 |
-| `acp/*` | 持有 ACP 传输、agent 生命周期、session 配置和协议状态 | ACP 是独立于原生模型供应商的执行后端 |
-| `orchestrator.rs` | 定义 orchestrator 工具名称、schema 和分发契约 | 面向模型的工具定义保持稳定 |
-| `policy.rs` | 决定哪些工具动作需要批准或拒绝 | 危险或会改变状态的动作不能只因模型要求就执行 |
-| `persistence.rs` | 存储对话和 AI 持久状态 | 在启用时，长对话可跨应用重启保留 |
-| `profiles.rs` 与 `settings.rs` | 管理 AI 配置档和设置 | 模型/供应商选择是用户配置，不是硬编码默认值 |
-| `rag/*` | 持久化、切分、嵌入、索引和搜索知识文档 | 检索和持久文档状态属于领域服务，不属于工作区渲染逻辑 |
-| `mcp/*` | 管理 MCP 注册表、进程启动和协议类型 | 外部工具服务器与核心应用状态隔离 |
-| `references.rs`, `slash.rs`, `suggestions.rs` | 提供引用、斜杠命令和建议 | 助手输入辅助与供应商传输分离 |
-
 ### 持久化、设置与插件模块
 
 | 区域 | Native 所有者 | 说明 |
@@ -1183,7 +1068,7 @@ flowchart TB
   -> 将输出流送入终端渲染器
 ```
 
-本地终端路径刻意保持很短。它不应等待插件扫描、AI 供应商发现或远端连接检查。
+本地终端路径刻意保持很短。它不应等待插件扫描或远端连接检查。
 
 ### 打开保存的 SSH 连接
 
@@ -1315,48 +1200,6 @@ sequenceDiagram
 
 转发规则可以持久化，但在线监听器依赖节点健康和本地端口可用性。
 
-### AI 工具调用
-
-```text
-用户消息
-  -> 构建已脱敏上下文
-  -> 选择模型/供应商
-  -> 流式接收模型响应
-  -> 解析工具请求
-  -> 评估策略和目标
-  -> 必要时请求用户批准
-  -> 通过领域运行时执行
-  -> 将结构化结果追加到对话记录
-```
-
-AI 工具不会隐式拥有 shell。命令、文件读取、文件写入或设置动作必须解析到允许的目标，并通过策略检查。
-
-```mermaid
-sequenceDiagram
-    actor User as 用户
-    participant Sidebar as AI 侧边栏
-    participant Context as 上下文构建器
-    participant Provider as AI 供应商
-    participant Policy as 工具策略
-    participant Approval as 批准界面
-    participant Executor as 工具执行器
-    participant Domain as 领域运行时
-
-    User->>Sidebar: 发送消息
-    Sidebar->>Context: 构建已脱敏上下文
-    Context->>Provider: 发送流式请求
-    Provider-->>Sidebar: 工具提议
-    Sidebar->>Policy: 检查工具、意图和目标
-    alt 需要批准
-        Policy->>Approval: 请求用户批准
-        Approval-->>Policy: 批准或拒绝
-    end
-    Policy->>Executor: 执行允许的工具
-    Executor->>Domain: 运行命令 / 读取文件 / 更新状态
-    Domain-->>Executor: 结构化结果
-    Executor-->>Sidebar: 将工具结果追加到对话记录
-```
-
 ### 启用插件
 
 ```text
@@ -1432,7 +1275,7 @@ stateDiagram-v2
 |---|---|---|
 | 仅保存 | 配置存在，没有在线连接 | 稍后可以连接 |
 | 连接中 | 正在打开传输 | 依赖视图等待或显示进度 |
-| 已连接 | 节点在线且可用 | 终端、SFTP、IDE、转发和 AI 工具都可选择它 |
+| 已连接 | 节点在线且可用 | 终端、SFTP、IDE 和转发都可选择它 |
 | 空闲 | 节点已连接，但没有前台消费者 | 连接监控仍可展示它 |
 | 已失效 | 最近连接状态已经不能信任 | 消费者应暂停或刷新 |
 | 重连中 | 重试策略正在尝试恢复 | 视图不应做破坏性假设 |
@@ -1447,7 +1290,7 @@ stateDiagram-v2
 | 启动中 | PTY 或 SSH 通道正在打开 | 输入可能延迟 |
 | 就绪 | 终端可以接受输入 | 正常交互 |
 | 忙碌 | 命令正在产生输出 | 终端保持响应，但输出量可能很大 |
-| 等待输入 | 进程正在提示输入 | AI 观察和用户控件可以报告该状态 |
+| 等待输入 | 进程正在提示输入 | 用户控件可以报告该状态 |
 | 已关闭 | 通道或 PTY 已结束 | 视图可显示退出状态或关闭 |
 
 ### 文件传输生命周期
@@ -1524,34 +1367,6 @@ stateDiagram-v2
 | 冲突 | 远端状态出现非预期变化 | 用户需要选择比较、覆盖或重新加载 |
 | 已关闭 | 缓冲区不再可见 | 除非已保存，否则远端文件不变 |
 
-### AI 工具生命周期
-
-```mermaid
-stateDiagram-v2
-    [*] --> Proposed
-    Proposed --> PolicyChecked: 解析工具调用
-    PolicyChecked --> WaitingApproval: 需要批准
-    PolicyChecked --> Running: 安全且目标有效
-    PolicyChecked --> Rejected: 策略拒绝
-    WaitingApproval --> Running: 用户批准
-    WaitingApproval --> Rejected: 用户拒绝
-    Running --> Result: 领域返回成功
-    Running --> Failed: 执行错误
-    Result --> [*]
-    Rejected --> [*]
-    Failed --> [*]
-```
-
-| 状态 | 含义 | 用户影响 |
-|---|---|---|
-| 已提出 | 模型请求工具 | 尚无副作用 |
-| 已检查策略 | 工具已与策略和目标状态比较 | 可以继续、拒绝或要求批准 |
-| 等待批准 | 需要用户决定 | 执行暂停 |
-| 运行中 | 工具正在执行 | 结果应流式展示或汇总 |
-| 已返回结果 | 工具完成 | 对话记录保存结构化输出 |
-| 已拒绝 | 策略或用户拒绝 | 对话记录保存拒绝原因 |
-| 失败 | 执行失败 | 显示错误但不泄漏凭据 |
-
 ### 插件生命周期
 
 | 区域 | 状态 | 含义 |
@@ -1577,8 +1392,6 @@ stateDiagram-v2
 | 图形会话 | 保存的 RDP/VNC provider 与 helper，或节点图形运行时 / VNC 查看器 | 配置元数据可以持久化；在线 viewer 不持久化 | 根据路径使用 provider 凭据或 SSH/session 启动 | 在线 viewer 否 | 可行时重连 provider/helper 或节点会话 | 重连、停止或重新启动 |
 | IDE 工作区 | IDE 页面 / 运行时 | 最近工作区和设置 | 远端侧使用 SSH 认证层 | 最近记录保留 | 重连后重新打开或刷新 | 保存、重新加载、解决冲突 |
 | 编辑器缓冲区 | IDE / 编辑器状态 | 只有保存后才写入文件 | 默认无 | 未保存内容取决于恢复策略 | 节点重连不会自动保存 | 保存、重新加载、丢弃 |
-| AI 对话 | AI 侧边栏 / 运行时 | AI 持久化 | 供应商密钥存储 | 启用时保留 | 除非工具目标是节点，否则不依赖连接 | 继续、压缩、删除 |
-| AI 供应商密钥 | AI 密钥存储 | 凭据存储 | 凭据存储 | 是 | 是 | 重新输入或解锁 |
 | 插件设置 | 插件设置存储 | 插件设置文件/存储 | 插件凭据另行存储 | 是 | 通常是 | 重置、禁用插件 |
 | 插件凭据 | 插件生命周期凭据边界 | 凭据存储 | 凭据存储 | 是 | 是 | 重新输入、撤销、禁用 |
 | 便携运行时 | 便携运行时 crate | 便携元数据/载荷 | 便携密钥材料 | 是 | 与连接无关 | 解锁、恢复、重建 |
@@ -1598,7 +1411,6 @@ flowchart LR
         HostTools["主机工具"]
         Forward["转发状态"]
         IDE["IDE 保存/冲突"]
-        AI["AI 工具事件"]
         Plugin["插件生命周期"]
     end
 
@@ -1611,7 +1423,6 @@ flowchart LR
         ActiveSurface["活跃页面刷新"]
         Notifications["通知中心"]
         Badges["侧边栏标记"]
-        Transcript["AI 对话事件"]
         Logs["诊断日志"]
     end
 
@@ -1623,7 +1434,6 @@ flowchart LR
     HostTools --> RuntimeEntities
     Forward --> RuntimeEntities
     IDE --> RuntimeEntities
-    AI --> RuntimeEntities
     Plugin --> RuntimeEntities
     RuntimeEntities --> Delivery
     Delivery --> ActiveSurface
@@ -1650,7 +1460,6 @@ flowchart LR
 - 转发启动、停止、挂起和失败。
 - IDE 保存、冲突和重新加载结果。
 - 插件安装、启用、禁用、设置和宿主 API 失败。
-- AI 工具提出、批准、执行结果和策略拒绝。
 
 ### 通知规则
 
@@ -1679,7 +1488,6 @@ flowchart LR
 - 已失效节点在刷新或重连前，不应接受新的高风险操作。
 - 已失效文件列表在破坏性动作前应提供刷新。
 - 已失效转发应显示挂起或失败状态，而不是假装流量仍在通过。
-- 已失效 AI 目标应要求重新选择目标，或拒绝工具调用。
 
 ---
 
@@ -1714,10 +1522,6 @@ flowchart LR
 | IDE 工作区打开但文件树缺失 | IDE 工作区 | IDE 文件系统 | 根路径错误、权限阻止列表，或缓存已失效 | 刷新文件树，或打开其他根路径 |
 | IDE 保存失败 | IDE 工作区和连接监控 | IDE 写入路径 | 节点断开、权限不足、冲突，或远端文件已变化 | 重连、解决冲突，或另存为其他路径 |
 | 重连后仍有未保存编辑 | IDE 工作区 | 编辑器缓冲区 | 重连只恢复节点访问，不会自动写入文件 | 重连后显式保存 |
-| AI 想在保存主机上运行命令 | AI 审批和会话页 | AI 目标选择 | 保存配置不是在线 shell 目标 | 先连接主机，或选择其他活跃目标 |
-| AI 工具被拒绝 | AI 侧边栏 | AI 策略 | 工具危险、缺少批准，或目标不允许 | 按提示批准、缩小目标，或提出更安全请求 |
-| AI 上下文缺少最近终端输出 | AI 侧边栏 | 上下文窗口 | token 预算或脱敏移除了内容 | 显式附加所需上下文，或缩小任务 |
-| AI 供应商调用失败 | AI 设置和 AI 侧边栏 | 供应商传输 | 密钥缺失、模型无效、额度不足或网络失败 | 更新供应商设置并重试 |
 | 插件设置变更后界面未更新 | 插件管理器和受影响页面 | 插件生命周期 | 页面需要刷新，或插件事件未触发重新渲染 | 刷新页面、禁用/启用插件，或重启应用 |
 | 插件启用失败 | 插件管理器 | 插件注册表/生命周期 | manifest 无效、权限不足、依赖缺失，或凭据不可用 | 查看插件详情、更新设置，或移除插件 |
 | 便携运行时无法解锁 | 便携设置 | 便携运行时 | 口令错误、密钥材料缺失，或载荷损坏 | 重新输入口令，或重建便携数据 |
@@ -1740,10 +1544,8 @@ flowchart LR
 | 转发 | `oxideterm-forwarding`, 应用转发页面 |
 | 图形和远程桌面会话 | `oxideterm-wsl-graphics`, `oxideterm-remote-desktop`, `oxideterm-gpui-remote-desktop`, `oxideterm-rdp-helper`, `oxideterm-vnc-helper`, 应用图形/远程桌面页面 |
 | IDE 和编辑器 | `oxideterm-gpui-ide`, `oxideterm-gpui-editor`, `oxideterm-ide-core`, `oxideterm-ide-fs`, `oxideterm-editor-*` |
-| 知识库工作区与 Markdown | `oxideterm-ai` RAG 领域、`oxideterm-gpui-markdown`、`oxideterm-gpui-editor`、`workspace/knowledge.rs` |
+| 知识库工作区与 Markdown | `oxideterm-gpui-markdown`、`oxideterm-gpui-editor`、`workspace/knowledge.rs` |
 | 设置和提权凭据 | `oxideterm-settings`, `oxideterm-settings-model`, `oxideterm-gpui-settings-view`, 应用凭据感知边界 |
-| AI、RAG、MCP、推理和工具策略 | `oxideterm-ai`, `oxideterm-ai-tasks`, `oxideterm-skills`, 应用 AI 侧边栏 |
-| ACP agent session 和主机工具 | `oxideterm-acp-adapter`, `oxideterm-acp-host-tools`, `workspace/acp_workspace.rs` |
 | 插件 | `oxideterm-plugin-manifest`, `oxideterm-plugin-registry`, `oxideterm-plugin-host-api`, `oxideterm-plugin-wasm-runtime`, 应用插件 Entity |
 | 便携运行时 | `oxideterm-portable-runtime` |
 | CLI 伴侣工具 | `oxideterm-cli` |
@@ -1765,7 +1567,6 @@ flowchart LR
 | 终端协议辅助 | 终端提权辅助和 X/Y/ZMODEM modem 传输引擎 |
 | 远端视觉会话 | 图形 / VNC 会话架构 |
 | ReconnectOrchestratorStore | Native 重连编排模型 |
-| AI 侧边栏与工具 | OxideSens AI 架构 |
 | 插件运行时 | 插件注册表、宿主 API、生命周期、设置和凭据 |
 | SettingsStore | 设置领域 crate 和设置页面 |
 | `.oxide` 格式 | 便携包 |

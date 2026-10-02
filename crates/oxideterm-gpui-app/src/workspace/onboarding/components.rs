@@ -287,35 +287,6 @@ impl WorkspaceApp {
             .into_any_element()
     }
 
-    pub(in crate::workspace) fn onboarding_capability_grid(
-        &self,
-        title_key: &str,
-        items: &[(LucideIcon, &str)],
-    ) -> AnyElement {
-        let mut grid = div().grid().grid_cols(2).gap(px(8.0));
-        for (icon, key) in items {
-            grid = grid.child(self.onboarding_capability_chip(*icon, key));
-        }
-        self.onboarding_section(
-            LucideIcon::ListChecks,
-            title_key,
-            None,
-            grid.into_any_element(),
-        )
-    }
-
-    pub(in crate::workspace) fn onboarding_capability_list(
-        &self,
-        title_key: &str,
-        items: &[(LucideIcon, &str)],
-    ) -> AnyElement {
-        let mut list = div().flex().flex_col().gap(px(6.0));
-        for (icon, key) in items {
-            list = list.child(self.onboarding_capability_chip(*icon, key));
-        }
-        self.onboarding_section(LucideIcon::Shield, title_key, None, list.into_any_element())
-    }
-
     pub(in crate::workspace) fn onboarding_capability_chip(
         &self,
         icon: LucideIcon,
@@ -339,86 +310,6 @@ impl WorkspaceApp {
                     .text_size(px(11.0))
                     .text_color(rgb(self.tokens.ui.text))
                     .child(self.i18n.t(&format!("onboarding.{key}"))),
-            )
-            .into_any_element()
-    }
-
-    pub(in crate::workspace) fn onboarding_toggle_card(
-        &self,
-        title_key: &str,
-        hint_key: &str,
-        checked: bool,
-        enabled: bool,
-        action: impl Fn(&mut Self, &mut Context<Self>) + 'static,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        div()
-            .flex()
-            .items_center()
-            .gap(px(12.0))
-            .p(px(14.0))
-            .rounded(px(self.tokens.radii.md))
-            .border_1()
-            .border_color(if checked {
-                rgba((self.tokens.ui.accent << 8) | ONBOARDING_ACCENT_BORDER_ALPHA)
-            } else {
-                rgb(self.tokens.ui.border)
-            })
-            .bg(if checked {
-                rgba((self.tokens.ui.accent << 8) | ONBOARDING_ACCENT_SUBTLE_ALPHA)
-            } else {
-                rgb(self.tokens.ui.bg_card)
-            })
-            .opacity(if enabled {
-                1.0
-            } else {
-                ONBOARDING_DISABLED_OPACITY
-            })
-            .cursor(if enabled {
-                CursorStyle::PointingHand
-            } else {
-                CursorStyle::OperationNotAllowed
-            })
-            .child(checkbox::checkbox(&self.tokens, String::new(), checked))
-            .child(
-                div()
-                    .flex_1()
-                    .min_w(px(0.0))
-                    .child(
-                        div()
-                            .text_size(px(self.tokens.metrics.ui_text_xs))
-                            .font_weight(gpui::FontWeight::MEDIUM)
-                            .text_color(rgb(self.tokens.ui.text))
-                            .child(self.i18n.t(title_key)),
-                    )
-                    .child(
-                        div()
-                            .text_size(px(11.0))
-                            .text_color(rgb(self.tokens.ui.text_muted))
-                            .child(self.i18n.t(hint_key)),
-                    ),
-            )
-            .child(Self::render_lucide_icon(
-                if checked {
-                    LucideIcon::CheckCircle
-                } else {
-                    LucideIcon::Circle
-                },
-                20.0,
-                if checked {
-                    rgb(self.tokens.ui.accent)
-                } else {
-                    rgb(self.tokens.ui.text_muted)
-                },
-            ))
-            .on_mouse_down(
-                MouseButton::Left,
-                cx.listener(move |this, _event, _window, cx| {
-                    if enabled {
-                        action(this, cx);
-                    }
-                    cx.stop_propagation();
-                }),
             )
             .into_any_element()
     }

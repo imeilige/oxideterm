@@ -1863,7 +1863,6 @@ impl TerminalPane {
             .command_selection_labels
             .copy_command
             .clone();
-        let send_to_ai_label = self.preferences.command_selection_labels.send_to_ai.clone();
         let fill_command_bar_label = self
             .preferences
             .command_selection_labels
@@ -1995,18 +1994,6 @@ impl TerminalPane {
                         cx,
                     ))
                     .child(context_menu_separator(tokens))
-                    .child(self.render_terminal_context_menu_item(
-                        send_to_ai_label,
-                        !menu.has_selection,
-                        |this, _event, _window, cx| {
-                            this.request_context_action(
-                                TerminalContextAction::SendSelectionToAi,
-                                true,
-                                cx,
-                            );
-                        },
-                        cx,
-                    ))
                     .child(self.render_terminal_context_menu_item(
                         fill_command_bar_label,
                         !menu.has_selection,

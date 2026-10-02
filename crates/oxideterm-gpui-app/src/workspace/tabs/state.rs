@@ -6,32 +6,10 @@ impl WorkspaceApp {
         if tab.kind == TabKind::Sftp {
             self.ensure_sftp_page(tab_id, cx);
         }
-        self.register_tab_surface(&tab, cx);
         let previous_active_tab_id = self
             .tab_host
             .update(cx, |tab_host, _| tab_host.insert_and_select_main_tab(tab));
         self.apply_main_window_active_tab_change(previous_active_tab_id, Some(tab_id), cx);
-    }
-
-    pub(in crate::workspace) fn register_tab_surface(&mut self, tab: &Tab, cx: &mut App) {
-        let tab_id = tab.id;
-        let surface_kind = crate::workspace::root::helpers::tab_surface_kind(&tab.kind).to_string();
-        let surface_label = if tab.title.trim().is_empty() {
-            surface_kind.clone()
-        } else {
-            tab.title.clone()
-        };
-        let stable_surface_ref = oxideterm_ai::StableResourceRef::new(
-            oxideterm_ai::StableResourceKind::AppSurface,
-            surface_kind,
-            Some(surface_label.clone()),
-        )
-        .ok();
-        // Tab insertion is the mount boundary for exact focus authority. The
-        // stable reference is optional because not every internal tab is openable.
-        self.ai_runtime_context.update(cx, |runtime, _cx| {
-            runtime.register_app_surface(tab_id, surface_label, stable_surface_ref);
-        });
     }
 
     pub(in crate::workspace) fn alloc_tab_id(&mut self, cx: &mut App) -> TabId {
@@ -118,6 +96,20 @@ impl WorkspaceApp {
 
     pub(in crate::workspace) fn active_tab<'a>(&self, cx: &'a App) -> Option<&'a Tab> {
         self.tab_host.read(cx).active_tab()
+    }
+
+    /// Resolve the terminal session that owns a pane, or `None` for the
+    /// page-style tabs that have no terminal behind them.
+    pub(in crate::workspace) fn session_id_for_pane(
+        &self,
+        pane_id: PaneId,
+        _cx: &App,
+    ) -> Option<TerminalSessionId> {
+        self.tab_host
+            .read(_cx)
+            .tabs()
+            .iter()
+            .find_map(|tab| tab.root_pane.as_ref()?.session_id_for_pane(pane_id))
     }
 
     pub(in crate::workspace) fn active_content_tab_id(&self, cx: &App) -> Option<TabId> {

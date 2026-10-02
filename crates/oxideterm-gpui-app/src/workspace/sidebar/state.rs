@@ -55,7 +55,6 @@ fn should_collapse_primary_sidebar_section(
 pub(in crate::workspace) fn context_sidebar_panel_visible(
     sidebar_collapsed: bool,
     zen_mode: bool,
-    ai_enabled: bool,
     active_panel: ContextSidebarPanel,
 ) -> bool {
     if sidebar_collapsed || zen_mode {
@@ -65,7 +64,6 @@ pub(in crate::workspace) fn context_sidebar_panel_visible(
     // Host Tools shares the companion sidebar shell, but its visibility must
     // remain independent from the optional AI feature.
     match active_panel {
-        ContextSidebarPanel::Assistant => ai_enabled,
         ContextSidebarPanel::HostTools => true,
     }
 }
@@ -163,18 +161,11 @@ impl WorkspaceApp {
         }
     }
 
-    pub(in crate::workspace) fn ai_sidebar_visible(&self) -> bool {
-        self.context_sidebar_visible()
-            && self.active_context_sidebar_panel == ContextSidebarPanel::Assistant
-            && self.settings_store.settings().ai.enabled
-    }
-
     pub(in crate::workspace) fn context_sidebar_visible(&self) -> bool {
         let settings = self.settings_store.settings();
         context_sidebar_panel_visible(
-            settings.sidebar_ui.ai_sidebar_collapsed,
+            settings.sidebar_ui.context_sidebar_collapsed,
             settings.sidebar_ui.zen_mode,
-            settings.ai.enabled,
             self.active_context_sidebar_panel,
         )
     }
@@ -184,7 +175,6 @@ impl WorkspaceApp {
         section: SidebarSection,
         cx: &mut Context<Self>,
     ) {
-        self.clear_ai_sidebar_keyboard_focus(cx);
         self.active_sidebar_section = section;
         if self.sidebar_collapsed {
             self.set_sidebar_collapsed_with_motion(false, cx);
@@ -381,10 +371,6 @@ impl WorkspaceApp {
         )
     }
 
-    pub(in crate::workspace) fn toggle_ai_sidebar(&mut self, cx: &mut Context<Self>) -> bool {
-        self.toggle_context_sidebar_panel(ContextSidebarPanel::Assistant, cx)
-    }
-
     pub(in crate::workspace) fn toggle_context_sidebar_panel(
         &mut self,
         panel: ContextSidebarPanel,
@@ -407,35 +393,16 @@ impl WorkspaceApp {
         panel: ContextSidebarPanel,
         cx: &mut Context<Self>,
     ) -> bool {
-        if panel == ContextSidebarPanel::Assistant && !self.settings_store.settings().ai.enabled {
-            self.push_ai_settings_toast(
-                self.i18n.t("ai.sidebar.not_enabled_hint"),
-                TerminalNoticeVariant::Warning,
-                cx,
-            );
-            cx.notify();
-            return false;
-        }
-
         self.active_context_sidebar_panel = panel;
         self.settings_store
             .settings_mut()
             .sidebar_ui
-            .ai_sidebar_collapsed = false;
+            .context_sidebar_collapsed = false;
         self.set_context_sidebar_rendered_with_motion(true, cx);
-        if panel == ContextSidebarPanel::Assistant {
-            self.ensure_ai_chat_initialized(cx);
-            self.bootstrap_ai_mcp_registry(cx);
-        } else {
-            // Non-AI context panels share the old right-sidebar shell, but must
-            // not keep AI-specific focus or floating popovers alive.
-            self.close_ai_sidebar_popovers(cx);
-            self.host_tools.update(cx, |host_tools, cx| {
-                host_tools.reset_active_tool(cx);
-            });
-        }
+        self.host_tools.update(cx, |host_tools, cx| {
+            host_tools.reset_active_tool(cx);
+        });
         self.sync_host_tools_lifecycle(panel == ContextSidebarPanel::HostTools, cx);
-        self.clear_ai_sidebar_keyboard_focus(cx);
         self.persist_sidebar_settings_store(cx);
         cx.notify();
         true
@@ -445,18 +412,16 @@ impl WorkspaceApp {
         self.settings_store
             .settings_mut()
             .sidebar_ui
-            .ai_sidebar_collapsed = true;
+            .context_sidebar_collapsed = true;
         self.set_context_sidebar_rendered_with_motion(false, cx);
         self.context_sidebar_resizing = false;
         self.sidebar_resize_hotzone_hovered = false;
         self.sync_host_tools_lifecycle(false, cx);
-        self.clear_ai_sidebar_keyboard_focus(cx);
-        self.close_ai_sidebar_popovers(cx);
         self.persist_sidebar_settings_store(cx);
         cx.notify();
     }
 
-    pub(in crate::workspace) fn set_ai_sidebar_width(
+    pub(in crate::workspace) fn set_context_sidebar_panel_width(
         &mut self,
         width: f32,
         viewport_width: f32,
@@ -465,8 +430,8 @@ impl WorkspaceApp {
         let next_width = clamp_responsive_sidebar_width(
             width,
             viewport_width,
-            AI_SIDEBAR_ABSOLUTE_MIN_WIDTH,
-            AI_SIDEBAR_ABSOLUTE_MAX_WIDTH,
+            CONTEXT_SIDEBAR_ABSOLUTE_MIN_WIDTH,
+            CONTEXT_SIDEBAR_ABSOLUTE_MAX_WIDTH,
         );
         if (next_width - self.context_sidebar_width).abs() < f32::EPSILON {
             return false;
@@ -491,7 +456,7 @@ impl WorkspaceApp {
         self.context_sidebar_resizing = true;
         // Mirror the browser sidebar: the first press updates the width from
         // the pointer position so a resize drag is visible before the next move.
-        let width_changed = self.set_ai_sidebar_width(
+        let width_changed = self.set_context_sidebar_panel_width(
             self.ai_sidebar_width_from_cursor(event.position.x, window),
             f32::from(window.viewport_size().width),
             cx,
@@ -519,7 +484,7 @@ impl WorkspaceApp {
         }
         // Continue from the root capture even after the pointer leaves the AI
         // sidebar edge, matching browser resize handles.
-        self.set_ai_sidebar_width(
+        self.set_context_sidebar_panel_width(
             self.ai_sidebar_width_from_cursor(event.position.x, window),
             f32::from(window.viewport_size().width),
             cx,
@@ -532,7 +497,7 @@ impl WorkspaceApp {
             self.settings_store
                 .settings_mut()
                 .sidebar_ui
-                .ai_sidebar_width = self.context_sidebar_width.round() as i64;
+                .context_sidebar_width = self.context_sidebar_width.round() as i64;
             self.persist_sidebar_settings_store(cx);
             cx.notify();
         }
@@ -564,8 +529,8 @@ impl WorkspaceApp {
         let context_width = clamp_responsive_sidebar_width(
             self.context_sidebar_width,
             viewport_width,
-            AI_SIDEBAR_ABSOLUTE_MIN_WIDTH,
-            AI_SIDEBAR_ABSOLUTE_MAX_WIDTH,
+            CONTEXT_SIDEBAR_ABSOLUTE_MIN_WIDTH,
+            CONTEXT_SIDEBAR_ABSOLUTE_MAX_WIDTH,
         );
         let primary_changed = (primary_width - self.sidebar_width).abs() >= f32::EPSILON;
         let context_changed = (context_width - self.context_sidebar_width).abs() >= f32::EPSILON;
@@ -605,7 +570,7 @@ pub(in crate::workspace) fn ai_sidebar_width_from_cursor_value(
     clamp_responsive_sidebar_width(
         viewport_width - cursor_x,
         viewport_width,
-        AI_SIDEBAR_ABSOLUTE_MIN_WIDTH,
-        AI_SIDEBAR_ABSOLUTE_MAX_WIDTH,
+        CONTEXT_SIDEBAR_ABSOLUTE_MIN_WIDTH,
+        CONTEXT_SIDEBAR_ABSOLUTE_MAX_WIDTH,
     )
 }

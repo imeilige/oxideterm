@@ -207,30 +207,6 @@ impl Render for DetachedTabWindow {
                             }
                         }
                     }
-                    if crate::keybindings::keystroke_matches_action(
-                        &event.keystroke,
-                        "terminal.aiPanel",
-                        &session.settings_store.settings().keybindings.overrides,
-                    ) {
-                        session.toggle_terminal_ai_inline_panel(window, cx);
-                        return true;
-                    }
-                    if session.active_ime_target_for_window(window_id, cx)
-                        == Some(super::ime::WorkspaceImeTarget::AiInlinePrompt)
-                    {
-                        if session.defer_active_ime_key(&event.keystroke, window, cx) {
-                            return false;
-                        }
-                        if session.handle_active_text_input_edit_shortcut(&event.keystroke, cx)
-                            || session
-                                .handle_active_text_input_delete_selection(&event.keystroke, cx)
-                            || session.handle_active_text_input_transpose(&event.keystroke, cx)
-                            || session.handle_active_text_input_navigation(&event.keystroke, cx)
-                        {
-                            return true;
-                        }
-                        return session.handle_ai_inline_panel_key(event, window, cx);
-                    }
                     if matches!(kind, Some(TabKind::Sftp | TabKind::Forwards)) {
                         if session.defer_active_ime_key(&event.keystroke, window, cx) {
                             return false;

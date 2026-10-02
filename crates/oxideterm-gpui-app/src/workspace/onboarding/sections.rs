@@ -584,7 +584,6 @@ impl WorkspaceApp {
         };
         let features = [
             (LucideIcon::Terminal, "cmd_palette", Some(mod_key), true),
-            (LucideIcon::Bot, "ai_chat", None, false),
             (LucideIcon::FolderOpen, "sftp", None, false),
             (LucideIcon::FileCode, "remote_ide", None, false),
             (LucideIcon::HardDrive, "local_file_manager", None, false),
@@ -617,111 +616,6 @@ impl WorkspaceApp {
                 "onboarding.features_desc",
             ))
             .child(grid)
-            .into_any_element()
-    }
-
-    pub(in crate::workspace) fn render_onboarding_ai_intro(
-        &self,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        div()
-            .px(px(32.0))
-            .pt(px(24.0))
-            .pb(px(24.0))
-            .flex()
-            .flex_col()
-            .gap(px(16.0))
-            .child(self.onboarding_step_heading(
-                LucideIcon::Sparkles,
-                "onboarding.ai_tools_title",
-                "onboarding.ai_tools_desc",
-            ))
-            .child(self.onboarding_info_card(
-                Some((LucideIcon::Bot, self.tokens.ui.accent_secondary)),
-                "onboarding.ai_tools_oxidesens",
-                Some("onboarding.ai_tools_oxidesens_desc"),
-                false,
-                cx,
-            ))
-            .child(self.onboarding_capability_grid(
-                "onboarding.ai_tools_capabilities",
-                &[
-                    (LucideIcon::Terminal, "ai_tools_cap_sidebar"),
-                    (LucideIcon::Zap, "ai_tools_cap_inline"),
-                    (LucideIcon::Bot, "ai_tools_cap_agent"),
-                    (LucideIcon::Key, "ai_tools_cap_byok"),
-                ],
-            ))
-            .child(self.onboarding_capability_list(
-                "onboarding.ai_tools_privacy",
-                &[
-                    (LucideIcon::Lock, "ai_tools_privacy_local"),
-                    (LucideIcon::Key, "ai_tools_privacy_keys"),
-                    (LucideIcon::Shield, "ai_tools_privacy_context"),
-                ],
-            ))
-            .into_any_element()
-    }
-
-    pub(in crate::workspace) fn render_onboarding_ai_setup(
-        &self,
-        _window: &Window,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let shortcut = if cfg!(target_os = "macos") {
-            "⌘K"
-        } else {
-            "Ctrl+K"
-        };
-        div()
-            .px(px(32.0))
-            .pt(px(24.0))
-            .pb(px(24.0))
-            .flex()
-            .flex_col()
-            .gap(px(16.0))
-            .child(self.onboarding_step_heading(
-                LucideIcon::Settings,
-                "onboarding.ai_setup_title",
-                "onboarding.ai_setup_desc",
-            ))
-            .child(self.onboarding_toggle_card(
-                "onboarding.ai_tools_enable",
-                "onboarding.ai_tools_enable_hint",
-                self.onboarding.ai_opt_in,
-                true,
-                |this, cx| {
-                    this.onboarding.ai_opt_in = !this.onboarding.ai_opt_in;
-                    if !this.onboarding.ai_opt_in {
-                        this.onboarding.tool_use_opt_in = false;
-                    }
-                    cx.notify();
-                },
-                cx,
-            ))
-            .child(self.onboarding_toggle_card(
-                "onboarding.ai_tools_enable_tools",
-                "onboarding.ai_tools_enable_tools_hint",
-                self.onboarding.tool_use_opt_in,
-                self.onboarding.ai_opt_in,
-                |this, cx| {
-                    if this.onboarding.ai_opt_in {
-                        this.onboarding.tool_use_opt_in = !this.onboarding.tool_use_opt_in;
-                        cx.notify();
-                    }
-                },
-                cx,
-            ))
-            .child(self.onboarding_info_card_with_text(
-                Some((LucideIcon::Terminal, self.tokens.ui.accent)),
-                self.i18n.t("onboarding.ai_tools_cmd_palette"),
-                self.onboarding_i18n_with(
-                    "onboarding.ai_tools_cmd_palette_desc",
-                    &[("shortcut", shortcut.to_string())],
-                ),
-                true,
-            ))
-            .child(self.onboarding_tip("onboarding.ai_tools_later_hint", &[]))
             .into_any_element()
     }
 

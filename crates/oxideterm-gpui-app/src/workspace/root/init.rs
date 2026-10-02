@@ -41,24 +41,6 @@ impl WorkspaceApp {
         );
         // Capture one stable root for this window. Shell `cd` must not silently
         // replace the available workflow catalog.
-        let skill_workspace_root = std::env::current_dir().ok();
-        let disabled_paths = settings
-            .ai
-            .skills
-            .disabled_paths
-            .iter()
-            .map(std::path::PathBuf::from)
-            .collect();
-        let skill_registry =
-            oxideterm_skills::SkillRegistry::discover(&oxideterm_skills::SkillDiscoveryOptions {
-                workspace_root: skill_workspace_root.clone(),
-                settings_path: Some(settings_store.path().to_path_buf()),
-                // Plugin-provided skill roots left with the plugin system, so
-                // discovery is limited to the workspace and user skill roots.
-                plugin_roots: Vec::new(),
-                disabled_paths,
-            });
-        let skill_registry = std::sync::Arc::new(parking_lot::RwLock::new(skill_registry));
         let local_shells = scan_shells();
         let tokens = tokens_from_settings(&settings);
         let initial_viewport_width = current_window_size(window).0;
@@ -69,10 +51,10 @@ impl WorkspaceApp {
             tokens.metrics.sidebar_max_width,
         );
         let initial_context_sidebar_width = sidebar::clamp_responsive_sidebar_width(
-            settings.sidebar_ui.ai_sidebar_width as f32,
+            settings.sidebar_ui.context_sidebar_width as f32,
             initial_viewport_width,
-            AI_SIDEBAR_ABSOLUTE_MIN_WIDTH,
-            AI_SIDEBAR_ABSOLUTE_MAX_WIDTH,
+            CONTEXT_SIDEBAR_ABSOLUTE_MIN_WIDTH,
+            CONTEXT_SIDEBAR_ABSOLUTE_MAX_WIDTH,
         );
         let overlay_exit_duration = oxideterm_gpui_ui::motion::duration(
             &tokens,
@@ -371,43 +353,6 @@ impl WorkspaceApp {
             // a transfer actually needs persisted progress.
             Arc::new(LazyProgressStore::new(path))
         };
-        let ai_key_store = oxideterm_ai::AiProviderKeyStore::new();
-        let ai_entity = cx.new(|cx| {
-            let mut entity =
-                ai_state::AiWorkspaceEntity::new(forwarding_runtime.clone(), ai_key_store, cx);
-            entity.configure_chat_surface(
-                initial_context_sidebar_width,
-                Some(current_window_size(window)),
-            );
-            entity
-        });
-        let ai_entity_subscription = cx.subscribe(
-            &ai_entity,
-            |workspace, _ai_entity, event: &ai_state::AiWorkspaceEvent, cx| {
-                workspace.enqueue_ai_window_effect(event, cx);
-            },
-        );
-        let acp_entity =
-            cx.new(|cx| acp_workspace::AcpWorkspaceEntity::new(forwarding_runtime.clone(), cx));
-        let acp_entity_subscription = cx.subscribe(
-            &acp_entity,
-            |workspace, _acp_entity, _event: &acp_workspace::AcpWorkspaceEvent, cx| {
-                workspace.forward_acp_workspace_deliveries(cx);
-            },
-        );
-        let ai_background_tasks = cx.new(|cx| {
-            ai_background_tasks::AiBackgroundTaskEntity::new(forwarding_runtime.clone(), cx)
-        });
-        let ai_background_tasks_subscription = cx.subscribe(
-            &ai_background_tasks,
-            |workspace, _tasks, event: &ai_background_tasks::AiBackgroundTaskEvent, cx| {
-                workspace.handle_ai_background_task_event(*event, cx);
-            },
-        );
-        let ai_runtime_context = cx.new(|cx| {
-            ai_runtime_context::AiRuntimeContextEntity::attach_release_shutdown(cx);
-            ai_runtime_context::AiRuntimeContextEntity::new()
-        });
         let tab_host = cx.new(|_| tabs::WorkspaceTabHostEntity::new());
         let tab_host_subscription = cx.subscribe(
             &tab_host,
@@ -490,8 +435,6 @@ impl WorkspaceApp {
             _settings_workspace_subscription: settings_workspace_subscription,
             segmented_control_user_motion:
                 selection_motion::UserSegmentedControlMotionState::default(),
-            ai_text_editor_dialog: None,
-            ai_text_editor: None,
             // Detached local terminals are a bounded popover list, but the
             // number of retained background shells is user-driven, so keep it
             // on the same ListState path as other browser-style popovers.
@@ -522,12 +465,11 @@ impl WorkspaceApp {
                 },
             ),
             sidebar_width: initial_sidebar_width,
-            context_sidebar_rendered: !settings.sidebar_ui.ai_sidebar_collapsed
-                && !settings.sidebar_ui.zen_mode
-                && settings.ai.enabled,
+            context_sidebar_rendered: !settings.sidebar_ui.context_sidebar_collapsed
+                && !settings.sidebar_ui.zen_mode,
             context_sidebar_motion_generation: 0,
             context_sidebar_motion: oxideterm_gpui_ui::motion::SidebarMotion::new(
-                if settings.sidebar_ui.ai_sidebar_collapsed || settings.sidebar_ui.zen_mode {
+                if settings.sidebar_ui.context_sidebar_collapsed || settings.sidebar_ui.zen_mode {
                     0.0
                 } else {
                     initial_context_sidebar_width
@@ -535,17 +477,7 @@ impl WorkspaceApp {
             ),
             context_sidebar_width: initial_context_sidebar_width,
             context_sidebar_resizing: false,
-            ai_entity,
-            acp_entity,
-            skill_registry,
-            skill_workspace_root,
-            loaded_conversation_skills: HashMap::new(),
-            ai_background_tasks,
-            _ai_background_tasks_subscription: ai_background_tasks_subscription,
-            ai_runtime_context,
-            _ai_entity_subscription: ai_entity_subscription,
-            _acp_entity_subscription: acp_entity_subscription,
-            active_context_sidebar_panel: ContextSidebarPanel::Assistant,
+            active_context_sidebar_panel: ContextSidebarPanel::HostTools,
             needs_active_pane_focus: false,
             active_sidebar_section: SidebarSection::from_settings_key(
                 &settings.sidebar_ui.active_section,
@@ -704,14 +636,8 @@ impl WorkspaceApp {
         };
         let _workspace_window_bounds = cx.observe_window_bounds(window, |this, window, cx| {
             this.clamp_sidebar_widths_to_viewport(current_window_size(window).0, cx);
-            this.update_ai_sidebar_overlay_for_window_bounds(window, cx);
             this.capture_main_window_state(window, cx);
         });
-        workspace.sync_ai_workspace_visibility(cx);
-        if workspace.ai_sidebar_visible() {
-            workspace.ensure_ai_chat_initialized(cx);
-            workspace.bootstrap_ai_mcp_registry(cx);
-        }
         if workspace.version_migration.open {}
         workspace.sync_ssh_config_sync_service();
         workspace.restore_session_tree_snapshot();
@@ -727,17 +653,6 @@ impl WorkspaceApp {
         cx.on_release(|workspace, cx| {
             workspace.flush_main_window_state(cx);
             workspace.shutdown_terminal_trigger_runtime();
-            // Shutdown ordering is security-sensitive: late broker callbacks
-            // fail before user-decision waiters and owner projections disappear.
-            workspace.ai_runtime_context.update(cx, |runtime, _cx| {
-                runtime.stop_accepting_and_finish_tool_sessions();
-            });
-            workspace.ai_entity.update(cx, |ai, _cx| {
-                ai.cancel_chat_stream();
-            });
-            workspace.ai_runtime_context.update(cx, |runtime, _cx| {
-                runtime.revoke_registered_owner_projections();
-            });
         })
         .detach();
         Ok(workspace)
@@ -1016,7 +931,6 @@ impl WorkspaceApp {
                 copy: self.i18n.t("terminal.command_selection.copy"),
                 copy_title: self.i18n.t("terminal.command_selection.copy_title"),
                 copy_command: self.i18n.t("terminal.command_selection.copy_command"),
-                send_to_ai: self.i18n.t("terminal.command_selection.send_to_ai"),
                 fill_command_bar: self.i18n.t("terminal.command_selection.fill_command_bar"),
                 insert_selection_into_command: self
                     .i18n

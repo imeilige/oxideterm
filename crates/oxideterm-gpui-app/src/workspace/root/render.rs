@@ -31,9 +31,6 @@ impl WorkspaceApp {
                 if let Some(modal) = self.render_settings_navigation_editor(cx) {
                     modals.push(modal);
                 }
-                if let Some(modal) = self.render_ai_mcp_add_server_dialog(cx) {
-                    modals.push(modal);
-                }
                 if self
                     .settings_workspace
                     .read(cx)
@@ -128,10 +125,8 @@ impl WorkspaceApp {
         });
         self.begin_selectable_text_frame();
         self.schedule_pending_auto_close_terminal_sessions(window, cx);
-        self.sync_ai_workspace_visibility(cx);
         // Confirmation snapshots are immutable frame inputs. Sampling each
         // owner once avoids repeatedly cloning typed payloads during render.
-        let ai_chat_confirm_snapshot = self.ai_entity.read(cx).chat_confirm_snapshot();
         let overlay_confirm_snapshot = self.overlay.read(cx).confirm_snapshot();
         let tab_close_confirm_open = self.tab_host.read(cx).close_confirm().is_some();
         let title = self
@@ -164,7 +159,6 @@ impl WorkspaceApp {
             && let Some(pane) = self.active_pane(cx)
         {
             self.needs_active_pane_focus = false;
-            self.clear_ai_sidebar_keyboard_focus(cx);
             window.on_next_frame(move |window, cx| {
                 pane.update(cx, |pane, cx| pane.focus(window, cx));
             });
@@ -432,9 +426,6 @@ impl WorkspaceApp {
                 } else if this.handle_terminal_command_overlay_escape(event, cx) {
                     window.prevent_default();
                     cx.stop_propagation();
-                } else if this.handle_ai_inline_panel_key(event, window, cx) {
-                    window.prevent_default();
-                    cx.stop_propagation();
                 } else if this.sftp_presentation_request.is_some() {
                     if event.keystroke.key.eq_ignore_ascii_case("escape") {
                         this.sftp_presentation_request = None;
@@ -544,15 +535,8 @@ impl WorkspaceApp {
                         .read(cx)
                         .settings_entity_focused_input()
                         .is_some()
-                    || this.ai_entity.read(cx).focused_settings_input().is_some()
                 {
                     let _ = this.handle_settings_input_key(event, cx);
-                    window.prevent_default();
-                    cx.stop_propagation();
-                } else if this.ai_sidebar_visible()
-                    && this.ai_entity.read(cx).sidebar_keyboard_target_focused()
-                {
-                    let _ = this.handle_ai_sidebar_key(event, cx);
                     window.prevent_default();
                     cx.stop_propagation();
                 }
@@ -573,7 +557,6 @@ impl WorkspaceApp {
             .on_mouse_move(cx.listener(|this, event: &MouseMoveEvent, window, cx| {
                 this.update_sidebar_resize(event, window, cx);
                 this.update_embedded_sftp_sidebar_resize(event, window, cx);
-                this.update_ai_sidebar_resize(event, window, cx);
                 this.update_sftp_pane_resize(event, window, cx);
                 this.update_sftp_queue_resize(event, window, cx);
                 this.update_terminal_command_sender_resize(event, window, cx);
@@ -769,17 +752,11 @@ impl WorkspaceApp {
             .on_action(cx.listener(|this, _: &ShowShortcuts, _window, cx| {
                 this.open_shortcuts_modal(cx);
             }))
-            .on_action(cx.listener(|this, _: &TerminalAiPanel, _window, cx| {
-                this.toggle_terminal_ai_inline_panel(_window, cx);
-            }))
             .on_action(cx.listener(|this, _: &TerminalClearScreen, _window, cx| {
                 this.clear_active_terminal_screen(cx);
             }))
             .on_action(cx.listener(|this, _: &TerminalFreeTypeMode, _window, cx| {
                 this.toggle_free_type_mode(cx);
-            }))
-            .on_action(cx.listener(|this, _: &PaletteAiSidebar, _window, cx| {
-                let _ = this.toggle_ai_sidebar(cx);
             }))
             .on_action(cx.listener(|this, _: &PaletteDisconnectAll, window, cx| {
                 this.disconnect_all_ssh_nodes_from_palette(window, cx);
@@ -957,46 +934,6 @@ impl WorkspaceApp {
                 |root| root.child(self.render_keyboard_interactive_dialog(cx)),
             )
             .when(
-                self.ai_entity.read(cx).settings_confirm_is_enable(),
-                |root| root.child(self.render_ai_enable_confirm_dialog(cx)),
-            )
-            .when(
-                self.ai_entity
-                    .read(cx)
-                    .settings_confirm_is_provider_key_remove(),
-                |root| root.child(self.render_ai_provider_key_remove_confirm_dialog(cx)),
-            )
-            .when(
-                self.ai_entity
-                    .read(cx)
-                    .settings_confirm_provider_name()
-                    .is_some(),
-                |root| root.child(self.render_ai_provider_remove_confirm_dialog(cx)),
-            )
-            .when(
-                self.ai_entity.read(cx).chat_ui().safety_confirm_open,
-                |root| root.child(self.render_ai_safety_confirm_dialog(cx)),
-            )
-            .when(
-                self.ai_entity.read(cx).chat_ui().summarize_confirm_open,
-                |root| root.child(self.render_ai_summarize_confirm_dialog(cx)),
-            )
-            .when(
-                ai_chat_confirm_snapshot.as_ref().is_some_and(|snapshot| {
-                    matches!(&snapshot.kind, ai_state::AiChatConfirmKind::ClearAll)
-                }),
-                |root| root.child(self.render_ai_clear_all_confirm_dialog(cx)),
-            )
-            .when(
-                ai_chat_confirm_snapshot.as_ref().is_some_and(|snapshot| {
-                    matches!(
-                        &snapshot.kind,
-                        ai_state::AiChatConfirmKind::DeleteMessage { .. }
-                    )
-                }),
-                |root| root.child(self.render_ai_delete_message_confirm_dialog(cx)),
-            )
-            .when(
                 overlay_confirm_snapshot.as_ref().is_some_and(|snapshot| {
                     matches!(&snapshot.kind, WorkspaceOverlayConfirmKind::SettingsReset)
                 }),
@@ -1061,10 +998,6 @@ impl WorkspaceApp {
             .children(active_tab_window_modals)
             .when_some(settings_select_overlay, |root, overlay| root.child(overlay))
             .when_some(
-                self.render_ai_sidebar_floating_overlay(window, cx),
-                |root, overlay| root.child(overlay),
-            )
-            .when_some(
                 self.render_detached_tab_return_handoff(window, cx),
                 |root, handoff| root.child(handoff),
             )
@@ -1095,11 +1028,6 @@ impl WorkspaceApp {
                 // Structured command specs use the same workspace-wide modal
                 // ownership so the settings list never contains a nested editor.
                 root.child(self.render_terminal_command_specs_editor_modal(cx))
-            })
-            .when(self.ai_text_editor_dialog.is_some(), |root| {
-                // Long AI documents use workspace-wide modal ownership so the
-                // settings list keeps compact, independently measured cards.
-                root.child(self.render_ai_text_editor_modal(cx))
             })
             .when(
                 self.session_manager.read(cx).oxide_import_dialog.is_some(),
@@ -1185,7 +1113,6 @@ impl WorkspaceApp {
                 this.update_tab_drag(event, window, cx);
                 this.update_sidebar_resize(event, window, cx);
                 this.update_embedded_sftp_sidebar_resize(event, window, cx);
-                this.update_ai_sidebar_resize(event, window, cx);
                 this.update_sftp_pane_resize(event, window, cx);
                 this.update_sftp_queue_resize(event, window, cx);
                 this.update_terminal_command_sender_resize(event, window, cx);
@@ -1212,7 +1139,6 @@ impl WorkspaceApp {
         let was_read_only_dragging = self.read_only_selection_drag_active();
         self.finish_sidebar_resize(cx);
         self.finish_embedded_sftp_sidebar_resize(cx);
-        self.finish_ai_sidebar_resize(cx);
         self.finish_sftp_pane_resize(cx);
         self.finish_sftp_queue_resize(cx);
         self.finish_terminal_command_sender_resize(cx);
@@ -1369,6 +1295,24 @@ impl WorkspaceApp {
     ) -> bool {
         self.overlay
             .update(cx, |overlay, cx| overlay.apply_intent(intent, cx))
+    }
+
+    pub(in crate::workspace) fn push_settings_toast(
+        &self,
+        title: String,
+        variant: TerminalNoticeVariant,
+        cx: &App,
+    ) {
+        self.push_workspace_notice(
+            TerminalNotice {
+                title,
+                description: None,
+                status_text: None,
+                progress: None,
+                variant,
+            },
+            cx,
+        );
     }
 
     pub(in crate::workspace) fn push_workspace_notice(&self, notice: TerminalNotice, cx: &App) {

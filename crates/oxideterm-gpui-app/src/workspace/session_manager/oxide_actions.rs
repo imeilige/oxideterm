@@ -620,7 +620,7 @@ impl WorkspaceApp {
             }
         }
         dialog.selected_plugin_ids = dialog.plugin_groups.keys().cloned().collect();
-        dialog.preflight = self.oxide_export_preflight_for_dialog(&dialog, cx);
+        dialog.preflight = self.oxide_export_preflight_for_dialog(&dialog);
         self.session_manager.update(cx, |session_manager, cx| {
             session_manager.oxide_export_dialog = Some(dialog);
             session_manager.focused_input = None;
@@ -1422,8 +1422,6 @@ impl WorkspaceApp {
             cx,
         );
 
-        self.apply_oxide_import_portable_secrets(&mut envelope, cx);
-
         let result = OxideClientStateImportResult {
             envelope,
             imported_app_settings,
@@ -1592,40 +1590,22 @@ impl WorkspaceApp {
             || dialog.include_portable_secrets
     }
 
-    pub(in crate::workspace) fn oxide_export_portable_secret_count(
-        &self,
-        dialog: &OxideExportDialogState,
-        cx: &App,
-    ) -> usize {
-        if !dialog.include_portable_secrets {
-            return 0;
-        }
-        oxideterm_ai::provider_views(&self.settings_store.settings().ai.providers)
-            .into_iter()
-            .filter(|provider| {
-                self.ai_entity
-                    .read(cx)
-                    .key_store()
-                    .has_provider_key(&provider.id)
-            })
-            .count()
-    }
-
     pub(super) fn oxide_export_preflight(
         &self,
         dialog: &OxideExportDialogState,
-        cx: &App,
     ) -> ExportPreflightResult {
         let selected_ids = self
             .oxide_export_connection_ids(dialog)
             .into_iter()
             .collect::<Vec<_>>();
+        // Portable secrets are only provider keys, and the provider key store
+        // is gone, so an export can never carry one any more.
         preflight_export(
             &self.connection_store,
             &selected_ids,
             dialog.embed_keys,
             dialog.include_managed_keys,
-            self.oxide_export_portable_secret_count(dialog, cx),
+            0,
         )
     }
 
@@ -1635,7 +1615,7 @@ impl WorkspaceApp {
             session_manager
                 .oxide_export_dialog
                 .as_ref()
-                .map(|dialog| self.oxide_export_preflight_for_dialog(dialog, cx))
+                .map(|dialog| self.oxide_export_preflight_for_dialog(dialog))
         }) else {
             return;
         };
@@ -1650,11 +1630,10 @@ impl WorkspaceApp {
     pub(super) fn oxide_export_preflight_for_dialog(
         &self,
         dialog: &OxideExportDialogState,
-        cx: &App,
     ) -> Option<ExportPreflightResult> {
         let has_preflight_content =
             !self.oxide_export_connection_ids(dialog).is_empty() || dialog.include_portable_secrets;
-        has_preflight_content.then(|| self.oxide_export_preflight(dialog, cx))
+        has_preflight_content.then(|| self.oxide_export_preflight(dialog))
     }
 
     pub(super) fn export_oxide_dialog(&mut self, cx: &mut Context<Self>) {
@@ -1680,8 +1659,8 @@ impl WorkspaceApp {
                     .oxide_export_connection_ids(dialog)
                     .into_iter()
                     .collect::<Vec<_>>();
-                let preflight = self.oxide_export_preflight(dialog, cx);
-                self.build_oxide_export_options(dialog, cx)
+                let preflight = self.oxide_export_preflight(dialog);
+                self.build_oxide_export_options(dialog)
                     .map(|options| (selected_ids, preflight, options))
             }
         };
@@ -1804,7 +1783,6 @@ impl WorkspaceApp {
     pub(super) fn build_oxide_export_options(
         &self,
         dialog: &OxideExportDialogState,
-        cx: &App,
     ) -> Result<OxideExportOptions, String> {
         let app_settings_json = if dialog.include_app_settings {
             Some(
@@ -1918,35 +1896,8 @@ impl WorkspaceApp {
         } else {
             Vec::new()
         };
-        let portable_secrets = if dialog.include_portable_secrets {
-            let provider_ids =
-                oxideterm_ai::provider_views(&self.settings_store.settings().ai.providers)
-                    .into_iter()
-                    .map(|provider| provider.id)
-                    .filter(|provider_id| {
-                        self.ai_entity
-                            .read(cx)
-                            .key_store()
-                            .has_provider_key(provider_id)
-                    })
-                    .collect::<Vec<_>>();
-            self.ai_entity
-                .read(cx)
-                .key_store()
-                .get_provider_keys(&provider_ids)
-                .map_err(|error| error.to_string())?
-                .into_iter()
-                .map(
-                    |(id, secret)| oxideterm_connections::oxide_file::EncryptedPortableSecret {
-                        kind: "ai_provider_key".to_string(),
-                        id,
-                        secret,
-                    },
-                )
-                .collect()
-        } else {
-            Vec::new()
-        };
+        // Provider keys were the only portable secret kind, so an export no
+        // longer carries any; the archive field stays readable for old files.
         Ok(OxideExportOptions {
             description: (!dialog.description.trim().is_empty())
                 .then(|| dialog.description.trim().to_string()),
@@ -1962,7 +1913,6 @@ impl WorkspaceApp {
             mosh_profiles_json,
             remote_desktop_profiles_json,
             plugin_settings,
-            portable_secrets,
             forwards,
             ..OxideExportOptions::default()
         })
@@ -2123,45 +2073,6 @@ impl WorkspaceApp {
                 (false, true)
             }
         }
-    }
-
-    #[allow(dead_code)]
-    pub(in crate::workspace) fn apply_oxide_import_portable_secrets(
-        &mut self,
-        envelope: &mut ImportResultEnvelope,
-        cx: &mut Context<Self>,
-    ) {
-        let total = envelope.portable_secrets.len();
-        if total == 0 {
-            return;
-        }
-
-        let mut imported = 0usize;
-        for secret in envelope.portable_secrets.drain(..) {
-            if secret.kind != "ai_provider_key" || secret.id.trim().is_empty() {
-                envelope.errors.push(format!(
-                    "Unsupported portable secret kind '{}' for id '{}'",
-                    secret.kind, secret.id
-                ));
-                continue;
-            }
-
-            match self
-                .ai_entity
-                .read(cx)
-                .key_store()
-                .store_provider_key(&secret.id, secret.secret)
-            {
-                Ok(()) => imported += 1,
-                Err(error) => envelope.errors.push(format!(
-                    "Failed to import portable secret '{}': {error}",
-                    secret.id
-                )),
-            }
-        }
-
-        envelope.imported_portable_secrets = imported;
-        envelope.skipped_portable_secrets = total.saturating_sub(imported);
     }
 }
 

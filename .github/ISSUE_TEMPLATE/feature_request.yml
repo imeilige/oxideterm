@@ -12,8 +12,8 @@ body:
 
         ---
 
-        **Scope:** OxideTerm is an SSH-based terminal and DevOps platform (local shells, SSH, SFTP, remote IDE, port forwarding, AI, plugins). Requests for unrelated remote-access protocols are out of scope and will be closed.
-        **范围：** OxideTerm 是基于 SSH 的终端与 DevOps 平台（本地终端、SSH、SFTP、远程 IDE、端口转发、AI、插件）。与此无关的远程访问协议不在项目范围内，相关请求将被直接关闭。
+        **Scope:** OxideTerm is an SSH-based terminal and DevOps platform (local shells, SSH, SFTP, remote IDE, port forwarding, plugins). Requests for unrelated remote-access protocols are out of scope and will be closed.
+        **范围：** OxideTerm 是基于 SSH 的终端与 DevOps 平台（本地终端、SSH、SFTP、远程 IDE、端口转发、插件）。与此无关的远程访问协议不在项目范围内，相关请求将被直接关闭。
 
         **One request per issue.** Multiple unrelated suggestions in a single issue will be closed — please open separate issues.
         **每个 Issue 只提一个建议。** 在同一 Issue 中混合多条不相关建议将被直接关闭，请分别提交。
@@ -70,7 +70,7 @@ body:
         - SFTP / file manager
         - IDE mode
         - Port forwarding / topology
-        - AI / OxideSens / MCP / RAG
+        - MCP / external tool servers
         - Plugins
         - Settings / themes / i18n
         - Windows / WSL / graphics

@@ -410,8 +410,8 @@ impl WorkspaceApp {
         };
 
         // Some Tauri confirm dialogs use a split footer instead of shadcn
-        // DialogFooter spacing. Use the shared split footer primitive so AI
-        // and settings confirms share button focus-visible behavior.
+        // DialogFooter spacing. Use the shared split footer primitive so every
+        // split confirm shares button focus-visible behavior.
         split_footer_button(
             &self.tokens,
             label,
@@ -555,18 +555,6 @@ impl WorkspaceApp {
                 .connection_form_state(cx)
                 .open_select
                 .is_some_and(|select| Self::new_connection_select_anchor_id(select) == anchor.id)
-            || (matches!(
-                anchor.id,
-                SelectAnchorId::AiPanelRoot
-                    | SelectAnchorId::AiConversationList
-                    | SelectAnchorId::AiChatMenu
-                    | SelectAnchorId::AiModelSelector
-                    | SelectAnchorId::AiInlineModelSelector
-                    | SelectAnchorId::AiReasoningMenu
-                    | SelectAnchorId::AiSafetyMenu
-                    | SelectAnchorId::AiContextPopover
-                    | SelectAnchorId::AiAutocomplete
-            ) && self.has_ai_sidebar_floating_overlay(cx))
             || (anchor.id == SelectAnchorId::TerminalCwdMenu
                 && self.terminal.read(cx).cwd_picker_open())
             || (anchor.id == SelectAnchorId::TerminalGitBranchMenu
@@ -594,36 +582,6 @@ impl WorkspaceApp {
             if should_notify {
                 cx.notify();
             }
-        }
-    }
-
-    pub(in crate::workspace) fn deferred_ai_select_anchor_update(
-        workspace: gpui::Entity<Self>,
-    ) -> impl FnOnce(OverlayAnchor, &mut Window, &mut App) {
-        move |anchor, window, cx| {
-            // AI popovers are rendered from floating overlay probes. Updating the
-            // workspace synchronously from prepaint can re-enter WorkspaceApp
-            // when a click opened another modal in the same effect cycle.
-            window.defer(cx, move |_window, cx| {
-                let _ = workspace.update(cx, |this, cx| {
-                    this.update_select_anchor(anchor, cx);
-                });
-            });
-        }
-    }
-
-    pub(in crate::workspace) fn deferred_ai_text_input_anchor_update(
-        workspace: gpui::Entity<Self>,
-    ) -> impl FnOnce(TextInputAnchor, &mut Window, &mut App) {
-        move |anchor, window, cx| {
-            // AI sidebar text anchors can be repainted while a floating menu
-            // click opens another overlay. Defer the write to avoid re-entering
-            // WorkspaceApp from GPUI prepaint.
-            window.defer(cx, move |_window, cx| {
-                let _ = workspace.update(cx, |this, cx| {
-                    this.update_text_input_anchor(anchor, cx);
-                });
-            });
         }
     }
 
@@ -659,49 +617,6 @@ impl WorkspaceApp {
                 "backspace" | "delete" if !modifiers.platform && !modifiers.control => {
                     self.settings_workspace.update(cx, |settings, cx| {
                         settings.pop_settings_entity_input(input, cx);
-                    });
-                    return true;
-                }
-                _ => return true,
-            }
-        }
-        if let Some(input) = self.ai_entity.read(cx).focused_settings_input() {
-            let key = event.keystroke.key.as_str();
-            let modifiers = event.keystroke.modifiers;
-            match key {
-                "tab" if input.is_ai_mcp() && self.ai_entity.read(cx).mcp_dialog_is_open() => {
-                    if let Some(browser_behavior::ModalFooterInputKeyAction::FocusFooter(action)) =
-                        browser_behavior::modal_footer_input_key_action(
-                            key,
-                            event.keystroke.modifiers.shift,
-                            &CONFIRM_DIALOG_FOOTER_ACTIONS,
-                            true,
-                            true,
-                            self.standard_confirm_focus_owner(),
-                            ConfirmDialogAction::Cancel,
-                            None,
-                        )
-                    {
-                        self.ai_entity.update(cx, |ai, cx| {
-                            ai.blur_settings_input(cx);
-                        });
-                        self.set_standard_confirm_focus(action);
-                        self.show_active_input_caret(cx);
-                        cx.notify();
-                    }
-                    return true;
-                }
-                "escape" | "enter" => {
-                    self.ai_entity.update(cx, |ai, cx| {
-                        ai.blur_settings_input(cx);
-                    });
-                    self.clear_ime_selection();
-                    self.show_active_input_caret(cx);
-                    return true;
-                }
-                "backspace" | "delete" if !modifiers.platform && !modifiers.control => {
-                    self.ai_entity.update(cx, |ai, cx| {
-                        ai.pop_settings_input(input, cx);
                     });
                     return true;
                 }
@@ -775,14 +690,6 @@ impl WorkspaceApp {
             self.clear_ime_selection();
             changed = true;
         }
-        if self
-            .ai_entity
-            .update(cx, |ai, cx| ai.blur_settings_input(cx))
-        {
-            self.ime_marked_text = None;
-            self.clear_ime_selection();
-            changed = true;
-        }
         if let Some(input) = self.focused_settings_input.take() {
             self.clear_settings_input_draft(input);
             self.ime_marked_text = None;
@@ -833,48 +740,6 @@ impl WorkspaceApp {
             .sftp_view()
             .update(cx, |sftp, cx| sftp.clear_input_focus(cx))
         {
-            self.ime_marked_text = None;
-            changed = true;
-        }
-        if self.ai_entity.read(cx).model_selector_search_focused()
-            || self.ai_entity.read(cx).model_selector_open()
-        {
-            // The AI model selector can live either in the sidebar portal or
-            // inside the terminal inline panel. A generic outside blur should
-            // release the searchable select without restoring inline focus.
-            self.ai_entity.update(cx, |ai, _cx| {
-                ai.close_model_selector();
-            });
-            self.ime_marked_text = None;
-            changed = true;
-        }
-        if self
-            .ai_entity
-            .read(cx)
-            .terminal_inline_panel()
-            .prompt_focused
-        {
-            // The inline AI prompt is rendered inside the terminal pane rather
-            // than as a normal form control, so it must explicitly join the
-            // shared blur path or it remains the active IME target after an
-            // outside click.
-            self.ai_entity.update(cx, |ai, _cx| {
-                ai.terminal_inline_panel_mut().prompt_focused = false;
-            });
-            self.ime_marked_text = None;
-            changed = true;
-        }
-        if self.ai_entity.read(cx).chat_ui().input_focused {
-            self.ai_entity.update(cx, |ai, _cx| {
-                ai.blur_chat_input(true);
-            });
-            self.ime_marked_text = None;
-            changed = true;
-        }
-        if self.ai_entity.read(cx).chat_ui().editing_message_focused {
-            self.ai_entity.update(cx, |ai, _cx| {
-                ai.blur_message_edit();
-            });
             self.ime_marked_text = None;
             changed = true;
         }
@@ -988,9 +853,6 @@ impl WorkspaceApp {
             .settings_entity_input_value(input)
             .is_some();
         if entity_owned_input {
-            self.ai_entity.update(cx, |ai, cx| {
-                ai.blur_settings_input(cx);
-            });
             if let Some(previous_input) = self.focused_settings_input.take() {
                 self.clear_settings_input_draft(previous_input);
             }
@@ -1002,26 +864,8 @@ impl WorkspaceApp {
             cx.notify();
             return;
         }
-        if ai_state::AiWorkspaceEntity::owns_settings_input(input) {
-            if let Some(previous_input) = self.focused_settings_input.take() {
-                self.clear_settings_input_draft(previous_input);
-            }
-            self.settings_workspace.update(cx, |settings, cx| {
-                settings.blur_settings_entity_input(cx);
-            });
-            self.ai_entity.update(cx, |ai, cx| {
-                ai.focus_settings_input(input, cx);
-            });
-            self.clear_ime_selection();
-            self.show_active_input_caret(cx);
-            cx.notify();
-            return;
-        }
         self.settings_workspace.update(cx, |settings, cx| {
             settings.blur_settings_entity_input(cx);
-        });
-        self.ai_entity.update(cx, |ai, cx| {
-            ai.blur_settings_input(cx);
         });
         if let Some(previous_input) = self
             .focused_settings_input
@@ -1082,9 +926,6 @@ impl WorkspaceApp {
         if let Some(value) = self.terminal_trigger_settings_input_value(input) {
             return value;
         }
-        if let Some(value) = self.ai_entity.read(cx).settings_input_value(input) {
-            return value.to_owned();
-        }
         if let Some(value) = self
             .settings_workspace
             .read(cx)
@@ -1131,12 +972,6 @@ impl WorkspaceApp {
             SettingsInputDraftApply::Unhandled => {}
         }
 
-        if ai_state::AiWorkspaceEntity::owns_settings_input(input) {
-            // Entity-owned inputs are updated directly by the IME adapter and
-            // must not be copied into the legacy settings page model.
-            cx.notify();
-            return;
-        }
         let terminal_trigger_input_draft = self.settings_input_draft.clone();
         if self.apply_terminal_trigger_settings_input(input, &terminal_trigger_input_draft) {
             cx.notify();
@@ -1312,15 +1147,6 @@ pub(in crate::workspace) fn select_anchor_tracks_while_closed(anchor_id: SelectA
             | SelectAnchorId::SettingsAppearanceBackgroundOpacitySlider
             | SelectAnchorId::SettingsAppearanceBackgroundBlurSlider
             | SelectAnchorId::SettingsTerminalFontSizeSlider
-            | SelectAnchorId::AiPanelRoot
-            | SelectAnchorId::AiConversationList
-            | SelectAnchorId::AiChatMenu
-            | SelectAnchorId::AiModelSelector
-            | SelectAnchorId::AiInlineModelSelector
-            | SelectAnchorId::AiReasoningMenu
-            | SelectAnchorId::AiSafetyMenu
-            | SelectAnchorId::AiContextPopover
-            | SelectAnchorId::AiAutocomplete
             | SelectAnchorId::NewConnectionGroup
             | SelectAnchorId::NewConnectionKeyAuthSource
             | SelectAnchorId::NewConnectionManagedKey

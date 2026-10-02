@@ -69,11 +69,9 @@ actions!(
         ClosePane,
         SplitNavLeft,
         SplitNavRight,
-        TerminalAiPanel,
         TerminalClearScreen,
         TerminalFreeTypeMode,
         PaletteEventLog,
-        PaletteAiSidebar,
         PaletteDisconnectAll,
         PaletteReconnectAll,
         PaletteCancelReconnect,
@@ -85,7 +83,6 @@ actions!(
 );
 
 fn main() {
-    oxideterm_acp_adapter::run_from_env_if_requested();
     let native_launch_args = native_launch_args().unwrap_or_else(|error| {
         eprintln!("failed to read native connection launch argument: {error}");
         std::process::exit(2);
@@ -423,7 +420,10 @@ fn looks_like_connection_uri(value: &str) -> bool {
 }
 
 fn quit(_: &Quit, cx: &mut App) {
-    workspace::request_app_quit(cx);
+    // The chat-history barrier that used to delay this is gone with the AI
+    // feature, so only the desktop-presence handshake is left to honour.
+    oxideterm_desktop_presence::request_quit();
+    cx.quit();
 }
 
 fn desktop_presence_menu(i18n: &I18n) -> oxideterm_desktop_presence::DesktopPresenceMenu {

@@ -9,12 +9,12 @@ use oxideterm_settings::{
     create_default_highlight_rule, reindex_highlight_rules, sanitize_highlight_rule_sets,
 };
 use oxideterm_settings_model::{
-    AiSettingsPage, CUSTOM_SEMANTIC_SCHEME_PREFIX,
+    CUSTOM_SEMANTIC_SCHEME_PREFIX,
     MAX_SEMANTIC_RULES, SEMANTIC_CLASSES, SETTINGS_SECTION_HEADER_ITEM_COUNT, SemanticClass,
     SemanticRuleContext, SemanticRuleDefinition, SemanticSchemeDocument,
     SettingsDynamicSectionCounts, SettingsInputDraftApply, TERMINAL_THEME_COLOR_FIELDS,
     ThemeColorField, ThemeEditorSection, ThemeEditorState, UI_THEME_COLOR_FIELDS,
-    add_custom_semantic_rule, ai_mcp_configs, ai_mcp_transport_label, ai_provider_views,
+    add_custom_semantic_rule,
     apply_persisted_settings_input_draft, create_custom_semantic_scheme, custom_theme_display_name,
     delete_custom_semantic_rule, delete_custom_semantic_scheme, delete_custom_theme_from_settings,
     edit_custom_semantic_scheme, editor_terminal_theme, editor_ui_colors,
@@ -30,13 +30,7 @@ use oxideterm_settings_model::{
 use oxideterm_theme::BUILT_IN_THEMES;
 
 use super::*;
-use super::{ai_state::AiSettingsViewSection, ime::WorkspaceImeTarget};
-use oxideterm_ai::{
-    AiProviderView, apply_provider_model_refresh as ai_apply_provider_model_refresh,
-    provider_id as ai_provider_id, provider_key_display_state as ai_provider_key_display_state,
-    provider_view as ai_provider_view,
-    remove_provider_at_with_scoped_settings as ai_remove_provider_at_with_scoped_settings,
-};
+use super::ime::WorkspaceImeTarget;
 use oxideterm_connections::{
     ManagedSshKeyInfo, ManagedSshKeyOrigin, ManagedSshKeyUsage, SecretString, SshConfigHost,
     list_available_ssh_keys, list_ssh_config_hosts,
@@ -146,7 +140,6 @@ pub(in crate::workspace) const APPEARANCE_BORDER_RADIUS_MAX: f32 = 16.0; // Taur
 pub(in crate::workspace) const APPEARANCE_UI_FONT_SIZE_MIN: f32 = 11.0;
 pub(in crate::workspace) const APPEARANCE_UI_FONT_SIZE_MAX: f32 = 20.0;
 
-mod ai_page;
 mod appearance;
 mod cards;
 mod connections_page;
@@ -176,7 +169,6 @@ mod terminal_display;
 mod terminal_triggers;
 pub(in crate::workspace) use terminal_triggers::TerminalTriggersSettingsState;
 
-pub(in crate::workspace) use ai_page::AiTextEditorDialog;
 use connections_page::connection_idle_timeout_options;
 use pages::settings_keybinding_scope_matches;
 pub(in crate::workspace) use remote_shell_integration::{

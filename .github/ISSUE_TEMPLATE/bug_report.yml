@@ -65,7 +65,7 @@ body:
         - SFTP / file manager
         - IDE mode / remote agent
         - Port forwarding / reconnect / ProxyJump
-        - AI / OxideSens / MCP / RAG
+        - MCP / external tool servers
         - Plugins
         - Import / export / connection migration
         - Install / update / portable mode

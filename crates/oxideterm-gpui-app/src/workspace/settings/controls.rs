@@ -1294,15 +1294,12 @@ impl WorkspaceApp {
         &mut self,
         select_id: SettingsSelect,
         owner_window_id: gpui::WindowId,
-        cx: &mut Context<Self>,
+        _cx: &mut Context<Self>,
     ) {
         // Browser select triggers opened by pointer do not show a focus-visible
-        // ring. Keep the origin and open/toggle rule in one place so settings,
-        // AI provider, and knowledge selects do not drift apart.
+        // ring. Keep the origin and open/toggle rule in one place so settings
+        // selects do not drift apart.
         self.focused_settings_input = None;
-        self.ai_entity.update(cx, |entity, cx| {
-            entity.blur_settings_input(cx);
-        });
         if self.open_settings_select == Some(select_id)
             && self.open_settings_select_owner_window_id == Some(owner_window_id)
         {

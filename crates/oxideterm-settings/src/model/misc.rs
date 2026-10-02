@@ -453,7 +453,6 @@ pub struct PersistedSettings {
     pub window_ui: WindowUiState,
     #[serde(default)]
     pub settings_navigation: SettingsNavigationSettings,
-    pub ai: AiSettings,
     pub local_terminal: LocalTerminalSettings,
     pub sftp: SftpSettings,
     pub ide: IdeSettings,
@@ -472,8 +471,6 @@ pub struct PersistedSettings {
     pub keybindings: KeybindingSettings,
     #[serde(default)]
     pub custom_themes: Map<String, Value>,
-    #[serde(default)]
-    pub agent_roles: Option<Value>,
     #[serde(default)]
     pub new_connection: NewConnectionSettings,
     #[serde(default)]
@@ -499,7 +496,6 @@ impl Default for PersistedSettings {
             sidebar_ui: SidebarUiState::default(),
             window_ui: WindowUiState::default(),
             settings_navigation: SettingsNavigationSettings::default(),
-            ai: AiSettings::default(),
             local_terminal: LocalTerminalSettings::default(),
             sftp: SftpSettings::default(),
             ide: IdeSettings::default(),
@@ -512,7 +508,6 @@ impl Default for PersistedSettings {
             command_palette_mru: Vec::new(),
             keybindings: KeybindingSettings::default(),
             custom_themes: Map::new(),
-            agent_roles: None,
             new_connection: NewConnectionSettings::default(),
             ssh_config: SshConfigSettings::default(),
             diagnostics: DiagnosticsSettings::default(),

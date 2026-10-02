@@ -124,12 +124,6 @@ pub struct TreeUiState {
     pub extra: ExtraFields,
 }
 
-pub const AI_SIDEBAR_ABSOLUTE_MIN_WIDTH: f32 = 280.0;
-// The GPUI shell combines this Tauri-compatible baseline with a viewport ratio
-// so wide windows can allocate more space without weakening the compact fallback.
-pub const AI_SIDEBAR_ABSOLUTE_MAX_WIDTH: f32 = 500.0;
-pub const AI_SIDEBAR_DEFAULT_WIDTH: i64 = 340;
-
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SessionSortOrder {
@@ -152,11 +146,17 @@ pub struct SidebarUiState {
     pub collapsed: bool,
     pub active_section: String,
     pub width: i64,
-    pub ai_sidebar_collapsed: bool,
-    pub ai_sidebar_width: i64,
     pub zen_mode: bool,
+    #[serde(default)]
+    pub context_sidebar_collapsed: bool,
+    #[serde(default = "default_context_sidebar_width")]
+    pub context_sidebar_width: i64,
     #[serde(flatten)]
     pub extra: ExtraFields,
+}
+
+fn default_context_sidebar_width() -> i64 {
+    360
 }
 
 impl Default for SidebarUiState {
@@ -168,9 +168,9 @@ impl Default for SidebarUiState {
             session_manual_order: Vec::new(),
             hidden_local_terminal_profile_ids: Vec::new(),
             width: 300,
-            ai_sidebar_collapsed: true,
-            ai_sidebar_width: AI_SIDEBAR_DEFAULT_WIDTH,
             zen_mode: false,
+            context_sidebar_collapsed: false,
+            context_sidebar_width: default_context_sidebar_width(),
             extra: ExtraFields::new(),
         }
     }

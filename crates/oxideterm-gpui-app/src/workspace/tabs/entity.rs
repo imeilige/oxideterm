@@ -1430,7 +1430,9 @@ mod tests {
     }
 
     #[gpui::test]
-    fn moved_terminal_keeps_ai_target_and_content_across_window_handoffs(cx: &mut TestAppContext) {
+    fn moved_terminal_keeps_pane_ownership_and_content_across_window_handoffs(
+        cx: &mut TestAppContext,
+    ) {
         let main = cx.add_window(|_, _| TabHostTestRoot);
         let detached = cx.add_window(|_, _| TabHostTestRoot);
         let panes = main
@@ -1454,10 +1456,6 @@ mod tests {
         let host = cx.new(|_| WorkspaceTabHostEntity::new());
         let [a, b] = [PaneId(1), PaneId(2)];
         let [sa, sb] = [TerminalSessionId(1), TerminalSessionId(2)];
-        let mut ai = crate::workspace::ai_runtime_context::AiRuntimeContextEntity::new();
-        ai.register_terminal_session(sb, "remote-b".into());
-        let tools = ai.begin_tool_session(1);
-        let handle = ai.issue_terminal_handle(&tools, sb).unwrap();
         host.update(cx, |host, cx| {
             host.insert_and_select_main_tab(test_tab(TabId(1), Some(PaneNode::leaf(a, sa))));
             assert!(host.split_pane(TabId(1), a, PaneId(3), SplitDirection::Horizontal, b, sb));
@@ -1505,21 +1503,6 @@ mod tests {
             assert!(host.terminal_pane_for_target(a, sb).is_none());
             let target = host.terminal_pane_for_target(b, sb).unwrap();
             assert_eq!(target.read(cx).ai_buffer_snapshot().trim(), "remote-b");
-            for capability in [
-                oxideterm_ai::RuntimeCapability::TerminalObserve,
-                oxideterm_ai::RuntimeCapability::TerminalRunCommand,
-                oxideterm_ai::RuntimeCapability::TerminalSendInput,
-            ] {
-                assert_eq!(
-                    ai.validate_terminal_handle(
-                        &tools,
-                        Some(handle.handle_id.as_str()),
-                        capability
-                    )
-                    .unwrap(),
-                    sb
-                );
-            }
             host.return_to_main(TabId(2), TabMountCloseReason::ReturnToMain)
                 .unwrap();
             assert_eq!(host.pane_window_affinities[&b].current, main.into());
@@ -1749,12 +1732,6 @@ mod tests {
             id
         });
         let [sftp, forwards, spare] = ids;
-        let mut ai = crate::workspace::ai_runtime_context::AiRuntimeContextEntity::new();
-        let tools = ai.begin_tool_session(1);
-        let handles = ids.map(|id| {
-            ai.register_app_surface(id, format!("page-{}", id.0), None);
-            ai.issue_app_surface_handle(&tools, id).unwrap()
-        });
         let (first, _) = host
             .combine_pages(sftp, forwards, SplitDirection::Horizontal)
             .unwrap();
@@ -1788,15 +1765,11 @@ mod tests {
         let mount = host.begin_detach(combined.id).unwrap();
         assert!(host.commit_detach(combined.id, mount, detached.into()));
         host.select_main_tab(None);
-        for (id, handle) in ids.into_iter().zip(&handles) {
-            let target = ai
-                .validate_app_surface_handle(&tools, Some(handle.handle_id.as_str()))
-                .unwrap();
-            assert_eq!(target, id);
-            host.focus_content_page(target);
+        for id in ids {
+            host.focus_content_page(id);
             assert_eq!(host.focused_page_id(combined.id), id);
-            assert_eq!(host.detached_window_handle(target), Some(detached.into()));
-            assert!(host.surface_is_visible(target));
+            assert_eq!(host.detached_window_handle(id), Some(detached.into()));
+            assert!(host.surface_is_visible(id));
         }
         host.return_to_main(combined.id, TabMountCloseReason::ReturnToMain)
             .unwrap();
@@ -1873,10 +1846,6 @@ mod tests {
         let mut page = test_tab(source, None);
         page.kind = TabKind::Sftp;
         host.insert_tab(page);
-        let mut ai = crate::workspace::ai_runtime_context::AiRuntimeContextEntity::new();
-        ai.register_app_surface(source, "Files".into(), None);
-        let tools = ai.begin_tool_session(1);
-        let handle = ai.issue_app_surface_handle(&tools, source).unwrap();
         let mount = host.begin_detach(source).unwrap();
         assert!(!host.can_receive_tab_drop(source, target));
         host.commit_detach(source, mount, window.into());
@@ -1928,11 +1897,6 @@ mod tests {
                 tab_id: combined.id,
                 pane_id: b
             })
-        );
-        assert_eq!(
-            ai.validate_app_surface_handle(&tools, Some(handle.handle_id.as_str()))
-                .unwrap(),
-            source
         );
         assert_eq!(host.container_tab_id(source), combined.id);
         assert!(!host.can_receive_tab_drop(combined.id, combined.id));

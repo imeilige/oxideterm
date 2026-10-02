@@ -5,7 +5,7 @@
 <h1 align="center">⚡ OxideTerm</h1>
 
 <p align="center">
-  <strong>面向远程服务器、带 AI 能力的原生运维工作区 —— 纯 Rust 原生应用</strong>
+  <strong>面向远程服务器的原生运维工作区 —— 纯 Rust 原生应用</strong>
   <br>
   SSH、Mosh、Telnet、串口、RDP/VNC、SFTP、端口转发 和轻量编辑，集中在一个原生工作区。
   <br>
@@ -40,9 +40,8 @@ OxideTerm 是面向 SSH 与远程运维的开源工作区。终端、文件、�
 
 - 在同一个工作区中管理 SSH、Mosh、Telnet、串口、RDP/VNC、SFTP、端口转发、本地 Shell 与轻量编辑
 - 通过 Grace Period 重连机制，应对短暂网络中断并维持远程工作
-- 使用你自己的 AI 服务商，让 OxideSens 检查活动会话并执行经过批准的工作区操作
 
-连接信息与运维数据始终由你掌控。OxideSens 使用你自己的 AI 服务商，无需注册账户。
+连接信息与运维数据始终由你掌控。无需注册账户。
 
 ---
 
@@ -50,10 +49,9 @@ OxideTerm 是面向 SSH 与远程运维的开源工作区。终端、文件、�
 
 | 如果你关注…… | OxideTerm 提供…… |
 |---|---|
-| 一个远程节点，多种工具 | 终端、SFTP、端口转发、RDP/VNC、trzsz、原生 IDE、监控和 OxideSens AI 都归属于同一工作区 |
+| 一个远程节点，多种工具 | 终端、SFTP、端口转发、RDP/VNC、trzsz、原生 IDE、监控都归属于同一工作区 |
 | 没有 Electron 或捆绑 WebView 的桌面应用 | GPUI 直接在 GPU 表面绘制界面，无需附带浏览器运行时 |
 | 本地优先的运维流程 | SSH、Telnet、SFTP、转发、RDP/VNC、本地 Shell、串口终端和配置无需注册即可使用 |
-| 自带密钥的 OxideSens AI，而非平台额度 | OxideSens 使用你的 OpenAI、Anthropic、Gemini、Ollama 或 OpenAI 兼容端点，并支持 MCP、本地 RAG、按服务商适配的推理控制和经批准的工作区操作 |
 | 重连稳定性 | Grace Period 会在替换连接前探测旧连接 30 秒，让 TUI 应用能穿越短暂的网络中断 |
 | 纯 Rust SSH 与凭证安全 | SSH 栈通过 `russh` + `ring` 提供，不依赖 OpenSSL/libssh2；已保存凭证使用系统钥匙串，`.oxide` 包使用 ChaCha20-Poly1305 + Argon2id |
 
@@ -80,7 +78,7 @@ OxideTerm 是面向 SSH 与远程运维的开源工作区。终端、文件、�
 
 <table>
 <tr>
-<td align="center"><strong>SSH 终端 + OxideSens AI</strong><br/><br/><img src="../../docs/screenshots/terminal/SSHTERMINAL.png" alt="带 OxideSens AI 的 SSH 终端" /></td>
+<td align="center"><strong>SSH 终端</strong><br/><br/><img src="../../docs/screenshots/terminal/SSHTERMINAL.png" alt="SSH 终端" /></td>
 <td align="center"><strong>SFTP 文件管理器</strong><br/><br/><img src="../../docs/screenshots/sftp/sftp.png" alt="SFTP 双窗格文件管理器与传输队列" /></td>
 </tr>
 <tr>
@@ -93,14 +91,13 @@ OxideTerm 是面向 SSH 与远程运维的开源工作区。终端、文件、�
 
 ## 为远程运维而设计
 
-OxideTerm 将连接、文件、转发、主机工具、自动化与 AI 上下文放在同一个 Rust 工作区中。各项工具共享同一台服务器的身份与会话生命周期。
+OxideTerm 将连接、文件、转发、主机工具、自动化放在同一个 Rust 工作区中。各项工具共享同一台服务器的身份与会话生命周期。
 
 | 方面 | 捆绑浏览器的方案 | OxideTerm |
 |---|---|---|
 | **渲染** | 浏览器引擎与网页布局 | GPU 表面上的 GPUI |
 | **终端数据流** | WebSocket → JavaScript 事件循环 → xterm.js | Rust 输入 → `TerminalState` 变更 → GPUI 渲染 |
 | **连接生命周期** | 分散在前端与后端层 | 单一进程内连接与重连流水线 |
-| **AI 上下文** | 通过应用桥接复制 | 在用户批准下从活动工作区构建 |
 | **插件运行时** | 浏览器脚本环境 | manifest-only、能力受限的 WASM 与需要信任判断的进程路径 |
 | **CLI** | 需要桌面应用正在运行 | 独立二进制，直接链接 crate |
 | **运行时边界** | 桌面外壳加浏览器运行时 | 不带捆绑浏览器运行时的原生进程 |
@@ -115,22 +112,11 @@ OxideTerm 将连接、文件、转发、主机工具、自动化与 AI 上下文
 | **文件与远程编辑** | SFTP、传输队列、收藏夹、安全写入、项目树与多标签编辑 |
 | **转发与网络** | 本地、远程与动态 SOCKS5 转发、已保存规则与 Socket 调试 |
 | **主机运维与远程桌面** | 监控、进程、服务、日志、端口、任务、磁盘、软件包、容器、tmux、RDP 与 VNC |
-| **OxideSens 与自动化** | 自有 AI 服务商、MCP、本地 RAG、Agent Skills、已批准操作与 CLI |
+| **自动化** | 命令策略、可移植 `.oxide` 打包，以及用于自动化与诊断的独立 CLI |
 | **扩展与个性化** | manifest-only、WASM 与进程插件、自定义标签页、快速命令、主题、背景图片、快捷键与 2 种界面语言（中文和英文） |
 
 ---
 
-<div align="center">
-
-<a href="../../docs/media/ai-terminal-demo.mp4">
-  <img src="../../docs/media/ai-terminal-demo.gif" alt="OxideSens 在 OxideTerm 中打开终端" width="920">
-</a>
-
-*观看 OxideSens 按照用户请求在 OxideTerm 中打开一个终端。*
-
-</div>
-
----
 
 ## 安装
 
@@ -147,10 +133,10 @@ OxideTerm 将连接、文件、转发、主机工具、自动化与 AI 上下文
 
 ## 内部实现
 
-OxideTerm 将终端、SSH、Telnet、RDP、VNC、SFTP、转发、IDE、AI、插件和 CLI 整合在同一套 Rust 架构中。下方列出了面向开发者的技术细节。
+OxideTerm 将终端、SSH、Telnet、RDP、VNC、SFTP、转发、IDE、插件和 CLI 整合在同一套 Rust 架构中。下方列出了面向开发者的技术细节。
 
 <details>
-<summary><strong>架构、SSH 内部、GPUI 外壳、重连、AI、插件与更多细节</strong></summary>
+<summary><strong>架构、SSH 内部、GPUI 外壳、重连、插件与更多细节</strong></summary>
 <br>
 
 ### 核心进程内直连，无 WebView 桥接
@@ -192,16 +178,6 @@ Pipeline: `queued → snapshot → grace-period → ssh-connect → await-termin
 - UI 只按 `nodeId` 操作，`NodeRouter` 原子解析到底层 `connectionId`
 - `NodeRuntimeStore` 保存进程内节点运行时状态并导出拓扑快照；由工作区 helper 将快照写入 `session_tree.json`，启动时重新构建运行中的句柄
 - 跳板机失效会级联标记下游节点为 `link_down`
-
-### OxideSens AI
-
-OxideSens 采用 BYOK 模式，并在进程内构建上下文：
-
-- 提供商：OpenAI、Anthropic、Gemini、Ollama 或任意 OpenAI 兼容端点
-- MCP：stdio 与 SSE 传输，支持工具发现与调用
-- RAG：BM25 全文检索、HNSW 向量索引、RRF 融合与 CJK 双字词分词器
-- 发往提供商的消息会过滤凭证模式；工作区上下文与操作仍由用户控制
-- API 密钥存入系统钥匙串，并明确排除在结构化日志和桌面核心消息负载之外
 
 ### GPUI 桌面外壳
 
@@ -300,7 +276,6 @@ cargo run -p oxideterm-cli -- --config-dir ./fixture-config doctor --strict
 | SSH | russh（`ring`） | SSH 栈不依赖 OpenSSL/libssh2，支持 SSH Agent |
 | 终端 | portable-pty + alacritty_terminal | 本地伪终端、终端模拟与 Sixel/Kitty 图形 |
 | 插件 | Wasmtime/WASI 与进程路径 | manifest-only、受控 WASM 宿主调用，以及需要明确授权的本地进程 |
-| AI 与检索 | SSE + BM25 + HNSW | 提供商流式传输、CJK 双字词与 RRF 融合 |
 | 编辑器 | tree-sitter（语法）、自定义缓冲区 | 多语言，基于 SFTP |
 | 加密 | ChaCha20-Poly1305 + Argon2id | AEAD + 内存困难型 KDF（256 MB） |
 | 国际化 | oxideterm-i18n | 内置加载器，内置 2 种界面语言（中文和英文） |
@@ -312,7 +287,6 @@ cargo run -p oxideterm-cli -- --config-dir ./fixture-config doctor --strict
 | 已存储凭证 | macOS 钥匙串 / Windows Credential Manager / libsecret |
 | 内存中的秘密 | 持有秘密的类型和临时缓冲区在支持的所有权边界使用 `zeroize` / `Zeroizing` |
 | 诊断 | 支持报告优先输出结构化元数据和脱敏提示，避免携带秘密的原始负载 |
-| AI 上下文 | 发往提供商的消息会过滤凭证模式；工作区上下文与操作仍由用户控制 |
 | `.oxide` | ChaCha20-Poly1305 + Argon2id |
 | CLI 写操作 | dry-run 计划、`--yes` 保护和回滚备份 |
 | 主机密钥 | 使用 `~/.ssh/known_hosts` 的 TOFU，拒绝意外变更 |

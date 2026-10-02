@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 
 use super::ime::WorkspaceImeTarget;
 use super::terminal_git::{
-    TerminalGitAiCommitError, TerminalGitBranchError, TerminalGitPanelSection,
+    TerminalGitBranchError, TerminalGitPanelSection,
     TerminalGitPathAction, TerminalGitRepositoryAction, terminal_git_path_action_label_key,
     terminal_git_repository_action_label_key,
 };

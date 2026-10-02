@@ -59,10 +59,6 @@ impl WorkspaceApp {
                                 OnboardingStep::Features => {
                                     self.render_onboarding_features(window, cx)
                                 }
-                                OnboardingStep::AiIntro => self.render_onboarding_ai_intro(cx),
-                                OnboardingStep::AiSetup => {
-                                    self.render_onboarding_ai_setup(window, cx)
-                                }
                                 OnboardingStep::QuickStart => {
                                     self.render_onboarding_quick_start(window, cx)
                                 }

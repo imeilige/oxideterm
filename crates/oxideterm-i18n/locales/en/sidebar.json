@@ -28,8 +28,6 @@
       "forwards": "Port Forwarding",
       "forwards_title": "Port Forwarding",
       "connection_pool": "Connection Pool",
-      "ai": "OxideSens",
-      "ai_assistant": "OxideSens (Coming Soon)",
       "settings": "Settings",
       "no_saved_connections": "No saved connections",
       "no_active_sessions": "No active sessions",
@@ -59,7 +57,6 @@
     },
     "tooltips": {
       "settings": "Settings",
-      "ai_hint": "OxideSens",
       "switch_tree": "Switch to Tree View",
       "switch_focus": "Switch to Focus View",
       "new_connection": "New Connection",

@@ -6,7 +6,7 @@ use oxideterm_settings::PersistedSettings;
 use crate::{
     CloseOtherTabs, ClosePane, CloseTab, CommandPalette, Copy, Cut, Find, FindNext, FindPrev,
     FontDecrease, FontIncrease, FontReset, NewConnection, NewTerminal, NextTab, OpenSettings,
-    PaletteAiSidebar, PaletteCancelReconnect, PaletteCleanupDead,
+    PaletteCancelReconnect, PaletteCleanupDead,
     PaletteDetachTerminal, PaletteDisconnectAll, PaletteEventLog, PaletteHealthCheck,
     PaletteReconnectAll, PaletteResetPanes, Paste, PrevTab, Quit, ShellLauncher, ShowShortcuts,
     SplitHorizontal, SplitVertical, ToggleSidebar, ZenMode,
@@ -74,10 +74,6 @@ pub(crate) fn app_menus(settings: &PersistedSettings) -> Vec<Menu> {
                 MenuItem::action(i18n.t("command_palette.title"), CommandPalette),
                 MenuItem::action(i18n.t("command_palette.cmd_toggle_sidebar"), ToggleSidebar),
                 MenuItem::action(i18n.t("command_palette.cmd_toggle_panel"), PaletteEventLog),
-                MenuItem::action(
-                    i18n.t("command_palette.cmd_toggle_ai_sidebar"),
-                    PaletteAiSidebar,
-                ),
                 MenuItem::separator(),
                 MenuItem::action(i18n.t("command_palette.cmd_font_increase"), FontIncrease),
                 MenuItem::action(i18n.t("command_palette.cmd_font_decrease"), FontDecrease),

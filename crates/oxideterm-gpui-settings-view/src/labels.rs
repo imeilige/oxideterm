@@ -2,8 +2,8 @@ use oxideterm_gpui_platform::vibrancy::NativeVibrancyMode;
 use oxideterm_i18n::I18n;
 use oxideterm_render_policy::RenderProfile;
 use oxideterm_settings::{
-    AiThinkingStyle, AnimationSpeed, ConflictAction, FileTransferProtocolPreference, FontFamily,
-    FrostedGlassMode, IdeAgentMode, RemoteShellIntegrationMode, UiDensity,
+    AnimationSpeed, ConflictAction, FileTransferProtocolPreference, FontFamily, FrostedGlassMode,
+    IdeAgentMode, RemoteShellIntegrationMode, UiDensity,
 };
 
 pub fn file_transfer_protocol_label(
@@ -119,8 +119,4 @@ pub fn render_profile_label(profile: RenderProfile, i18n: &I18n) -> String {
             i18n.t("settings_view.appearance.render_profile_compatibility")
         }
     }
-}
-
-pub fn ai_thinking_label(style: AiThinkingStyle) -> String {
-    format!("{style:?}")
 }

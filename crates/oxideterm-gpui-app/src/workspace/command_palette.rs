@@ -1778,7 +1778,6 @@ impl WorkspaceApp {
                 [
                     registry_row("terminal.search", "settings_view.help.shortcut_find"),
                     registry_row("terminal.paste", "settings_view.help.shortcut_paste"),
-                    registry_row("terminal.aiPanel", "settings_view.help.shortcut_ai_panel"),
                     registry_row(
                         "terminal.closePanel",
                         "settings_view.help.shortcut_close_panel",
@@ -1823,10 +1822,6 @@ impl WorkspaceApp {
             self.i18n.t("settings_view.help.category_palette"),
             [
                 registry_row("palette.eventLog", "settings_view.help.shortcut_event_log"),
-                registry_row(
-                    "palette.aiSidebar",
-                    "settings_view.help.shortcut_ai_sidebar",
-                ),
             ]
             .into_iter()
             .flatten()
@@ -2251,12 +2246,6 @@ fn command_palette_specs() -> Vec<CommandSpec> {
             "palette.eventLog",
             LucideIcon::LayoutList,
         ),
-        keybinding_command(
-            "cmd:toggle_ai_sidebar",
-            "command_palette.cmd_toggle_ai_sidebar",
-            "palette.aiSidebar",
-            LucideIcon::PanelLeft,
-        ),
         CommandSpec {
             id: "cmd:close_tab",
             label_key: "command_palette.cmd_close_tab".into(),
@@ -2401,13 +2390,6 @@ fn command_palette_specs() -> Vec<CommandSpec> {
             icon: LucideIcon::ArrowLeftRight,
             shortcut_action: None,
             action: PaletteAction::Sidebar(SidebarSection::Forwards),
-        },
-        CommandSpec {
-            id: "cmd:sidebar_ai",
-            label_key: "command_palette.cmd_sidebar_ai".into(),
-            icon: LucideIcon::Bot,
-            shortcut_action: None,
-            action: PaletteAction::Keybinding("palette.aiSidebar"),
         },
         CommandSpec {
             id: "cmd:disconnect_all",

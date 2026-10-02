@@ -1,9 +1,9 @@
 use oxideterm_gpui_ui::select::SelectAnchorId;
 use oxideterm_i18n::I18n;
 use oxideterm_settings::{
-    AiThinkingStyle, AnimationSpeed, ConflictAction, CursorStyle as SettingsCursorStyle,
-    FontFamily, IdeAgentMode, Language, PersistedSettings, TerminalBackspaceSequence,
-    TerminalDeleteSequence, TerminalEncoding, UiDensity,
+    AnimationSpeed, ConflictAction, CursorStyle as SettingsCursorStyle, FontFamily, IdeAgentMode,
+    Language, PersistedSettings, TerminalBackspaceSequence, TerminalDeleteSequence,
+    TerminalEncoding, UiDensity,
 };
 pub use oxideterm_settings_model::theme_display_name;
 use oxideterm_theme::BUILT_IN_THEMES;
@@ -263,42 +263,6 @@ pub fn set_ide_line_height_percent(settings: &mut PersistedSettings, value: i64)
     settings.ide.line_height = Some(value as f64 / 100.0);
 }
 
-pub fn set_ai_enabled(settings: &mut PersistedSettings, value: bool) {
-    settings.ai.enabled = value;
-}
-
-pub fn set_ai_enabled_confirmed(settings: &mut PersistedSettings, value: bool) {
-    settings.ai.enabled_confirmed = value;
-}
-
-pub fn set_ai_context_source_ide(settings: &mut PersistedSettings, value: bool) {
-    settings.ai.context_sources.ide = value;
-}
-
-pub fn set_ai_context_source_sftp(settings: &mut PersistedSettings, value: bool) {
-    settings.ai.context_sources.sftp = value;
-}
-
-pub fn set_ai_memory_enabled(settings: &mut PersistedSettings, value: bool) {
-    settings.ai.memory.enabled = value;
-}
-
-pub fn set_ai_tool_use_enabled(settings: &mut PersistedSettings, value: bool) {
-    settings.ai.tool_use.enabled = value;
-}
-
-pub fn set_ai_skills_enabled(settings: &mut PersistedSettings, value: bool) {
-    settings.ai.skills.enabled = value;
-}
-
-pub fn set_ai_tool_use_max_rounds(settings: &mut PersistedSettings, value: i64) {
-    settings.ai.tool_use.max_rounds = Some(value);
-}
-
-pub fn set_ai_tool_use_max_calls_per_round(settings: &mut PersistedSettings, value: i64) {
-    settings.ai.tool_use.max_calls_per_round = Some(value);
-}
-
 pub fn set_command_bar_enabled(settings: &mut PersistedSettings, value: bool) {
     settings.terminal.command_bar.enabled = value;
 }
@@ -402,13 +366,6 @@ pub fn cycle_ide_agent_mode(settings: &mut PersistedSettings) {
         IdeAgentMode::Ask => IdeAgentMode::Enabled,
         IdeAgentMode::Enabled => IdeAgentMode::Disabled,
         IdeAgentMode::Disabled => IdeAgentMode::Ask,
-    };
-}
-
-pub fn cycle_ai_thinking(settings: &mut PersistedSettings) {
-    settings.ai.thinking_style = match settings.ai.thinking_style {
-        AiThinkingStyle::Detailed => AiThinkingStyle::Compact,
-        AiThinkingStyle::Compact => AiThinkingStyle::Detailed,
     };
 }
 

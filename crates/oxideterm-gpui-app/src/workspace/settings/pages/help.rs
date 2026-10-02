@@ -268,7 +268,7 @@ impl WorkspaceApp {
             .and_then(|()| open_path_external(&log_dir))
             .map_err(|error| error.to_string());
         if let Err(error) = opened {
-            self.push_ai_settings_toast(error, TerminalNoticeVariant::Error, cx);
+            self.push_settings_toast(error, TerminalNoticeVariant::Error, cx);
             cx.notify();
         }
     }

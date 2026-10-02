@@ -1,6 +1,6 @@
 # Application Guide
 
-This guide introduces the OxideTerm desktop app. Use it for day-to-day terminal, SSH, file, forwarding, Host Tools, graphics/VNC, AI, plugin, and settings work. The `oxideterm` CLI is a separate companion for automation, diagnostics, CI, migration, and recovery.
+This guide introduces the OxideTerm desktop app. Use it for day-to-day terminal, SSH, file, forwarding, Host Tools, graphics/VNC, plugin, and settings work. The `oxideterm` CLI is a separate companion for automation, diagnostics, CI, migration, and recovery.
 
 ## First Run
 
@@ -10,7 +10,7 @@ Recommended first pass:
 
 1. Open a local terminal.
 2. Type a simple command such as `pwd` or `echo ok`.
-3. Open Settings and review terminal font, theme, shell, and AI settings.
+3. Open Settings and review terminal font, theme, and shell settings.
 4. Add one saved SSH connection.
 5. Connect to the host and verify terminal input, file browsing, Host Tools, and connection status.
 
@@ -50,7 +50,7 @@ Terminal-adjacent helpers stay tied to the active terminal pane:
 
 - Use the terminal context menu or command bar for copy, paste, search, command selection, and explicit transfer actions.
 - When an X/Y/ZMODEM prompt appears after a real transfer command such as `rz`, `sz`, `rx`, or `rb`, choose the local file or directory and watch progress from the visible prompt/notification.
-- Do not place sudo/su passwords in connection names, notes, quick commands, AI prompts, logs, or support bundles.
+- Do not place sudo/su passwords in connection names, notes, quick commands, logs, or support bundles.
 
 ### Advanced command sender
 
@@ -116,26 +116,6 @@ Use Host Tools from the connected-node context when you need a read-oriented vie
 
 Use graphics/VNC sessions for remote visual workflows. A viewer is backed either by a saved RDP/VNC profile and its helper process or by a node-owned graphics runtime; rendered frames are not terminal output, and closing the viewer is separate from deleting saved connection data.
 
-## AI Sidebar
-
-The AI sidebar is intended to work with the current app context. It can inspect targets, use terminal and file tools when tool use is enabled, and summarize or act on the current workspace state.
-
-When the selected provider and model expose reasoning controls, the chat surface shows a provider-aware **Thinking Effort** menu. Known models are normalized against capability data; an unknown model with a known provider uses that provider's request format, while an unknown provider is treated as unsupported. ACP sessions use their own session options rather than the native provider reasoning field.
-
-Good AI workflow:
-
-1. Open the relevant terminal, connection, SFTP, IDE, or settings surface.
-2. Include context only when needed.
-3. Let the AI list or select explicit targets before running commands.
-4. Review approval prompts for write, interactive, or destructive actions.
-5. Check tool results before accepting follow-up changes.
-
-Never paste secrets into AI prompts. Use the app's provider key and secret storage surfaces for API keys or credentials.
-
-### Agent Skills
-
-OxideSens can discover bounded `SKILL.md` workflows from the workspace, user data directories, and enabled native plugins. Open **Settings → OxideSens → Tools → Agent Skills** to review discovered skills, enable or disable them, and refresh the catalog. Loading a skill provides instructions only; it does not grant terminal, file, credential, or network permissions. Every resulting action still goes through the existing tool policy and approval mode. See the [Agent Skills reference](../../agent-skills.md) for discovery precedence and resource limits.
-
 ## Knowledge
 
 Open Knowledge from the activity bar. OxideTerm opens or focuses one central Knowledge tab instead of placing the browser in the global companion sidebar.
@@ -145,7 +125,7 @@ Open Knowledge from the activity bar. OxideTerm opens or focuses one central Kno
 - The formatting toolbar inserts standard Markdown for headings, emphasis, lists, quotes, code, links, images, tables, and horizontal rules. Fenced code blocks use three backticks.
 - Save state and conflicts are shown in the editor header. Leaving a dirty document, closing its tab, or quitting requires the draft to be saved or explicitly discarded.
 
-Use the Knowledge settings page for embedding and retrieval configuration. Document browsing and editing belong to the Knowledge workspace tab.
+Document browsing and editing belong to the Knowledge workspace tab.
 
 ## External MCP Clients
 
@@ -208,7 +188,6 @@ Use Settings for interactive configuration:
 - Appearance, theme, and whole-window opacity.
 - Terminal renderer, shell, font, encoding, transfer helpers, and local terminal behavior.
 - SSH, reconnect, SFTP, and IDE behavior.
-- AI providers, model selection, memory, tool use, and Knowledge embedding or retrieval settings.
 - Keybindings, help, and update information.
 
 Use the desktop UI when you are making exploratory or visual changes. Use the CLI only when the change must be scripted or repeated across environments.

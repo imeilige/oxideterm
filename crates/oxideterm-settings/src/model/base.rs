@@ -7,12 +7,6 @@ pub const TERMINAL_SCROLLBACK_MAX: i64 = 20_000;
 pub const DEFAULT_BACKEND_HOT_BUFFER_LINES: i64 = 8_000;
 pub const BACKEND_HOT_BUFFER_MIN: i64 = 5_000;
 pub const BACKEND_HOT_BUFFER_MAX: i64 = 12_000;
-pub const DEFAULT_AI_TOOL_MAX_ROUNDS: i64 = 25;
-pub const MIN_AI_TOOL_MAX_ROUNDS: i64 = 1;
-pub const MAX_AI_TOOL_MAX_ROUNDS: i64 = 30;
-pub const DEFAULT_AI_TOOL_MAX_CALLS_PER_ROUND: i64 = 8;
-pub const MIN_AI_TOOL_MAX_CALLS_PER_ROUND: i64 = 1;
-pub const MAX_AI_TOOL_MAX_CALLS_PER_ROUND: i64 = 32;
 pub const MAX_HIGHLIGHT_RULES: usize = 32;
 pub const MAX_HIGHLIGHT_PATTERN_LENGTH: usize = 512;
 
@@ -273,28 +267,6 @@ pub enum RemoteShellIntegrationMode {
     Ask,
     Enabled,
     Disabled,
-}
-
-#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum AiThinkingStyle {
-    #[default]
-    Detailed,
-    Compact,
-}
-
-#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum AiReasoningEffort {
-    None,
-    Minimal,
-    Low,
-    Medium,
-    High,
-    Xhigh,
-    Max,
-    #[default]
-    Auto,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
